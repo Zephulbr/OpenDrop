@@ -34,7 +34,7 @@ audio devices. The first target is the **original Moondrop Space Travel**
 | Control channel | Qualcomm **GAIA v3** over Bluetooth Classic SPP/RFCOMM, vendor `0x001D`; no BLE | Our capture (verified) |
 | GAIA features | core, earbud, voice UI, music processing (EQ), upgrade. **No ANC, battery or gesture feature** | Our capture (verified) |
 | Firmware | 1.0.0 | Our capture |
-| Battery reporting | HFP `AT+IPHONEACCEV` (combined level), not GAIA | Gadgetbridge; GAIA absence verified |
+| Battery reporting | HFP `AT+IPHONEACCEV`, one earbud level in 10 % steps; case not reported | Our capture (verified) |
 
 Protocol details: [protocol/space-travel.md](protocol/space-travel.md).
 
@@ -48,26 +48,27 @@ Legend: ✅ High · 🟡 Medium · ❌ Low / out of scope
 |---|---|---|
 | Volume | ✅ | Link's slider is plain AVRCP absolute volume (verified), so this is Android media volume via `AudioManager`. No on-device volume command exists. |
 | EQ presets (Reference / Basshead / Monitor) | ✅ **Verified** | GAIA music processing: set `0a03 [0/1/2]`, get `0a02`, change notification `0a81`. |
-| ANC mode (Off / ANC / Transparency) | ❌→🟡 | Firmware advertises no ANC feature and Link has no ANC screen. Changing it from an app looks impossible. Showing the current mode is possible only if the buds send a notification on long-press (probe monitor mode). |
+| ANC mode (Off / ANC / Transparency) | ❌ **Verified** | No GAIA feature, and long-press changes send no traffic at all. Neither settable nor visible to any app. |
 | ANC strength / adaptive ANC | ❌ | Only if firmware exposes levels. Investigate, don't promise. |
 | Lock touch controls | 🟡→❌ | No gesture feature advertised and Link has no gesture screen. Depends on finding the command Gadgetbridge reportedly uses for touch actions. |
-| Battery % (combined) | ✅ | Sent over HFP; read Android's stored level for the device (hidden API via reflection, to be checked). |
-| Battery % (left / right / case) | ❌ | GAIA battery feature not advertised (verified). |
+| Battery % (earbuds) | ✅ **Verified** | One value over HFP, 10 % steps, already in Android. Read it in-app (hidden API via reflection, to be checked). |
+| Battery % (left / right / case) | ❌ **Verified** | Not sent anywhere. |
 | Bluetooth codec (SBC / AAC) | 🟡 | Android blocks this for normal apps. Options: optional **Shizuku**/root integration calling the privileged A2DP codec API; fallback deep-link to Developer Options. LDAC/aptX are impossible on this hardware. |
 
 ### Additional features
 
-Firmware-backed (to confirm in Phase 0):
+Firmware-backed:
 
 | Feature | Feasibility |
 |---|---|
-| Game / low-latency mode toggle | 🟡→❌ (not advertised; check notifications) |
+| Game / low-latency mode toggle | ❌ **Verified** (4× tap sends no traffic) |
+| On-device custom EQ (hidden "User" preset 63, 5 bands) | 🟡 new lead: read its config next |
 | Per-gesture touch remapping | 🟡 (not in Link 2.26; Gadgetbridge reportedly has it) |
 | Multipoint on/off, connected-device list | ❌ (dual-device feature not advertised) |
 | Voice prompts: on/off, language, volume | ❌ (prompts feature not advertised) |
-| Device rename | 🟡 |
+| Device rename | ❌ (no feature advertised) |
 | Firmware version display | ✅ **Verified** (`"1.0.0"`) |
-| Find my earbuds (beep) | 🟡 |
+| Find my earbuds (beep) | ❌ (no feature advertised) |
 | Factory reset / clear pairings | 🟡 |
 
 App-side (no firmware dependency):
@@ -76,7 +77,7 @@ App-side (no firmware dependency):
 |---|---|
 | Phone-side parametric EQ (10-band, via Android `DynamicsProcessing`) | ✅ |
 | AutoEQ profile import / Space Travel target presets | ✅ |
-| Quick Settings tiles (EQ preset; ANC/game mode only if supported) | ✅ |
+| Quick Settings tile (EQ preset) | ✅ |
 | Battery home-screen widget + low-battery notification | ✅ |
 | Automations (e.g. game mode when a game launches) | ✅ |
 | Tasker / broadcast-intent integration | ✅ |
@@ -147,9 +148,9 @@ and game mode.
 ### Phase 2: MVP (v0.1)
 
 - [ ] Device screen: connection state, firmware version, battery (combined, from Android).
-- [ ] ANC mode indicator, only if the buds report mode changes (probe).
+- [ ] ~~ANC mode indicator~~ (not possible: buds don't report it).
 - [ ] EQ preset selector (Reference / Basshead / Monitor).
-- [ ] Game mode indicator, only if the buds report it (probe).
+- [ ] ~~Game mode indicator~~ (not possible: buds don't report it).
 - [ ] Volume control (Android media volume).
 - [ ] State stays in sync when changed from the earbuds themselves.
 

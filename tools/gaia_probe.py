@@ -1,8 +1,8 @@
 """Read-only GAIA probe and notification monitor for the Moondrop Space Travel.
 
 Runs on a PC (Linux or Windows, Python 3.10+) paired with the earbuds.
-It only sends commands with NO payload that are "get"/query commands, or that
-the MOONDROP Link app itself sends on connect. It never sends a "set".
+It only sends "get"/query commands, or ones the MOONDROP Link app itself sends
+on connect. It never sends a "set".
 
 Usage:
   python tools/gaia_probe.py AA:BB:CC:DD:EE:FF            # probe, then exit
@@ -24,7 +24,7 @@ import time
 
 from gaia import Decoder, encode, encode_v2
 
-# (label, feature, command). All payload-less.
+# (label, feature, command[, payload]). Queries only.
 PROBES = [
     # Core: identification. Standard GAIA v3 "get" commands.
     ("core: protocol version", 0, 0x00),
@@ -44,6 +44,9 @@ PROBES = [
     ("music: available eq presets", 5, 0x01),
     ("music: selected eq set", 5, 0x02),
     ("music: user eq band count", 5, 0x04),
+    # Read the hidden "User" EQ (preset 63, 5 bands). Payload = first, last band.
+    ("music: user eq config, bands 0-5", 5, 0x05, bytes([0, 5])),
+    ("music: user eq config, bands 1-5", 5, 0x05, bytes([1, 5])),
     # Not advertised, but used by other Moondrop models. Expect errors.
     ("anc v1: get", 2, 0x00),
     ("audio curation: get mode", 8, 0x03),
@@ -137,9 +140,9 @@ def main() -> None:
         link.send(encode(0, 0x07, bytes([feature])))
         link.read_for(0.5)
 
-    for label, feature, cmd in PROBES:
+    for label, feature, cmd, *payload in PROBES:
         print(f"\n== {label}")
-        link.send(encode(feature, cmd))
+        link.send(encode(feature, cmd, payload[0] if payload else b""))
         if not link.read_for(1.0):
             print("  (no reply)")
 
