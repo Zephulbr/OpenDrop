@@ -30,8 +30,13 @@ audio devices. The first target is the **original Moondrop Space Travel**
 | Codecs | SBC, AAC | Spec sheet |
 | ANC | Off / ANC / Transparency (3 s hold on either bud) | Manual, reviews |
 | Game mode | ~55 ms latency (4x tap) | Manual |
-| Official app | MOONDROP Link (EQ presets, gestures, ANC mode) | Reviews |
-| Control channel | Expected: Bluetrum vendor protocol over BLE GATT (`0xAB`-style frames) | **Unverified, Phase 0** |
+| Official app | MOONDROP Link 2.26: volume (AVRCP) and EQ presets only | Our capture |
+| Control channel | Qualcomm **GAIA v3** over Bluetooth Classic SPP/RFCOMM, vendor `0x001D`; no BLE | Our capture (verified) |
+| GAIA features | core, earbud, voice UI, music processing (EQ), upgrade. **No ANC, battery or gesture feature** | Our capture (verified) |
+| Firmware | 1.0.0 | Our capture |
+| Battery reporting | HFP `AT+IPHONEACCEV` (combined level), not GAIA | Gadgetbridge; GAIA absence verified |
+
+Protocol details: [protocol/space-travel.md](protocol/space-travel.md).
 
 ## Feature list and feasibility
 
@@ -41,13 +46,13 @@ Legend: ✅ High · 🟡 Medium · ❌ Low / out of scope
 
 | Feature | Feasibility | How |
 |---|---|---|
-| Volume | ✅ | Phone volume via `AudioManager`. Any on-device volume setting (max / prompt volume) via a captured vendor command. |
-| EQ presets (Reference / Balanced / Monitor) | ✅ | Replay the command the Link app already sends. |
-| ANC mode (Off / ANC / Transparency) | ✅ | Command almost certainly exists since the touch gesture does it. |
+| Volume | ✅ | Link's slider is plain AVRCP absolute volume (verified), so this is Android media volume via `AudioManager`. No on-device volume command exists. |
+| EQ presets (Reference / Basshead / Monitor) | ✅ **Verified** | GAIA music processing: set `0a03 [0/1/2]`, get `0a02`, change notification `0a81`. |
+| ANC mode (Off / ANC / Transparency) | ❌→🟡 | Firmware advertises no ANC feature and Link has no ANC screen. Changing it from an app looks impossible. Showing the current mode is possible only if the buds send a notification on long-press (probe monitor mode). |
 | ANC strength / adaptive ANC | ❌ | Only if firmware exposes levels. Investigate, don't promise. |
-| Lock touch controls | 🟡→✅ | Native lock command if one exists (check APK); otherwise emulate by remapping all gestures to "none" and restoring the saved mapping on unlock. |
-| Battery % (left / right) | ✅ | Vendor battery query / notification. |
-| Battery % (case) | 🟡 | Only if the case reports its level to the buds. |
+| Lock touch controls | 🟡→❌ | No gesture feature advertised and Link has no gesture screen. Depends on finding the command Gadgetbridge reportedly uses for touch actions. |
+| Battery % (combined) | ✅ | Sent over HFP; read Android's stored level for the device (hidden API via reflection, to be checked). |
+| Battery % (left / right / case) | ❌ | GAIA battery feature not advertised (verified). |
 | Bluetooth codec (SBC / AAC) | 🟡 | Android blocks this for normal apps. Options: optional **Shizuku**/root integration calling the privileged A2DP codec API; fallback deep-link to Developer Options. LDAC/aptX are impossible on this hardware. |
 
 ### Additional features
@@ -56,12 +61,12 @@ Firmware-backed (to confirm in Phase 0):
 
 | Feature | Feasibility |
 |---|---|
-| Game / low-latency mode toggle | ✅ likely |
-| Per-gesture touch remapping | ✅ likely (Link has it) |
-| Multipoint on/off, connected-device list | 🟡 |
-| Voice prompts: on/off, language, volume | 🟡 |
+| Game / low-latency mode toggle | 🟡→❌ (not advertised; check notifications) |
+| Per-gesture touch remapping | 🟡 (not in Link 2.26; Gadgetbridge reportedly has it) |
+| Multipoint on/off, connected-device list | ❌ (dual-device feature not advertised) |
+| Voice prompts: on/off, language, volume | ❌ (prompts feature not advertised) |
 | Device rename | 🟡 |
-| Firmware version display | ✅ likely |
+| Firmware version display | ✅ **Verified** (`"1.0.0"`) |
 | Find my earbuds (beep) | 🟡 |
 | Factory reset / clear pairings | 🟡 |
 
@@ -71,7 +76,7 @@ App-side (no firmware dependency):
 |---|---|
 | Phone-side parametric EQ (10-band, via Android `DynamicsProcessing`) | ✅ |
 | AutoEQ profile import / Space Travel target presets | ✅ |
-| Quick Settings tiles (ANC mode, game mode) | ✅ |
+| Quick Settings tiles (EQ preset; ANC/game mode only if supported) | ✅ |
 | Battery home-screen widget + low-battery notification | ✅ |
 | Automations (e.g. game mode when a game launches) | ✅ |
 | Tasker / broadcast-intent integration | ✅ |
@@ -86,8 +91,8 @@ tuning, anything requiring modified firmware.
 app/                    Jetpack Compose UI, navigation, tiles, widgets
 core/model/             Capability model (Battery, AncMode, EqPreset, Gesture, ...)
 core/protocol/          Pure Kotlin: frame encode/decode, checksums, command table
-core/transport-ble/     BLE GATT connection, MTU, notifications, write queue
-core/transport-classic/ RFCOMM/SPP transport (only if Phase 0 shows it's needed)
+core/transport-classic/ RFCOMM/SPP transport (Space Travel)
+core/transport-ble/     BLE GATT transport (newer models, GAIA over GATT)
 core/audio/             Phone-side EQ (DynamicsProcessing), codec helper (Shizuku)
 devices/spacetravel/    Space Travel driver: maps capabilities -> protocol commands
 ```
@@ -96,8 +101,8 @@ devices/spacetravel/    Space Travel driver: maps capabilities -> protocol comma
   a **capability set**; the UI shows only what the connected device supports.
 - State is a `StateFlow<DeviceState>`, updated from device notifications.
 - Kotlin, Jetpack Compose, Coroutines/Flow, Hilt. `minSdk 26`, target latest.
-- Android 12+ permissions: `BLUETOOTH_CONNECT`, `BLUETOOTH_SCAN`
-  (`neverForLocation`). Device association via `CompanionDeviceManager` so the
+- Android 12+ permissions: `BLUETOOTH_CONNECT` (plus `BLUETOOTH_SCAN` for BLE models)
+  with `neverForLocation`. Device association via `CompanionDeviceManager` so the
   app can find the buds without location permission and stay connected.
 
 ## Phases
@@ -106,39 +111,46 @@ devices/spacetravel/    Space Travel driver: maps capabilities -> protocol comma
 
 Goal: a written protocol spec for every feature above.
 
-- [ ] **GATT survey**: use nRF Connect to list the earbuds' services and
-      characteristics, note which are writable and which notify.
-- [ ] **HCI snoop captures**: enable "Bluetooth HCI snoop log" in Developer
-      Options. Do one Link app action per capture session, with a written log
-      of the exact time and action. Pull the log via `adb bugreport`.
-- [ ] **Wireshark analysis**: isolate ATT writes/notifications (or RFCOMM
-      traffic), work out frame layout (header, command id, length, payload,
-      checksum).
-- [ ] **APK static analysis**: decompile MOONDROP Link with `jadx`, find the
-      command table and model mapping. Look for commands the app never shows
-      for Space Travel (lock, battery, game mode, prompts).
-- [ ] **Safe probing**: confirm hidden commands with read-only queries first.
-- [ ] Write `docs/protocol/space-travel.md`; commit sanitized captures as
-      test fixtures under `docs/protocol/captures/` (no MAC addresses).
+Head start: Gadgetbridge already supports ST1 (EQ preset, touch actions)
+over GAIA, and other projects document GAIA feature ids for newer Moondrop
+models. Phase 0 is now mainly **verifying** that on our hardware and finding
+the commands nobody has published (EQ, touch, game mode, lock).
 
-Exit criteria: documented commands for battery, ANC mode, EQ preset and
-gesture mapping, each verified on real hardware.
+- [x] **Prior-art survey**: summarised in
+      [protocol/space-travel.md](protocol/space-travel.md).
+- [x] **Device info**: Classic only (SPP, HFP, A2DP, AVRCP), no BLE.
+- [x] **HCI snoop capture** of the Link app (EQ, volume, connect):
+      [captures/](protocol/captures/).
+- [x] **Analysis**: framing, connect sequence, EQ commands verified;
+      decoder and tests in `tools/`.
+- [ ] **Safe probing** with `tools/gaia_probe.py` from a PC: read-only
+      commands, plus notification monitor while pressing/tapping the buds.
+- [ ] **Touch actions**: find the command Gadgetbridge reportedly uses.
+- [ ] **APK static analysis (optional)**: `jadx` on MOONDROP Link to find
+      commands it never shows for ST1 (lock, game mode, prompts).
+- [ ] Update `space-travel.md` to "verified"; commit sanitized captures as
+      test fixtures under `docs/protocol/captures/`.
+
+Exit criteria: EQ preset verified (done); probe results recorded for
+every feature that ST1 might support; a clear yes/no on ANC, gestures
+and game mode.
 
 ### Phase 1: Project scaffold
 
 - [ ] Gradle multi-module project, CI (build + unit tests + lint) on GitHub Actions.
 - [ ] `core/protocol` with frame codec and unit tests from Phase 0 captures.
-- [ ] `core/transport-ble`: scan/associate, connect, notifications, write queue,
-      reconnect.
+- [ ] `core/transport-classic`: RFCOMM connect to the bonded earbuds, GAIA
+      framing, reconnect on A2DP connect.
+- [ ] `core/transport-ble`: kept for later models that use GAIA over GATT.
 - [ ] Developer packet console screen (useful right away for more research).
 
 ### Phase 2: MVP (v0.1)
 
-- [ ] Device screen: connection state, battery L/R (+ case if available).
-- [ ] ANC mode selector (Off / ANC / Transparency).
-- [ ] EQ preset selector (Reference / Balanced / Monitor).
-- [ ] Game mode toggle.
-- [ ] Volume control.
+- [ ] Device screen: connection state, firmware version, battery (combined, from Android).
+- [ ] ANC mode indicator, only if the buds report mode changes (probe).
+- [ ] EQ preset selector (Reference / Basshead / Monitor).
+- [ ] Game mode indicator, only if the buds report it (probe).
+- [ ] Volume control (Android media volume).
 - [ ] State stays in sync when changed from the earbuds themselves.
 
 ### Phase 3: Controls and quality of life (v0.2)
@@ -169,6 +181,7 @@ gesture mapping, each verified on real hardware.
 
 | Risk | Mitigation |
 |---|---|
+| OpenDrop overlaps with Gadgetbridge (which already supports ST1) | Focus on what it doesn't do: a dedicated headphone UI, touch lock, codec switching, phone-side PEQ, tiles/widgets. Credit and cross-link. |
 | Protocol is encrypted or authenticated | APK analysis shows how; Frida hooks on the Link app as a fallback. |
 | Firmware updates change the protocol | Read firmware version; gate commands per version. |
 | A wrong write breaks a setting | Read-before-write, keep a backup of settings, never send unknown commands outside the dev console. |
@@ -183,4 +196,9 @@ gesture mapping, each verified on real hardware.
 - Bluetrum AB5682 hacking notes: https://github.com/atc1441/Bluetrum_AB5682_Hacking
 - Gadgetbridge, BT protocol reverse engineering guide:
   https://codeberg.org/Freeyourgadget/Gadgetbridge/wiki/BT-Protocol-Reverse-Engineering
+- Gadgetbridge, Moondrop support (AGPL-3.0, facts only, no code copied):
+  https://codeberg.org/Freeyourgadget/Gadgetbridge/pulls/3857
+- HyperPods-for-Moondrop `PROTOCOL.md` (GPL-3.0, facts only):
+  https://github.com/huime180/HyperPods-for-Moondrop
+- moondrop-control (GPL-3.0, facts only): https://github.com/FEAKEuser/moondrop-control
 - Prior Moondrop projects: https://github.com/topics/moondrop
