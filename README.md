@@ -3,7 +3,7 @@
 An unofficial, open-source Android app for controlling Moondrop audio devices.
 First target: the original **Moondrop Space Travel** earbuds.
 
-**Status:** early development (v0.1, untested on hardware). It connects to
+**Status:** early development (v0.1, first tested on a Galaxy Note 20 Ultra with Android 13). It connects to
 paired Space Travel earbuds and shows firmware version and battery, switches
 EQ presets (Reference / Basshead / Monitor), controls media volume, and shows
 a packet log.

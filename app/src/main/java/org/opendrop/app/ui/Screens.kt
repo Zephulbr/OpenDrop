@@ -154,11 +154,11 @@ private fun StatusCard(state: UiState, onDisconnect: () -> Unit) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(state.selected?.name ?: "Earbuds", style = MaterialTheme.typography.titleLarge)
-            if (state.connection == Connection.Connecting) {
+            if (state.connection == Connection.Connecting || state.connection == Connection.Reconnecting) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     CircularProgressIndicator(Modifier.width(18.dp), strokeWidth = 2.dp)
                     Spacer(Modifier.width(8.dp))
-                    Text("Connecting…")
+                    Text(if (state.connection == Connection.Reconnecting) "Connection dropped, reconnecting…" else "Connecting…")
                 }
             } else {
                 Text("Battery: ${state.battery?.let { "$it %" } ?: "unknown"}")

@@ -23,10 +23,13 @@ import java.util.concurrent.Executors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.opendrop.protocol.EqPreset
@@ -40,6 +43,7 @@ sealed interface Connection {
     data object Disconnected : Connection
     data object Connecting : Connection
     data object Connected : Connection
+    data object Reconnecting : Connection
     data class Failed(val message: String) : Connection
 }
 
@@ -126,42 +130,76 @@ class DeviceViewModel(app: Application) : AndroidViewModel(app) {
             it.copy(selected = target, connection = Connection.Connecting, device = SpaceTravelState(), log = emptyList())
         }
         readBattery(device)
-        readJob = viewModelScope.launch(Dispatchers.IO) {
-            val newLink = RfcommLink(device)
-            try {
-                newLink.connect()
-            } catch (e: Exception) {
-                newLink.close()
-                _state.update { it.copy(connection = Connection.Failed(e.message ?: e.javaClass.simpleName)) }
-                return@launch
-            }
-            link = newLink
-            val newSession = SpaceTravelSession(
-                send = { bytes -> newLink.write(bytes) },
-                onState = { s -> _state.update { it.copy(device = s) } },
-                onFrame = ::logFrame,
-            )
-            session = newSession
-            _state.update { it.copy(connection = Connection.Connected) }
+        readJob = viewModelScope.launch(Dispatchers.IO) { keepConnected(device) }
+    }
 
-            val buffer = ByteArray(1024)
-            try {
-                withContext(sessionThread) { newSession.start() }
-                while (true) {
-                    val n = newLink.read(buffer)
-                    if (n < 0) break
-                    val chunk = buffer.copyOf(n)
-                    withContext(sessionThread) { newSession.onBytes(chunk) }
-                }
-                _state.update { it.copy(connection = Connection.Failed("The earbuds closed the connection")) }
-            } catch (e: IOException) {
-                if (link === newLink) {
-                    _state.update { it.copy(connection = Connection.Failed(e.message ?: "Connection lost")) }
-                }
-            } finally {
-                newLink.close()
+    /** Connects, and reconnects with backoff when the earbuds drop the link. */
+    private suspend fun keepConnected(device: BluetoothDevice) {
+        var failures = 0
+        var everConnected = false
+        while (true) {
+            val ended = connectOnce(device)
+            if (!currentCoroutineContext().isActive) return // user disconnected
+            everConnected = everConnected || ended.connected
+            if (!everConnected) {
+                // First attempt failed: report it now; the user can tap again.
+                _state.update { it.copy(connection = Connection.Failed(ended.reason)) }
+                return
+            }
+            failures = if (ended.lastedMs >= STABLE_CONNECTION_MS) 0 else failures + 1
+            if (failures > RETRY_DELAYS_MS.size) {
+                _state.update { it.copy(connection = Connection.Failed(ended.reason)) }
+                return
+            }
+            val wait = RETRY_DELAYS_MS[(failures - 1).coerceAtLeast(0)]
+            logEvent("${ended.reason}. Reconnecting in ${wait / 1000} s")
+            _state.update { it.copy(connection = Connection.Reconnecting, device = SpaceTravelState()) }
+            delay(wait)
+        }
+    }
+
+    private class Ended(val reason: String, val connected: Boolean, val lastedMs: Long)
+
+    /** One connection, from connect to close. Returns why it ended. */
+    private suspend fun connectOnce(device: BluetoothDevice): Ended {
+        val newLink = RfcommLink(device)
+        try {
+            newLink.connect()
+        } catch (e: Exception) {
+            newLink.close()
+            return Ended(e.message ?: e.javaClass.simpleName, connected = false, lastedMs = 0)
+        }
+        val connectedAt = System.currentTimeMillis()
+        link = newLink
+        val newSession = SpaceTravelSession(
+            send = { bytes -> newLink.write(bytes) },
+            onState = { s -> _state.update { it.copy(device = s) } },
+            onFrame = ::logFrame,
+        )
+        session = newSession
+        _state.update { it.copy(connection = Connection.Connected) }
+        logEvent("Connected")
+
+        val buffer = ByteArray(1024)
+        val reason = try {
+            withContext(sessionThread) { newSession.start() }
+            while (true) {
+                val n = newLink.read(buffer)
+                if (n < 0) break
+                val chunk = buffer.copyOf(n)
+                withContext(sessionThread) { newSession.onBytes(chunk) }
+            }
+            "The earbuds closed the connection"
+        } catch (e: IOException) {
+            e.message ?: "Connection lost"
+        } finally {
+            newLink.close()
+            if (link === newLink) {
+                link = null
+                session = null
             }
         }
+        return Ended(reason, connected = true, lastedMs = System.currentTimeMillis() - connectedAt)
     }
 
     fun disconnect() {
@@ -199,14 +237,17 @@ class DeviceViewModel(app: Application) : AndroidViewModel(app) {
         _state.update { it.copy(battery = level?.takeIf { l -> l in 0..100 }) }
     }
 
-    private fun reportSendError(e: Throwable) {
-        _state.update { it.copy(connection = Connection.Failed(e.message ?: "Send failed")) }
-    }
+    /** A failed write means the link is dead; the read loop notices and reconnects. */
+    private fun reportSendError(e: Throwable) = logEvent("Send failed: ${e.message ?: e.javaClass.simpleName}")
 
-    private fun logFrame(incoming: Boolean, frame: GaiaFrame) {
+    private fun logFrame(incoming: Boolean, frame: GaiaFrame) =
+        log("${if (incoming) "RX" else "TX"} $frame")
+
+    private fun logEvent(message: String) = log("-- $message")
+
+    private fun log(text: String) {
         val time = SimpleDateFormat("HH:mm:ss.SSS", Locale.ROOT).format(Date())
-        val line = "$time ${if (incoming) "RX" else "TX"} $frame"
-        _state.update { it.copy(log = (it.log + line).takeLast(LOG_LINES)) }
+        _state.update { it.copy(log = (it.log + "$time $text").takeLast(LOG_LINES)) }
     }
 
     override fun onCleared() {
@@ -229,5 +270,8 @@ class DeviceViewModel(app: Application) : AndroidViewModel(app) {
         private const val EXTRA_BATTERY_LEVEL = "android.bluetooth.device.extra.BATTERY_LEVEL"
         private const val ACTION_VOLUME_CHANGED = "android.media.VOLUME_CHANGED_ACTION"
         private const val LOG_LINES = 200
+        private val RETRY_DELAYS_MS = longArrayOf(1_000, 3_000, 10_000)
+        /** A connection that lasted this long resets the retry count. */
+        private const val STABLE_CONNECTION_MS = 30_000L
     }
 }
