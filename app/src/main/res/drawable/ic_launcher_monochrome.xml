@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 13+ themed icon: the curve alone; the launcher picks the colors. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:pathData="M27.12,42.92C36.08,42.92 40.56,54.12 49.52,59.72C55.12,63.08 60.72,63.08 65.2,62.52C69.68,61.96 71.92,57.48 75.28,57.48C78.08,57.48 79.2,61.4 80.88,61.96"
+        android:strokeWidth="4.5"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>

@@ -310,6 +310,13 @@ haptic settings. No haptics on scroll.
 - Accent: System (12+) / presets / Custom
 - Haptics: on/off
 
+## App icon
+
+An adaptive icon (`mipmap-anydpi-v26`): the Basshead curve in hot pink with
+a soft fill and a gray baseline, on the dark background `#121212`. A
+monochrome layer (the curve alone) serves Android 13+ themed icons. The
+notification icon is the same curve in white.
+
 ## Implementation notes
 
 - `ui/theme/`: `Color.kt` (neutral palettes, accent presets, contrast
@@ -330,4 +337,3 @@ widget/tile theming.
 - Measured preset curves, to replace the illustrative ones.
 - Whether a home-screen widget and QS tile follow the same accent (likely
   yes, via Glance theming).
-- App icon.
