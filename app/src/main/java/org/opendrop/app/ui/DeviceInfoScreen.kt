@@ -59,6 +59,13 @@ fun DeviceInfoScreen(state: UiState, onBack: () -> Unit) {
                     },
                 )
             }
+            item(key = "eqCurve") {
+                InfoRow(
+                    "EQ curve",
+                    "Illustrative",
+                    note = "The curve on the home screen shows each preset's general shape. It isn't measured.",
+                )
+            }
             item(key = "developerGap") { Spacer(Modifier.height(Dimens.SectionGap)) }
             item(key = "developer") { SectionTitle("Developer · packet log") }
             if (lines.isEmpty()) {

@@ -112,6 +112,19 @@ fun HomeScreen(
     val name = if (phase == Phase.Device) state.selected?.name ?: "Earbuds" else "OpenDrop"
     val battery = state.battery.takeIf { phase == Phase.Device }
 
+    // The EQ choice shows right away, in the curve and the selector; it's
+    // cleared when the earbuds report back, or after a timeout (springs back).
+    val confirmedEq = state.device.eqPresetId
+    var pendingEq by remember { mutableStateOf<EqPreset?>(null) }
+    LaunchedEffect(confirmedEq) { pendingEq = null }
+    LaunchedEffect(pendingEq) {
+        if (pendingEq != null) {
+            delay(EQ_CONFIRM_TIMEOUT_MS)
+            pendingEq = null
+        }
+    }
+    val shownEq = pendingEq ?: confirmedEq?.let(EqPreset::of)
+
     Box(
         Modifier
             .fillMaxSize()
@@ -126,7 +139,7 @@ fun HomeScreen(
             modifier = Modifier.fillMaxSize(),
         ) {
             item(key = "hero") {
-                HeroSection(state, phase, name, battery)
+                HeroSection(state, phase, name, battery, shownEq)
             }
             item(key = "heroGap") { Spacer(Modifier.height(Dimens.SectionGap)) }
 
@@ -168,7 +181,17 @@ fun HomeScreen(
                 }
                 Phase.Device -> {
                     if (state.connection == Connection.Connected && state.device.supportsEq) {
-                        item(key = "eq") { EqSection(state.device.eqPresetId, onEq, Modifier.animateItem()) }
+                        item(key = "eq") {
+                            EqSection(
+                                shown = shownEq,
+                                confirmedId = confirmedEq,
+                                onSelect = { preset ->
+                                    pendingEq = preset
+                                    onEq(preset)
+                                },
+                                modifier = Modifier.animateItem(),
+                            )
+                        }
                         item(key = "eqGap") { Spacer(Modifier.height(Dimens.SectionGap)) }
                     }
                     item(key = "volume") {
@@ -209,49 +232,34 @@ private fun ConnectionHaptics(connection: Connection) {
 }
 
 @Composable
-private fun HeroSection(state: UiState, phase: Phase, name: String, battery: Int?) {
+private fun HeroSection(state: UiState, phase: Phase, name: String, battery: Int?, eq: EqPreset?) {
     val mode = when {
         phase != Phase.Device -> HeroMode.Disconnected
         state.connection == Connection.Connected -> HeroMode.Connected
         else -> HeroMode.Connecting
     }
     val status = statusLabel(state.connection, phase)
-    val description = buildString {
-        append(name).append(", ").append(status.lowercase())
-        battery?.let { append(", battery ").append(it).append(" percent") }
-    }
     Column(Modifier.fillMaxWidth()) {
-        EarbudsHero(mode, battery, state.device.eqPresetId, description)
-        Spacer(Modifier.height(16.dp))
+        EqCurveHero(mode, eq.takeIf { mode == HeroMode.Connected })
+        Spacer(Modifier.height(24.dp))
+        Text(
+            name,
+            style = MaterialTheme.typography.headlineSmall,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(horizontal = Dimens.Gutter),
+        )
         Row(
             Modifier
                 .fillMaxWidth()
                 .padding(horizontal = Dimens.Gutter),
-            verticalAlignment = Alignment.Bottom,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(Modifier.weight(1f)) {
-                Text(
-                    name,
-                    style = MaterialTheme.typography.headlineSmall,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    StatusDot(statusColor(state.connection, phase))
-                    Spacer(Modifier.width(8.dp))
-                    StatusText(status)
-                }
-            }
-            if (battery != null) {
-                Row(verticalAlignment = Alignment.Bottom) {
-                    RollingNumber(battery, MaterialTheme.typography.displaySmall)
-                    Text(
-                        "%",
-                        style = MonoValue,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 2.dp, bottom = 8.dp),
-                    )
-                }
+            StatusDot(statusColor(state.connection, phase))
+            Spacer(Modifier.width(8.dp))
+            Box(Modifier.weight(1f)) { StatusText(status) }
+            if (battery != null && mode == HeroMode.Connected) {
+                BatteryMeter(battery)
             }
         }
     }
@@ -351,19 +359,13 @@ private fun CollapsingTopBar(listState: LazyListState, name: String, battery: In
 }
 
 @Composable
-private fun EqSection(currentId: Int?, onEq: (EqPreset) -> Unit, modifier: Modifier = Modifier) {
+private fun EqSection(
+    shown: EqPreset?,
+    confirmedId: Int?,
+    onSelect: (EqPreset) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val haptics = LocalHaptics.current
-    // Shown right away; cleared when the earbuds report back, or after a timeout.
-    var pending by remember { mutableStateOf<EqPreset?>(null) }
-    LaunchedEffect(currentId) { pending = null }
-    LaunchedEffect(pending) {
-        if (pending != null) {
-            delay(EQ_CONFIRM_TIMEOUT_MS)
-            pending = null
-        }
-    }
-    val shown = pending ?: currentId?.let(EqPreset::of)
-
     Column(modifier.fillMaxWidth()) {
         SectionTitle("EQ")
         SegmentedSelector(
@@ -372,14 +374,13 @@ private fun EqSection(currentId: Int?, onEq: (EqPreset) -> Unit, modifier: Modif
             label = { it.label },
             onSelect = { preset ->
                 haptics.segment()
-                pending = preset
-                onEq(preset)
+                onSelect(preset)
             },
             modifier = Modifier.padding(horizontal = Dimens.Gutter),
         )
         Spacer(Modifier.height(8.dp))
-        val hint = if (currentId != null && EqPreset.of(currentId) == null) {
-            "Unknown preset ($currentId). Switching may pop briefly."
+        val hint = if (confirmedId != null && EqPreset.of(confirmedId) == null) {
+            "Unknown preset ($confirmedId). Switching may pop briefly."
         } else {
             "Switching may pop briefly. Lower the volume first."
         }

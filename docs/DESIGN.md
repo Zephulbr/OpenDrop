@@ -112,7 +112,6 @@ Scale (Compose `Typography` overrides):
 
 | Style | Use | Size / weight |
 |---|---|---|
-| `displaySmall` | Battery % in the hero | 36 sp, Mono Medium |
 | `headlineSmall` | Device name | 24 sp, Inter SemiBold |
 | `titleMedium` | Section titles | 16 sp, Inter SemiBold |
 | `bodyLarge` | Row labels | 16 sp, Inter Regular |
@@ -126,11 +125,11 @@ Scale (Compose `Typography` overrides):
 
 ```
 ┌──────────────────────────┐
+│ Basshead                 │  preset name
+│ ▁▇▆▄▂▁▁▁▁▂▃▂▁            │  hero: EQ curve
 │                          │
-│        ◖      ◗          │  hero: earbud illustration
-│                          │
-│      Space Travel        │  device name
-│   ● Connected    80 %    │  status dot, battery (mono)
+│ Space Travel             │  device name
+│ ● Connected ▮▮▮▮▮▮▮▮▯▯ 80%│  status dot, 10-step battery meter
 │                          │
 ├──────────────────────────┤
 │ EQ                       │
@@ -156,8 +155,8 @@ Scale (Compose `Typography` overrides):
 
 ### Other screens
 
-- **Device picker** (not connected): the same hero area with a dimmed
-  illustration, a list of paired devices, Moondrop devices first. Errors
+- **Device picker** (not connected): the same hero area with a flat,
+  dashed curve, a list of paired devices, Moondrop devices first. Errors
   show inline above the list, with the fix ("take them out of the case,
   close MOONDROP Link").
 - **Permission**: one sentence on why, one button. No multi-page onboarding
@@ -173,23 +172,37 @@ Scale (Compose `Typography` overrides):
   connected buttons).
 - Touch targets ≥ 48 dp.
 
-## Hero illustration
+## Hero: EQ curve and battery meter
 
-- An **original, simple vector** of two earbuds (`ImageVector`, not a
-  photo). Don't trace Moondrop product shots or use their logos.
-- Reacts to state:
+The hero shows the two things the earbuds tell us: the EQ preset and the
+battery level. An earbud drawing was tried first and dropped; it read as
+binoculars and said nothing about state.
+
+**EQ curve**
+
+- A line plot of the selected preset's sound signature over a log
+  frequency axis (20 Hz to 20 kHz), with a soft accent fill under it.
+- The curves are **illustrative**: hand-shaped from each preset's
+  character (Basshead lifts the bass, Monitor dips the bass and lifts the
+  presence region), not measured. Device info says so. No dB or frequency
+  labels until we have measured data; swap in real curves then.
+- The other presets show as faint lines behind, so the difference is
+  readable at a glance.
 
 | State | Look |
 |---|---|
-| Disconnected | Outline only, 40 % opacity |
-| Connecting | Outline, slow breathing pulse (opacity 40 → 80 %) |
-| Connected | Filled; buds ease together a few dp, accent ring draws in |
-| Battery | Accent ring around the buds fills to the battery level |
-| Low battery (≤ 20 %) | Ring turns error color |
-| EQ change | A short ripple from the buds in the accent color |
+| Disconnected | Flat dashed line, no fill, label "No EQ" |
+| Connecting | Flat gray line, slow pulse |
+| Connected | Preset curve in the accent color with fill; other presets faint |
+| EQ change | The curve springs from the old shape to the new one |
 
-- Idle: a very slow float (2–3 dp, ~6 s period). Stops when reduced motion
-  is on or the app is in the background.
+**Battery meter**
+
+- Ten pills next to the connection status, plus the percentage in mono.
+  Ten because the earbuds report battery in 10 % steps; the meter shows
+  exactly the resolution we have.
+- When the level first shows, pills light up left to right (35 ms
+  stagger). Red at 20 % or less.
 
 ## Motion
 
@@ -201,7 +214,7 @@ attached to your finger, never like it's playing a clip.
 - Use springs for anything spatial (position, size, shape) so interrupted
   animations keep their velocity.
 - Use short tweens only for fades and color.
-- Nothing longer than ~350 ms except the hero idle loop.
+- Nothing longer than ~350 ms except the connecting pulse.
 
 ### Tokens
 
@@ -223,15 +236,14 @@ Starting values, to tune on a real device.
 - **Press:** buttons and rows scale to 0.97 with `spatialFast`.
 - **EQ preset:** the selected segment morphs (pill grows, corner radius
   changes), accent fill slides from the old segment to the new one, light
-  haptic tick, hero ripple. Applied optimistically; if the earbuds report a
+  haptic tick, and the hero curve morphs. Applied optimistically; if the earbuds report a
   different preset, it animates back.
 - **Volume slider:** thumb grows while dragging; number next to it updates
   live with a vertical roll on each step.
-- **Battery %:** digits roll when the value changes (`AnimatedContent`,
-  slide up/down by direction).
+- **Battery:** meter pills fill left to right when the level appears.
 - **Connect:** device row → hero is a shared-element transition; the
   status dot crossfades gray → accent.
-- **Disconnect / error:** controls fade and slide down 8 dp; the hero dims.
+- **Disconnect / error:** controls fade and slide down 8 dp; the curve flattens.
 - **Screens:** shared-axis horizontal slide + fade, predictive back
   supported (Android 14+ back gesture scrubs the transition).
 - **Lists:** `animateItem()` for rows appearing or reordering.
@@ -241,7 +253,7 @@ Starting values, to tune on a real device.
 If the system animation scale is 0 or "Remove animations" is on:
 
 - Replace spatial springs with 150 ms crossfades.
-- Turn off the hero idle float, pulse and ripple.
+- Turn off the connecting pulse and the meter stagger.
 - Keep state changes instant and clear.
 
 ## Haptics
@@ -274,8 +286,8 @@ haptic settings. No haptics on scroll.
 ## Accessibility
 
 - All text and accent contrast ≥ 4.5:1 (see Color).
-- Every control has a content description; the hero is a single node
-  ("Space Travel, connected, battery 80 percent").
+- Every control has a content description; the curve is a single node
+  ("EQ curve, Basshead") and the meter reads "Battery 80 percent".
 - Supports font scale up to 200 % without clipping; the hero shrinks first.
 - State is never shown by color alone (status dot also has a label).
 
@@ -303,7 +315,7 @@ widget/tile theming.
 
 ## Open questions
 
-- Exact hero illustration (needs a quick sketch pass).
+- Measured preset curves, to replace the illustrative ones.
 - Whether a home-screen widget and QS tile follow the same accent (likely
   yes, via Glance theming).
 - App icon.
