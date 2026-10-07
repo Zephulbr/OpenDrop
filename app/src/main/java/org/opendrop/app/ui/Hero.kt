@@ -57,6 +57,12 @@ private const val SAMPLES = 96
 /** Level shown from the baseline to the top of the plot. */
 private const val RANGE_DB = 11f
 
+/**
+ * Where the 0 level sits, as a fraction of the plot height from the top.
+ * The presets mostly boost, so there's more room above the line than below.
+ */
+private const val BASELINE = 0.64f
+
 private fun bump(t: Float, center: Float, width: Float): Float {
     val x = (t - center) / width
     return exp(-x * x)
@@ -130,9 +136,9 @@ fun EqCurveHero(mode: HeroMode, preset: EqPreset?, modifier: Modifier = Modifier
         Canvas(
             Modifier
                 .fillMaxWidth()
-                .height(150.dp),
+                .height(120.dp),
         ) {
-            val mid = size.height / 2
+            val mid = size.height * BASELINE
             val perDb = mid / RANGE_DB
             for (i in 1..3) {
                 val x = size.width * i / 4
@@ -182,7 +188,7 @@ fun EqCurveHero(mode: HeroMode, preset: EqPreset?, modifier: Modifier = Modifier
 
 /** A path across the full width; [level] maps 0..1 to pixels above the baseline. */
 private fun DrawScope.curvePath(level: (Float) -> Float): Path {
-    val mid = size.height / 2
+    val mid = size.height * BASELINE
     return Path().apply {
         for (i in 0..SAMPLES) {
             val t = i / SAMPLES.toFloat()

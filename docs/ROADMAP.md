@@ -145,7 +145,7 @@ and game mode.
 - [x] RFCOMM connection to the paired earbuds (in `app` for now; split into
       `core/transport-classic` when a second model needs it).
 - [x] Reconnect automatically (with backoff) when the earbuds drop the link.
-- [ ] Connect automatically when the earbuds connect to the phone.
+- [x] Remember the last device; connect on launch and when the earbuds connect to the phone. *Untested on hardware.*
 - [ ] `core/transport-ble`: later models that use GAIA over GATT.
 - [x] Packet log on the device screen (read-only console).
 

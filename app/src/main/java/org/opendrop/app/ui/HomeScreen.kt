@@ -156,6 +156,22 @@ fun HomeScreen(
                             ErrorNote(state.selected?.name, failed.message, Modifier.animateItem())
                         }
                     }
+                    state.autoConnect?.let { remembered ->
+                        item(key = "autoConnect") {
+                            Message(
+                                if (state.autoConnectPaused) {
+                                    "Auto-connect is paused until you connect again."
+                                } else {
+                                    "OpenDrop connects to ${remembered.name} on its own once it's connected to " +
+                                        "your phone."
+                                },
+                                Modifier
+                                    .animateItem()
+                                    .padding(bottom = Dimens.SectionGap),
+                                secondary = true,
+                            )
+                        }
+                    }
                     if (state.devices.isEmpty()) {
                         item(key = "noDevices") {
                             Message(
@@ -516,10 +532,11 @@ private fun ErrorNote(deviceName: String?, message: String, modifier: Modifier =
 }
 
 @Composable
-private fun Message(text: String, modifier: Modifier = Modifier) {
+private fun Message(text: String, modifier: Modifier = Modifier, secondary: Boolean = false) {
     Text(
         text,
-        style = MaterialTheme.typography.bodyLarge,
+        style = if (secondary) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.bodyLarge,
+        color = if (secondary) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
         modifier = modifier.padding(horizontal = Dimens.Gutter),
     )
 }

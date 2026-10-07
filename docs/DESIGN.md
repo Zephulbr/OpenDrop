@@ -155,6 +155,10 @@ Scale (Compose `Typography` overrides):
 
 ### Other screens
 
+- **Auto-connect**: OpenDrop remembers the last device it connected to
+  and connects on launch, and again whenever Android reports the earbuds
+  connected to the phone. A failed automatic attempt is quiet (no error
+  card). An explicit Disconnect pauses this until the user connects again.
 - **Device picker** (not connected): the same hero area with a flat,
   dashed curve, a list of paired devices, Moondrop devices first. Errors
   show inline above the list, with the fix ("take them out of the case,
@@ -188,6 +192,8 @@ binoculars and said nothing about state.
   labels until we have measured data; swap in real curves then.
 - The other presets show as faint lines behind, so the difference is
   readable at a glance.
+- The 0 line sits at about two thirds of the plot height, because the
+  presets mostly boost; that leaves no empty band under the curves.
 
 | State | Look |
 |---|---|
