@@ -5,10 +5,13 @@ It only sends commands with NO payload that are "get"/query commands, or that
 the MOONDROP Link app itself sends on connect. It never sends a "set".
 
 Usage:
-  python3 tools/gaia_probe.py AA:BB:CC:DD:EE:FF            # probe, then exit
-  python3 tools/gaia_probe.py AA:BB:CC:DD:EE:FF --monitor 120
-      # probe, then print every notification for 120 s while you
+  python tools/gaia_probe.py AA:BB:CC:DD:EE:FF            # probe, then exit
+  python tools/gaia_probe.py AA:BB:CC:DD:EE:FF --monitor 180
+      # probe, then print every notification for 180 s while you
       # long-press / tap the earbuds, open and close the case, etc.
+  python tools/gaia_probe.py --port COM5 --monitor 180
+      # Windows fallback: use the outgoing COM port Windows created for the
+      # earbuds' "Serial Port" service (needs: pip install pyserial)
 
 Before running: close the MOONDROP Link app on your phone (or turn the phone's
 Bluetooth off), and make sure the PC is paired and connected to the earbuds.
@@ -53,26 +56,53 @@ PROBES = [
 REGISTER = [0, 1, 3, 5]  # notification features to register for (same as Link, minus upgrade)
 
 
-class Link:
+class RfcommSocket:
     def __init__(self, address: str, channel: int) -> None:
         self.sock = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
+        self.sock.settimeout(10)
         self.sock.connect((address, channel))
         self.sock.settimeout(0.2)
+
+    def write(self, data: bytes) -> None:
+        self.sock.sendall(data)
+
+    def read(self) -> bytes:
+        try:
+            data = self.sock.recv(1024)
+        except (socket.timeout, TimeoutError):
+            return b""
+        if not data:
+            raise ConnectionError("earbuds closed the connection")
+        return data
+
+
+class ComPort:
+    def __init__(self, port: str) -> None:
+        import serial  # pyserial, only needed for this mode
+        self.ser = serial.Serial(port, timeout=0.2)
+
+    def write(self, data: bytes) -> None:
+        self.ser.write(data)
+
+    def read(self) -> bytes:
+        return self.ser.read(1024)
+
+
+class Link:
+    def __init__(self, transport) -> None:
+        self.transport = transport
         self.decoder = Decoder()
 
     def send(self, data: bytes) -> None:
         print(f"  TX {data.hex(' ')}")
-        self.sock.send(data)
+        self.transport.write(data)
 
     def read_for(self, seconds: float) -> list:
         frames, end = [], time.monotonic() + seconds
         while time.monotonic() < end:
-            try:
-                data = self.sock.recv(1024)
-            except (socket.timeout, TimeoutError):
-                continue
+            data = self.transport.read()
             if not data:
-                raise ConnectionError("earbuds closed the connection")
+                continue
             for fr in self.decoder.feed(data):
                 stamp = time.strftime("%H:%M:%S")
                 print(f"  RX {stamp} {fr.describe()}")
@@ -82,14 +112,21 @@ class Link:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("address", help="earbuds Bluetooth address")
+    ap.add_argument("address", nargs="?", help="earbuds Bluetooth address")
+    ap.add_argument("--port", help="use a serial COM port instead of a Bluetooth socket")
     ap.add_argument("--channel", type=int, default=1, help="RFCOMM channel (default 1)")
     ap.add_argument("--monitor", type=int, default=0, metavar="SECONDS",
                     help="after probing, print notifications for this many seconds")
     args = ap.parse_args()
 
-    print(f"Connecting to {args.address} channel {args.channel} ...")
-    link = Link(args.address, args.channel)
+    if args.port:
+        print(f"Opening {args.port} ...")
+        link = Link(ComPort(args.port))
+    elif args.address:
+        print(f"Connecting to {args.address} channel {args.channel} ...")
+        link = Link(RfcommSocket(args.address, args.channel))
+    else:
+        ap.error("give the earbuds' address, or --port COMx")
 
     print("\n== handshake")
     link.send(encode_v2(0x0300))

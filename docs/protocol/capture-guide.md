@@ -148,26 +148,66 @@ Only the extracted files, never the full bugreport or raw `btsnoop_hci.log`.
 ## Step 8 (follow-up): probe from a PC
 
 After the first capture, `tools/gaia_probe.py` checks the remaining
-questions directly from a Linux or Windows PC with Bluetooth (Python 3.10+).
-It only sends payload-less query commands, plus the ones Link itself sends
-on connect. It never changes a setting.
+questions directly from a PC with Bluetooth. It only sends payload-less query
+commands, plus the ones Link itself sends on connect. It never changes a
+setting.
 
-1. Pair the PC with the earbuds (they support two devices at once).
-2. Close the MOONDROP Link app on the phone.
-3. Run, using the earbuds' address:
-   ```sh
-   python3 tools/gaia_probe.py AA:BB:CC:DD:EE:FF --monitor 180
-   ```
-   If it can't connect, find the SPP channel with `sdptool browse <address>`
-   (Linux) and pass `--channel N`.
-4. During the 180 s monitor, with the earbuds in your ears, do these, noting
-   the time of each:
-   - Long-press (3 s) to cycle ANC → Transparency → Off.
-   - 4× tap to turn game mode on, then off.
-   - Put one earbud in the case and take it out.
-   - Plug the case into a charger with an earbud in it (if practical).
-5. Save the full terminal output and share it with your notes.
-   Replace the address in the first line with `XX:XX:XX:XX:XX:XX` before sharing.
+### Windows 11 setup
 
-Also note what Android shows for the earbuds' battery in
-Settings → Connected devices (one value, or left/right?).
+1. Install Python 3.10+ from python.org (tick "Add python.exe to PATH").
+2. Get the OpenDrop code: Code → Download ZIP on GitHub for branch
+   `claude/modest-brahmagupta-brapwm`, or `git clone` it. Open a terminal
+   (PowerShell) in that folder.
+3. Pair the earbuds with the PC: Settings → Bluetooth & devices → Add device.
+   They support two devices at once, so they can stay paired with your phone.
+4. Find the earbuds' address: Device Manager → Bluetooth → "Moondrop Space
+   Travel" → Properties → Details → Property: **Bluetooth device address**.
+   It shows as 12 hex digits (e.g. `241111A1B2C3`); write it with colons:
+   `24:11:11:A1:B2:C3`.
+5. On the phone, close the MOONDROP Link app (force-stop it).
+
+### Run
+
+```powershell
+python tools\gaia_probe.py 24:11:11:A1:B2:C3 --monitor 180
+```
+
+If it fails to connect (e.g. "connection refused" or a timeout), try:
+- `--channel 2`, `--channel 3`, etc. (the serial service may not be on channel 1), or
+- the COM port fallback:
+  1. `pip install pyserial`
+  2. Settings → Bluetooth & devices → Devices → **More Bluetooth settings** →
+     **COM Ports** tab → Add → **Outgoing** → pick the Space Travel, service
+     "Serial Port" → OK. Note the COM number.
+  3. `python tools\gaia_probe.py --port COM5 --monitor 180` (your COM number).
+
+(On Linux: same command with your address; find the channel with
+`sdptool browse <address>`.)
+
+### During the 180 s monitor
+
+With the earbuds in your ears, do these with ~10 s between them, noting the
+time of each:
+
+- Long-press (3 s) to cycle ANC → Transparency → Off.
+- 4× tap to turn game mode on, then off.
+- Put one earbud in the case and take it out.
+- With one earbud in the case, plug the case into a charger (if practical).
+
+### Share
+
+Save the full terminal output (copy-paste into a `.txt`) and your notes.
+Replace the address in the first line with `XX:XX:XX:XX:XX:XX` before sharing.
+
+## Step 9: battery source check (no tools)
+
+Android shows one battery value. Over HFP the earbuds report their own level,
+so it should be the earbuds, not the case. To confirm:
+
+1. Charge everything to 100 %, take the earbuds out, close the case.
+2. Note the value Android shows, listen to music for ~45 minutes, note it again.
+3. If the value dropped, it's the earbuds (the case isn't in use, so it
+   wouldn't drop).
+4. Bonus: put **one** earbud in the case for a few minutes, and see whether the
+   value changes when it comes back out (tells us if it's left, right, or the
+   lower of the two).
