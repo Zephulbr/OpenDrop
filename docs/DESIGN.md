@@ -163,6 +163,12 @@ Scale (Compose `Typography` overrides):
   dashed curve, a list of paired devices, Moondrop devices first. Errors
   show inline above the list, with the fix ("take them out of the case,
   close MOONDROP Link").
+- **Connection notification**: while connected or reconnecting, a quiet
+  ongoing notification ("Space Travel — Connected · Basshead · 80 %") with a
+  Disconnect action; tapping it opens the app. It belongs to the foreground
+  service that keeps the connection alive in the background. The status bar
+  icon is the EQ curve. Android 13+ asks for notification permission once,
+  on the first connection.
 - **Permission**: one sentence on why, one button. No multi-page onboarding
   until Phase 5.
 - **Sub-screens** (touch controls, codec, PEQ later) slide in as full

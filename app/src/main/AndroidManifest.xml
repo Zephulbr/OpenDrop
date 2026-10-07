@@ -7,8 +7,14 @@
         android:maxSdkVersion="30" />
     <!-- Android 12+: talk to already-paired devices. No scanning, no location. -->
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <!-- Keep the connection alive in the background while the earbuds are connected. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <!-- Android 13+: show the connection notification (and its Disconnect button) in the shade. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
+        android:name=".OpenDropApplication"
         android:allowBackup="false"
         android:enableOnBackInvokedCallback="true"
         android:label="OpenDrop"
@@ -22,6 +28,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <service
+            android:name=".device.ConnectionService"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice" />
     </application>
 
 </manifest>
