@@ -2,9 +2,13 @@
 
 Device under test: firmware "1.0.0" (GAIA application version), MOONDROP Link
 2.26.1c, Samsung Galaxy Note 20 Ultra / Android 13.
-Capture: [captures/2026-10-07-link-eq.csv](captures/2026-10-07-link-eq.csv)
-with [notes](captures/2026-10-07-link-eq-notes.md) and
-[device info](captures/2026-10-07-device-info.md).
+Data (all in [captures/](captures/)):
+- `2026-10-07-link-eq.csv` + notes: first Link capture (EQ, volume).
+- `2026-10-07b-physical.csv` + notes: second capture with GAIA **and HFP**
+  traffic, while long-pressing (ANC), 4×-tapping (game mode) and moving
+  buds in and out of the case.
+- `2026-10-07-probe.txt`: read-only probe from a Windows PC.
+- `2026-10-07-device-info.md`.
 
 Decode any capture with `python3 tools/gaia_decode.py <file.csv>`.
 Status tags: **Verified** = seen in our capture. **Inferred** = consistent with
@@ -20,14 +24,17 @@ GPL/AGPL) and don't copy their source code.
 |---|---|---|
 | Transport | Bluetooth Classic only (no BLE/GATT). SDP: SPP, HFP, A2DP sink, AVRCP | Verified |
 | Control protocol | Qualcomm GAIA v3 (vendor `0x001D`) over SPP/RFCOMM | Verified |
-| RFCOMM channel | 1 | Reported (Gadgetbridge); confirm with the probe |
+| RFCOMM channel | 1 | Verified (probe) |
 | Handshake | legacy GAIA v2 "get API version", reply: protocol v4, API 3.1 | Verified |
 | Supported features | core v2, earbud v1, voice UI v1, music processing (EQ) v1, upgrade v2 | Verified |
-| ANC over GAIA | **Not advertised** (no feature 2, 8 or 32) | Verified (absence); probe to confirm |
-| Battery over GAIA | Not advertised (no feature 13). Battery is sent over HFP | Verified (absence) / Reported |
+| ANC | Not advertised; queries for features 2, 8, 32 get no reply; **no traffic at all** when ANC is changed by long-press | Verified |
+| Game mode | **No traffic** when toggled by 4× tap | Verified |
+| Battery | Not over GAIA (feature 13: no reply). Sent over HFP as `AT+IPHONEACCEV=1,1,N`, one value in 10 % steps | Verified |
+| Hidden "User" EQ | Available presets include id 63 ("User"); user EQ has 5 bands | Verified (probe) |
 | EQ presets | Music processing feature, presets 0/1/2 | Verified |
 | Volume | Link's slider is plain AVRCP absolute volume, not GAIA | Verified |
 | Firmware version | Core "get application version" → `"1.0.0"` | Verified |
+| Identity | variant name `"Moondrop Space Travel"`; serial `"ABCDEF0123456789"` (a placeholder, same on every unit presumably); GAIA protocol version `03 01` | Verified (probe) |
 
 What this Link version offers for this earbud: device card (volume, EQ
 Tuning, user guide), Product, Sleep and Settings tabs. **No ANC, gesture or
@@ -68,6 +75,12 @@ protocol 4, API 3.1.
 Supported-features payload: `[more=00]` then `(feature, version)` pairs:
 `(3,1) (5,1) (1,1) (6,2) (0,2)`.
 
+On some connects Link also sends core `0x0D` "set transport parameter"
+`01 00 01 00 09` (reply `01 00 00 00 30`) and core `0x0C` "get transport
+info" for keys 4, 2, 3, 6 (replies `04 00 00 03 52`, `02 00 00 00 30`,
+`03 00 00 06 40`; key 6 no reply). Inferred: packet-size negotiation
+(e.g. 850, 48, 1600). OpenDrop doesn't need these to work.
+
 Opening the device screen, Link also sends core commands `0x13`, `0x14`,
 `0x15`, `0x16` with no payload. **No reply was captured for any of them**;
 meaning unknown. A core notification 0 with payload `00` followed (inferred:
@@ -96,35 +109,69 @@ Notes:
 - Link warns that switching "may cause a brief pop or restart. Lower the
   volume first." OpenDrop should show the same warning.
 
-## Battery
+## User EQ (hidden, Verified exists; contents unknown)
 
-GAIA battery (feature 13) isn't advertised. Reported by Gadgetbridge: the
-buds send battery over HFP (`AT+IPHONEACCEV`), which Android already reads;
-it is one combined level. To check: what Android shows for the buds in
-Settings → Connected devices (one value, or L/R?).
+| Query | Reply | Meaning |
+|---|---|---|
+| get EQ state `0a00` | `01` | EQ enabled (inferred) |
+| get available presets `0a01` | `04 00 01 02 3f` | 4 presets: 0, 1, 2 and **63** (Qualcomm's id for the user-configurable set) |
+| get user set band count `0a04` | `05` | 5 bands |
 
-## ANC, gestures, game mode, touch lock
+| get user set config `0a05 00 05` | `00 01 00 00 00 00 00 00 00` | start band 0, then all zeros |
+| get user set config `0a05 01 05` | `01 01 00 00 00 00 00 00 00` | start band 1, then all zeros |
 
-None of these are in Link for this earbud, and the buds don't advertise GAIA
-ANC features. Remaining possibilities, to test with the probe's monitor mode:
+([probe output](captures/2026-10-07-probe-user-eq.txt))
 
-1. The buds send a notification when you long-press (ANC) or 4×-tap (game
-   mode). Then OpenDrop can at least *show* the current mode.
-2. Undocumented core commands (`0x13`–`0x16`, or others) control them.
-   Unlikely and risky to search for blindly; we won't brute-force "set" commands.
-3. Nothing: these are handled entirely on the earbuds, and no app can change them.
+Link never shows a user EQ for this earbud, but the firmware reports one.
+Its configuration reads back as **all zeros**: not just 0 dB gains but
+also frequency 0 and Q 0, which aren't valid filter settings. The exact
+byte layout is unclear (each reply seems to describe one band, not five).
+Most likely the user EQ is an unimplemented stub, kept because the firmware
+copies Qualcomm's command set.
 
-Gadgetbridge reportedly supports "touch actions" on Space Travel. If the probe
-finds nothing, it's worth finding out which command Gadgetbridge sends (its
-source is AGPL; reading it for protocol facts is fine).
+Remaining cheap test: `gaia_probe.py --try-user-eq` selects preset 63 for
+15 s and then restores the previous preset (the same "set EQ preset"
+command Link uses, with a different value). If the earbuds reject 63 or the
+sound doesn't change, we drop on-device custom EQ and rely on the phone-side
+EQ. We won't try writing band values to a stub.
+
+## Battery (Verified)
+
+Over HFP. The buds enable Apple's battery extension (`AT+XAPL=000D-0001-0101,2`)
+and send `AT+IPHONEACCEV=1,1,N`, where key 1 = battery and `N` 0–9 means
+(N+1)×10 %. Android turns this into the single level shown in Settings and
+the widget. GAIA has no battery feature on ST1.
+
+Observed: `7` (80 %) when both buds connect, flipping to `8` (90 %) and back
+as single buds went in and out of the case. So the value is **the earbuds,
+not the case**: whichever bud is reporting, or the lower of the two. The case
+level isn't sent anywhere.
+
+## ANC and game mode (Verified: not visible to apps)
+
+During the second capture (rows 7–8 of the notes) the long-presses and 4×
+taps produced **no GAIA traffic and no HFP traffic** apart from battery
+updates and one `AT+BVRA=1` (voice-assistant activation, probably one of the
+presses being read as the assistant gesture). The probe's 180 s monitor also
+received nothing. ANC and game mode live entirely on the earbuds: an app can
+neither change nor see them.
+
+## Gestures and touch lock
+
+No gesture feature advertised, no gesture screen in Link 2.26. Gadgetbridge
+reportedly supports "touch actions" on Space Travel; the remaining lead is
+to find out which command it sends (AGPL source; protocol facts are fine to
+reuse). Until then: not possible.
 
 ## Open questions
 
-- [ ] Confirm RFCOMM channel 1 (probe connects on it).
-- [ ] Probe results: replies to the read-only command list in `tools/gaia_probe.py`.
-- [ ] Monitor mode: notifications on ANC long-press, game mode 4×-tap, case open/close, one bud in case.
-- [ ] Meaning of core `0x0D`, `0x13`–`0x16`, EQ notif `0a80`, set-EQ response `01`.
-- [ ] Battery as shown by Android: combined or L/R.
+- [x] Confirm RFCOMM channel 1.
+- [x] Probe results (see `captures/2026-10-07-probe.txt`).
+- [x] ANC / game mode / case notifications: none.
+- [x] Battery: one HFP value, earbuds not case.
+- [x] Read the user EQ configuration (`0a05`): all zeros.
+- [ ] Optional: `--try-user-eq` (does preset 63 select, does sound change?).
+- [ ] Meaning of core `0x13`–`0x16`, EQ notif `0a80`, set-EQ response `01`.
 - [ ] Touch actions: which command (if any) Gadgetbridge uses.
 
 ## Feature reference from other Moondrop models (Reported)

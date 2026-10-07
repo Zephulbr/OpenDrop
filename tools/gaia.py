@@ -40,15 +40,20 @@ NAMES = {
     (0, 0, 0x04): "get_variant_name",
     (0, 0, 0x05): "get_application_version",
     (0, 0, 0x07): "register_notification",
-    (0, 0, 0x0D): "set_transport_parameter?",
+    (0, 0, 0x0C): "get_transport_info",
+    (0, 0, 0x0D): "set_transport_parameter",
     (0, 1, 0x00): "charger_status?",
+    (5, 0, 0x00): "get_eq_state",
+    (5, 0, 0x01): "get_available_eq_presets",
     (5, 0, 0x02): "get_selected_eq_set",
     (5, 0, 0x03): "set_eq_set",
+    (5, 0, 0x04): "get_user_set_band_count",
+    (5, 0, 0x05): "get_user_set_config",
     (5, 1, 0x00): "eq_state?",
     (5, 1, 0x01): "eq_set_changed",
 }
 
-EQ_PRESETS = {0: "Reference", 1: "Basshead", 2: "Monitor"}
+EQ_PRESETS = {0: "Reference", 1: "Basshead", 2: "Monitor", 63: "User"}
 
 
 @dataclass
@@ -99,10 +104,13 @@ def annotate(f: Frame) -> str:
         pairs = [(p[i], p[i + 1]) for i in range(1, len(p) - 1, 2)]
         feats = ", ".join(f"{FEATURES.get(a, a)} v{b}" for a, b in pairs)
         return f"more={p[0]} features: {feats}"
-    if (f.feature, f.cmd) == (0, 0x05) and f.type == 2:
+    if (f.feature, f.cmd) in ((0, 0x03), (0, 0x04), (0, 0x05)) and f.type == 2:
         return f'"{p.decode("ascii", "replace")}"'
     if f.feature == 5 and f.cmd in (0x02, 0x03) and f.type == 0 and p:
         return EQ_PRESETS.get(p[0], f"preset {p[0]}")
+    if (f.feature, f.cmd) == (5, 0x01) and f.type == 2 and p:
+        names = ", ".join(EQ_PRESETS.get(x, str(x)) for x in p[1:])
+        return f"{p[0]} presets: {names}"
     if (f.feature, f.cmd) == (5, 0x02) and f.type == 2 and p:
         return EQ_PRESETS.get(p[0], f"preset {p[0]}")
     if (f.feature, f.type, f.cmd) == (5, 1, 0x01) and p:
