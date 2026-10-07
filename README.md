@@ -11,7 +11,8 @@ a packet log.
 What the Space Travel firmware does and doesn't allow (for example, ANC and
 game mode can't be controlled by any app) is documented in
 [docs/protocol/space-travel.md](docs/protocol/space-travel.md). The plan is in
-[docs/ROADMAP.md](docs/ROADMAP.md).
+[docs/ROADMAP.md](docs/ROADMAP.md) and the UI direction in
+[docs/DESIGN.md](docs/DESIGN.md).
 
 ## Install a test build
 
