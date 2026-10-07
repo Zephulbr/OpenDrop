@@ -17,17 +17,67 @@ odd spellings (`ZZZ-ANGELS-OWS`, `H.I.D.E.404_Klukai`, `SUSANOO TWS IOS`)
 point the same way. The separate `IOS` entry suggests that some models
 connect differently on iOS, most likely over BLE.
 
-## What decides the work per device
+## What MOONDROP Link 2.26.1c contains
 
-| Group | Connection | Likely protocol | Work |
+Static analysis of the Android app's Java/Kotlin layer (Link is a Flutter
+app; the native side does the device I/O). Facts only, no code copied.
+
+**Bluetooth: one main protocol, GAIA v3, vendor `0x001D`.** Link's GAIA client
+knows these feature ids. 0 to 12 are Qualcomm's standard ones; **13 to 35 are
+Moondrop additions** under the same vendor id:
+
+| Id | Feature | Id | Feature |
 |---|---|---|---|
-| Bluetooth, Qualcomm-style | Classic SPP (RFCOMM) or BLE GATT | GAIA v3 | Shared driver. Features are self-describing, so a new model may work with no code |
-| Bluetooth, other chip vendors | Usually BLE | Vendor protocol (Airoha, Bluetrum, BES, Realtek, ...) | One driver per chip family, from captures |
-| USB DACs and DSP IEMs/cables | Android USB host | Vendor HID or USB control transfers | Separate USB transport; probably one protocol shared across several models |
+| 0 | Basic (core) | 18 | Spatial audio (+ head tracking) |
+| 1 | Earbud | 19 | LED |
+| 2 | ANC | 20 | "One brings two" (multipoint) |
+| 3 | Voice UI | 21 | BT address |
+| 4 | Debug | 22 | Touch controls v2 |
+| 5 | Music processing (EQ) | 23 | Audio resource (prompt sounds) |
+| 6 | Upgrade | 24 | Power control |
+| 7 | Handset service | 25 | Power-off / standby timeout |
+| 8 | Audio curation | 26 | Touch controls v3 |
+| 9 | Earbud fit | 27 | Dynamic bass |
+| 10 | Voice processing | 29 | Audio file storage |
+| 11 | Gesture configuration | 30 | L/R channel swap |
+| 12 | Statistics | 31 | Touch controls v4 (incl. knock) |
+| 13 | Battery | 32 | ANC v2 |
+| 14 | Voice prompts (language, index) | 33 | ANC v3 (modes, anti-wind) |
+| 15 | DAC gain | 34 | Find my earbuds |
+| 16 | Codec (LDAC / LHDC state) | 35 | Dual-mic ENC |
+| 17 | Light / wear sensor | | |
 
-We only know the protocol for the Space Travel so far. For every other model
-the protocol is **unknown** until we capture its traffic or read it out of the
-Link APK (see below).
+The Space Travel advertises only 0, 1, 3, 5 and 6, which matches what we
+measured: it has no battery, ANC or touch feature. Newer models advertise more
+of these, and because the device lists its own features, **one GAIA driver
+covers every model that speaks it**; we add features one at a time.
+
+The Space Travel runs on a Bluetrum chip yet speaks GAIA, and Link sends
+EQ gains for Bluetrum devices through its GAIA music-processing plugin. So
+GAIA is Moondrop's common protocol across chip vendors, not a Qualcomm-only one.
+
+**Other chip families in the app:**
+
+| Family | What Link does with it | Transport |
+|---|---|---|
+| Airoha (AB1562, AB1562E, AB1565, AB1568, incl. dual/V3 variants) | Full control via the Airoha SDK: ANC, PEQ, buttons, firmware update | SPP (seen); BLE likely |
+| Bluetrum | EQ via GAIA (above); firmware update (FOTA, USB HID OTA) | SPP, BLE service `0xAE00`, USB HID |
+| Jieli | Firmware update only (RCSP OTA, USB OTA) | BLE / USB |
+
+**USB devices: three protocol families.** All on Android USB host:
+
+| Family | Link's controls |
+|---|---|
+| Comtrue | Filter, gain level, LED, volume |
+| "SPV" | PEQ (with presets, pre-gain), CS43131 filter and working mode, DAC/ADC gain, LED, mic gain, L/R swap, firmware version; also ANC, battery, buttons and spatial audio for products that have them |
+| Synaptics / Conexant | EQ presets and PEQ saved to flash, firmware version |
+
+Plus a fourth, smaller "Jiu" EQ path and a factory SPP tool (serial numbers).
+
+**Still unknown: which model uses which family.** That mapping is not in the
+Java layer. It lives in the Flutter (Dart) code, in `lib/arm64-v8a/libapp.so`,
+which the analysed copy didn't include. Its strings should give the model to
+family table and fill in the Protocol column below.
 
 ## Device list
 
@@ -101,16 +151,14 @@ devices and 8 unknown.
 
 ## How to fill in the Protocol column
 
-1. **Link APK static analysis (best value).** Decompile Link with `jadx`. The
-   list above is almost certainly a table in the app that maps each name to a
-   connection type and protocol class. One pass would fill in most of the
-   Protocol column and give us the command sets.
+1. **`libapp.so` from the Link APK** (see above): model-to-family mapping.
 2. **Prior art.** Gadgetbridge supports some Moondrop models over GAIA. Check
    which ones and credit them (facts only, no code; see the legal note in the
    protocol notes).
 3. **Community captures.** Owners of other models record an HCI snoop log
    while using Link ([capture guide](protocol/capture-guide.md)), or a USB
-   capture for DACs.
+   capture for DACs. The GAIA features list alone (one read-only command)
+   already tells us most of what a model supports.
 
 ## How the app will use this
 
@@ -118,6 +166,9 @@ devices and 8 unknown.
   name, then pick a driver.
 - One generic GAIA v3 driver that builds the UI from the features the device
   reports, with small per-model overrides (like the Space Travel EQ pop warning).
+  Moondrop features (13 to 35) are added one at a time as we confirm their
+  commands with captures.
+- An Airoha driver next, if the model mapping shows many Airoha models.
 - Unknown devices connect in a read-only experimental mode with the packet
   log, so owners can send us captures.
 - USB devices get their own transport and driver, later (roadmap "Later").
