@@ -19,7 +19,9 @@ game mode can't be controlled by any app) is documented in
 Every push builds a debug APK on GitHub Actions: open the **Actions** tab,
 pick the latest green "Android" run, and download `opendrop-debug-apk`.
 Unzip it and install the APK on your phone (allow installs from unknown
-sources when asked).
+sources when asked). Builds are signed with the same debug key, so a newer
+build installs over an older one; builds from before October 2026 used a
+random key, so uninstall those once first.
 
 Before connecting: pair the earbuds in Android's Bluetooth settings, take them
 out of the case, and close the MOONDROP Link app.

@@ -29,9 +29,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import kotlin.math.cos
+import kotlin.math.sin
 import org.opendrop.app.ui.theme.LocalMotion
 
 /** How the hero should look; see the state table in DESIGN.md. */
@@ -110,6 +115,7 @@ fun EarbudsHero(
     val outline = colors.onSurface
     val track = colors.outline
     val budFill = colors.surfaceContainerHighest
+    val tipFill = colors.outline
     val background = colors.background
     val accent = colors.primary
 
@@ -146,11 +152,11 @@ fun EarbudsHero(
             )
         }
 
-        val budRadius = ringRadius * 0.34f
+        val budRadius = ringRadius * 0.31f
         val bodyCenterY = center.y + float.value * 2.5.dp.toPx()
-        val offsetX = budRadius * 1.1f + spread * 6.dp.toPx()
+        val offsetX = budRadius * 1.7f + spread * 6.dp.toPx()
         val lineAlpha = if (mode == HeroMode.Connecting) pulse.value else outlineAlpha
-        val style = BudStyle(outline, budFill, background, lineAlpha, fill)
+        val style = BudStyle(outline, budFill, tipFill, background, lineAlpha, fill)
         drawBud(Offset(center.x - offsetX, bodyCenterY), budRadius, facing = 1f, style)
         drawBud(Offset(center.x + offsetX, bodyCenterY), budRadius, facing = -1f, style)
     }
@@ -159,25 +165,70 @@ fun EarbudsHero(
 private class BudStyle(
     val line: Color,
     val fill: Color,
+    val tipFill: Color,
     val background: Color,
     val lineAlpha: Float,
     val fillAlpha: Float,
 )
 
-/** One bud: round body, a nozzle pointing toward the other bud, and a touch plate. */
-private fun DrawScope.drawBud(body: Offset, radius: Float, facing: Float, style: BudStyle) {
+/** Outward tilt of each bud, degrees. */
+private const val BUD_TILT = -18f
+
+/** Direction of the nozzle and ear tip: inward and down, degrees below horizontal. */
+private const val TIP_ANGLE = 55f
+
+/**
+ * One bud, drawn in units of [radius] with +x pointing toward the other bud:
+ * a rounded shell, a short nozzle and an ear tip angled inward and down, a
+ * highlight on the shell and a mic dot. [facing] mirrors it for the right bud.
+ */
+private fun DrawScope.drawBud(position: Offset, radius: Float, facing: Float, style: BudStyle) {
     val stroke = Stroke(2.dp.toPx())
-    val nozzle = Offset(body.x + facing * radius * 0.78f, body.y - radius * 0.55f)
-    val nozzleRadius = radius * 0.42f
+    val detail = lerp(style.line, style.fill, 0.4f)
+    withTransform({
+        translate(position.x, position.y)
+        rotate(BUD_TILT * facing, pivot = Offset.Zero)
+        scale(facing, 1f, pivot = Offset.Zero)
+    }) {
+        val angle = Math.toRadians(TIP_ANGLE.toDouble())
+        val dx = cos(angle).toFloat()
+        val dy = sin(angle).toFloat()
+        // Back to front; each shape's background fill hides what's behind it.
+        shape(Offset(0.78f * dx, 0.78f * dy) * radius, 0.42f * radius, 0.30f * radius, TIP_ANGLE, style.fill, style, stroke)
+        shape(Offset(1.16f * dx, 1.16f * dy) * radius, 0.34f * radius, 0.52f * radius, TIP_ANGLE, style.tipFill, style, stroke)
+        shape(Offset.Zero, 0.95f * radius, 1.12f * radius, 0f, style.fill, style, stroke)
 
-    // Nozzle sits behind the body; the body's background fill hides its overlap.
-    drawCircle(style.background, nozzleRadius, nozzle)
-    drawCircle(style.fill, nozzleRadius, nozzle, alpha = style.fillAlpha)
-    drawCircle(style.line, nozzleRadius, nozzle, alpha = style.lineAlpha, style = stroke)
+        val hx = 0.68f * 0.95f * radius
+        val hy = 0.68f * 1.12f * radius
+        drawArc(
+            detail,
+            startAngle = 200f,
+            sweepAngle = 55f,
+            useCenter = false,
+            topLeft = Offset(-hx, -hy),
+            size = Size(hx * 2, hy * 2),
+            alpha = style.lineAlpha,
+            style = Stroke(2.dp.toPx(), cap = StrokeCap.Round),
+        )
+        drawCircle(detail, 0.07f * radius, Offset(-0.30f * radius, 0.62f * radius), alpha = style.lineAlpha)
+    }
+}
 
-    drawCircle(style.background, radius, body)
-    drawCircle(style.fill, radius, body, alpha = style.fillAlpha)
-    drawCircle(style.line, radius, body, alpha = style.lineAlpha, style = stroke)
-
-    drawCircle(style.line, radius * 0.48f, body, alpha = style.lineAlpha * 0.5f, style = stroke)
+/** An oval with semi-axes [a] x [b] at [center], rotated by [degrees]: background, fill, outline. */
+private fun DrawScope.shape(
+    center: Offset,
+    a: Float,
+    b: Float,
+    degrees: Float,
+    fill: Color,
+    style: BudStyle,
+    stroke: Stroke,
+) {
+    rotate(degrees, pivot = center) {
+        val topLeft = Offset(center.x - a, center.y - b)
+        val size = Size(a * 2, b * 2)
+        drawOval(style.background, topLeft, size)
+        drawOval(fill, topLeft, size, alpha = style.fillAlpha)
+        drawOval(style.line, topLeft, size, alpha = style.lineAlpha, style = stroke)
+    }
 }
