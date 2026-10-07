@@ -1,8 +1,9 @@
 """Read-only GAIA probe and notification monitor for the Moondrop Space Travel.
 
 Runs on a PC (Linux or Windows, Python 3.10+) paired with the earbuds.
-It only sends "get"/query commands, or ones the MOONDROP Link app itself sends
-on connect. It never sends a "set".
+By default it only sends "get"/query commands, or ones the MOONDROP Link app
+itself sends on connect. The one exception is the opt-in --try-user-eq test,
+which selects EQ preset 63 for 15 s and then restores the previous preset.
 
 Usage:
   python tools/gaia_probe.py AA:BB:CC:DD:EE:FF            # probe, then exit
@@ -113,11 +114,38 @@ class Link:
         return frames
 
 
+def selected_preset(link: Link):
+    link.send(encode(5, 0x02))
+    for fr in link.read_for(1.0):
+        if (fr.feature, fr.type, fr.cmd) == (5, 2, 0x02) and fr.payload:
+            return fr.payload[0]
+    return None
+
+
+def try_user_eq(link: Link) -> None:
+    print("\n== user EQ test: lower the volume first (switching may pop)")
+    original = selected_preset(link)
+    if original is None:
+        print("  could not read the current preset; skipping")
+        return
+    print(f"  current preset: {original}")
+    link.send(encode(5, 0x03, bytes([63])))
+    link.read_for(2.0)
+    print("  now on preset 63 (if accepted). Listen for 15 s: does the sound change?")
+    link.read_for(13.0)
+    print(f"  selected preset reads as: {selected_preset(link)}")
+    link.send(encode(5, 0x03, bytes([original])))
+    link.read_for(2.0)
+    print(f"  restored; selected preset reads as: {selected_preset(link)}")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("address", nargs="?", help="earbuds Bluetooth address")
     ap.add_argument("--port", help="use a serial COM port instead of a Bluetooth socket")
     ap.add_argument("--channel", type=int, default=1, help="RFCOMM channel (default 1)")
+    ap.add_argument("--try-user-eq", action="store_true",
+                    help="select the hidden User EQ preset (63) for 15 s, then restore")
     ap.add_argument("--monitor", type=int, default=0, metavar="SECONDS",
                     help="after probing, print notifications for this many seconds")
     args = ap.parse_args()
@@ -145,6 +173,9 @@ def main() -> None:
         link.send(encode(feature, cmd, payload[0] if payload else b""))
         if not link.read_for(1.0):
             print("  (no reply)")
+
+    if args.try_user_eq:
+        try_user_eq(link)
 
     if args.monitor:
         print(f"\n== monitoring notifications for {args.monitor} s. "

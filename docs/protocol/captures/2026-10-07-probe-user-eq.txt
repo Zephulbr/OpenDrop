@@ -1,0 +1,116 @@
+﻿Connecting to XX:XX:XX:XX:XX:XX channel 1 ...
+
+== handshake
+  TX ff 01 00 00 00 0a 03 00
+  RX 22:10:44 v2 0x0300 ack 00 04 03 01  -> status=0 protocol=v4 api=3.1
+
+== register notifications
+  TX ff 04 00 01 00 1d 00 07 00
+  RX 22:10:45 core.register_notification [response]
+  RX 22:10:45 core.charger_status? [notification] 00
+  TX ff 04 00 01 00 1d 00 07 01
+  RX 22:10:46 core.register_notification [response]
+  TX ff 04 00 01 00 1d 00 07 03
+  RX 22:10:47 core.register_notification [response]
+  RX 22:10:47 voice_ui.cmd_0x00 [notification] 00
+  TX ff 04 00 01 00 1d 00 07 05
+  RX 22:10:47 core.register_notification [response]
+  RX 22:10:47 music_processing.eq_state? [notification] 00
+  RX 22:10:47 music_processing.eq_set_changed [notification] 00  -> Reference
+
+== core: protocol version
+  TX ff 04 00 00 00 1d 00 00
+  RX 22:10:48 core.get_protocol_version [response] 03 01
+
+== core: supported features
+  TX ff 04 00 00 00 1d 00 01
+  RX 22:10:49 core.get_supported_features [response] 00 03 01 05 01 01 01 06 02 00 02  -> more=0 features: voice_ui v1, music_processing v1, earbud v1, upgrade v2, core v2
+
+== core: serial number
+  TX ff 04 00 00 00 1d 00 03
+  RX 22:10:50 core.get_serial_number [response] 41 42 43 44 45 46 30 31 32 33 34 35 36 37 38 39
+
+== core: variant name
+  TX ff 04 00 00 00 1d 00 04
+  RX 22:10:51 core.get_variant_name [response] 4d 6f 6f 6e 64 72 6f 70 20 53 70 61 63 65 20 54 72 61 76 65 6c
+
+== core: application version
+  TX ff 04 00 00 00 1d 00 05
+  RX 22:10:52 core.get_application_version [response] 31 2e 30 2e 30  -> "1.0.0"
+
+== core: link init 0x13
+  TX ff 04 00 00 00 1d 00 13
+  (no reply)
+
+== core: link init 0x14
+  TX ff 04 00 00 00 1d 00 14
+  (no reply)
+
+== core: link init 0x15
+  TX ff 04 00 00 00 1d 00 15
+  (no reply)
+
+== core: link init 0x16
+  TX ff 04 00 00 00 1d 00 16
+  (no reply)
+
+== earbud: cmd 0
+  TX ff 04 00 00 00 1d 02 00
+  (no reply)
+
+== voice_ui: cmd 0
+  TX ff 04 00 00 00 1d 06 00
+  (no reply)
+
+== music: eq state
+  TX ff 04 00 00 00 1d 0a 00
+  RX 22:10:59 music_processing.cmd_0x00 [response] 01
+
+== music: available eq presets
+  TX ff 04 00 00 00 1d 0a 01
+  RX 22:11:00 music_processing.cmd_0x01 [response] 04 00 01 02 3f
+
+== music: selected eq set
+  TX ff 04 00 00 00 1d 0a 02
+  RX 22:11:01 music_processing.get_selected_eq_set [response] 00  -> Reference
+
+== music: user eq band count
+  TX ff 04 00 00 00 1d 0a 04
+  RX 22:11:02 music_processing.cmd_0x04 [response] 05
+  RX 22:11:02 music_processing.eq_state? [notification] 01
+
+== music: user eq config, bands 0-5
+  TX ff 04 00 02 00 1d 0a 05 00 05
+  RX 22:11:03 music_processing.cmd_0x05 [response] 00 01 00 00 00 00 00 00 00
+
+== music: user eq config, bands 1-5
+  TX ff 04 00 02 00 1d 0a 05 01 05
+  RX 22:11:04 music_processing.cmd_0x05 [response] 01 01 00 00 00 00 00 00 00
+
+== anc v1: get
+  TX ff 04 00 00 00 1d 04 00
+  (no reply)
+
+== audio curation: get mode
+  TX ff 04 00 00 00 1d 10 03
+  (no reply)
+
+== battery: get types
+  TX ff 04 00 00 00 1d 1a 00
+  (no reply)
+
+== voice prompts: get
+  TX ff 04 00 00 00 1d 1c 01
+  (no reply)
+
+== dual device: get state
+  TX ff 04 00 00 00 1d 28 01
+  (no reply)
+
+== anc v2: get mode
+  TX ff 04 00 00 00 1d 40 03
+  (no reply)
+
+== monitoring notifications for 180 s. Note the time of each thing you do.
+
+Done.

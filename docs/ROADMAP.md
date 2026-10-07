@@ -62,7 +62,7 @@ Firmware-backed:
 | Feature | Feasibility |
 |---|---|
 | Game / low-latency mode toggle | ❌ **Verified** (4× tap sends no traffic) |
-| On-device custom EQ (hidden "User" preset 63, 5 bands) | 🟡 new lead: read its config next |
+| On-device custom EQ (hidden "User" preset 63, 5 bands) | 🟡→❌ config reads as all zeros, likely a stub; one opt-in test left |
 | Per-gesture touch remapping | 🟡 (not in Link 2.26; Gadgetbridge reportedly has it) |
 | Multipoint on/off, connected-device list | ❌ (dual-device feature not advertised) |
 | Voice prompts: on/off, language, volume | ❌ (prompts feature not advertised) |

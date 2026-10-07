@@ -117,11 +117,23 @@ Notes:
 | get available presets `0a01` | `04 00 01 02 3f` | 4 presets: 0, 1, 2 and **63** (Qualcomm's id for the user-configurable set) |
 | get user set band count `0a04` | `05` | 5 bands |
 
+| get user set config `0a05 00 05` | `00 01 00 00 00 00 00 00 00` | start band 0, then all zeros |
+| get user set config `0a05 01 05` | `01 01 00 00 00 00 00 00 00` | start band 1, then all zeros |
+
+([probe output](captures/2026-10-07-probe-user-eq.txt))
+
 Link never shows a user EQ for this earbud, but the firmware reports one.
-Next: read its configuration (`0a05 [first band][last band]`, a query, now in
-the probe). If that works, on-device custom EQ may be possible by selecting
-preset 63 and writing band gains. Writing is a "set", so we'd do it only
-after reading back the current values, and preset 0 restores the default.
+Its configuration reads back as **all zeros**: not just 0 dB gains but
+also frequency 0 and Q 0, which aren't valid filter settings. The exact
+byte layout is unclear (each reply seems to describe one band, not five).
+Most likely the user EQ is an unimplemented stub, kept because the firmware
+copies Qualcomm's command set.
+
+Remaining cheap test: `gaia_probe.py --try-user-eq` selects preset 63 for
+15 s and then restores the previous preset (the same "set EQ preset"
+command Link uses, with a different value). If the earbuds reject 63 or the
+sound doesn't change, we drop on-device custom EQ and rely on the phone-side
+EQ. We won't try writing band values to a stub.
 
 ## Battery (Verified)
 
@@ -157,7 +169,8 @@ reuse). Until then: not possible.
 - [x] Probe results (see `captures/2026-10-07-probe.txt`).
 - [x] ANC / game mode / case notifications: none.
 - [x] Battery: one HFP value, earbuds not case.
-- [ ] Read the user EQ configuration (`0a05`), probe run 2.
+- [x] Read the user EQ configuration (`0a05`): all zeros.
+- [ ] Optional: `--try-user-eq` (does preset 63 select, does sound change?).
 - [ ] Meaning of core `0x13`–`0x16`, EQ notif `0a80`, set-EQ response `01`.
 - [ ] Touch actions: which command (if any) Gadgetbridge uses.
 
