@@ -1,117 +1,142 @@
 # Moondrop Space Travel (original): protocol notes
 
-Status: **prior-art summary, not yet verified on our hardware.** Every item
-below is tagged with where it comes from. Nothing moves to "verified" until we
-see it in our own HCI capture (see [capture-guide.md](capture-guide.md)).
+Device under test: firmware "1.0.0" (GAIA application version), MOONDROP Link
+2.26.1c, Samsung Galaxy Note 20 Ultra / Android 13.
+Capture: [captures/2026-10-07-link-eq.csv](captures/2026-10-07-link-eq.csv)
+with [notes](captures/2026-10-07-link-eq-notes.md) and
+[device info](captures/2026-10-07-device-info.md).
 
-Legal note: we only use protocol *facts* (frame layouts, command numbers)
-from other projects. Several of them are GPL/AGPL, so we do **not** copy their
-source code into OpenDrop. Our implementation is written from these notes.
+Decode any capture with `python3 tools/gaia_decode.py <file.csv>`.
+Status tags: **Verified** = seen in our capture. **Inferred** = consistent with
+the capture and Qualcomm GAIA v3, not directly confirmed. **Reported** = from
+other projects, not yet seen by us.
+
+Legal note: we only use protocol *facts* from other projects (several are
+GPL/AGPL) and don't copy their source code.
 
 ## Summary
 
-Despite the Bluetrum BT8892E chip, the Space Travel speaks Qualcomm's **GAIA**
-control protocol (Bluetrum firmware implements a GAIA-compatible protocol,
-likely so Moondrop could reuse one app across models).
+| Item | Value | Status |
+|---|---|---|
+| Transport | Bluetooth Classic only (no BLE/GATT). SDP: SPP, HFP, A2DP sink, AVRCP | Verified |
+| Control protocol | Qualcomm GAIA v3 (vendor `0x001D`) over SPP/RFCOMM | Verified |
+| RFCOMM channel | 1 | Reported (Gadgetbridge); confirm with the probe |
+| Handshake | legacy GAIA v2 "get API version", reply: protocol v4, API 3.1 | Verified |
+| Supported features | core v2, earbud v1, voice UI v1, music processing (EQ) v1, upgrade v2 | Verified |
+| ANC over GAIA | **Not advertised** (no feature 2, 8 or 32) | Verified (absence); probe to confirm |
+| Battery over GAIA | Not advertised (no feature 13). Battery is sent over HFP | Verified (absence) / Reported |
+| EQ presets | Music processing feature, presets 0/1/2 | Verified |
+| Volume | Link's slider is plain AVRCP absolute volume, not GAIA | Verified |
+| Firmware version | Core "get application version" → `"1.0.0"` | Verified |
 
-| Item | Value | Source | Status |
-|---|---|---|---|
-| Control protocol | GAIA V3 | Gadgetbridge [GB] | Reported |
-| Transport | Bluetooth Classic RFCOMM, channel 1 | [GB] | Reported |
-| Byte order | Big-endian | [GB] | Reported |
-| Vendor ID | `0x001D` (QTIL V3) | [GB], [HP] | Reported |
-| Features in Gadgetbridge | EQ preset, touch actions | [GB] | Reported |
-| Battery | **Not** sent over GAIA; sent over HFP with `AT+IPHONEACCEV` | [GB] | Reported |
-| Possible parallel protocol | Bluetrum "9ECA" private GATT service | [HP] | Unknown for ST1 |
+What this Link version offers for this earbud: device card (volume, EQ
+Tuning, user guide), Product, Sleep and Settings tabs. **No ANC, gesture or
+game mode screens.**
 
-[GB] Gadgetbridge, "Add support for Moondrop Space Travel" (Codeberg PR #3857)
-and gadgetbridge.org/gadgets/headphones/moondrop/. AGPL-3.0.
-[HP] HyperPods-for-Moondrop `PROTOCOL.md` (github.com/huime180/HyperPods-for-Moondrop),
-GPL-3.0. Lists Space Travel 1 as "profile-inferred, unverified".
-[MC] moondrop-control (github.com/FEAKEuser/moondrop-control), GPL-3.0.
-
-## GAIA PDU
+## Framing (RFCOMM)
 
 ```
-+-----------+-------------------+-------------+
-| vendor    | command value     | payload ... |
-| u16 BE    | u16 BE            |             |
-+-----------+-------------------+-------------+
-
-command value = (feature << 9) | (type << 7) | (command & 0x7F)
-type: 0 = command, 1 = notification, 2 = response, 3 = error
+FF | version | flags | length | vendor (u16 BE) | command (u16 BE) | payload (length bytes)
 ```
 
-Example: `00 1D 10 03` = vendor 0x001D, feature 8, type 0 (command), command 3.
-
-Version probe (V1/V2 vendor 0x000A) [HP]:
-`TX 00 0A 03 00` → `RX 00 0A 83 00 [status][protocol][major][minor]`
-
-## RFCOMM transport framing
-
-Over RFCOMM, each PDU is wrapped [HP], [MC]:
+- **Verified:** version `01` for the first (v2) handshake frame, `04` for
+  everything after. Flags `00` (no checksum, 1-byte length). `length` counts
+  the payload only (excludes vendor + command).
+- **Verified:** one RFCOMM packet can hold several frames (frame 830), so the
+  parser must work on a byte stream.
 
 ```
-0xFF | version (1) | flags (1) | length (1 or 2) | PDU | [checksum (1)]
-flags: 0x01 = checksum present, 0x02 = 2-byte length
-length = payload length (excludes the 4 bytes of vendor + command value)
+command = (feature << 9) | (type << 7) | (cmd & 0x7F)
+type: 0 command, 1 notification, 2 response, 3 error
 ```
 
-Some devices send raw `00 1D ...` PDUs without the `0xFF` wrapper [HP].
-**To verify on ST1:** which framing, which version byte, checksum or not.
+Legacy v2 frame (vendor `0x000A`): command `0x0300` = get API version; the
+reply sets bit `0x8000` (ack). Reply payload `00 04 03 01` = status 0,
+protocol 4, API 3.1.
 
-## Features (from other Moondrop models)
+## Connect sequence used by Link (Verified)
 
-These IDs come from other Moondrop GAIA devices [HP]. Whether ST1 implements
-each one is an open question. Phase 0 checks each one with read-only "get"
-commands only.
+| Step | TX (phone → buds) | RX (buds → phone) |
+|---|---|---|
+| 1 | v2 get API version `ff 01 00 00 000a 0300` | `... 000a 8300 00 04 03 01` |
+| 2 | core get supported features `001d 0001` | `001d 0101 00 0301 0501 0101 0602 0002` |
+| 3 | core cmd 0x0D `07 00 00 00 04` (likely "set transport parameter: protocol version = 4", inferred) | no direct reply seen |
+| 4 | core register notification for features 0, 3, 5, 1, 6 (`001d 0007 XX`) | response `001d 0107` per registration |
+| 5 | core get application version `001d 0005` | `001d 0105 "1.0.0"` |
+| — | | after registering, the buds push current state: voice UI notif 0 = `00`, EQ notif 0 = `00`, EQ notif 1 = `00` (current preset) |
 
-| Feature | ID | Commands (hex PDU) | Relevance to our feature list |
-|---|---|---|---|
-| Basic | 0 | capabilities, notification registration | Device info, firmware version? |
-| ANC V1 | 2 | get `00 1D 04 01`, set `00 1D 04 02 [0/1]` | ANC on/off |
-| Audio curation | 8 | get `00 1D 10 03`, set `00 1D 10 04 [bitmask 01/02/04]` | Off / ANC / Transparency |
-| Battery | 13 (0x0D) | types `00 1D 1A 00`, levels `00 1D 1A 01 [types]` | L/R/case battery (GB says ST1 doesn't use it) |
-| Voice prompts | 14 (0x0E) | get `00 1D 1C 01`, set `00 1D 1C 02 [en][vol][idx]` | Prompt on/off, volume |
-| DAC gain | 15 (0x0F) | | Probably not on ST1 |
-| Codec type | 16 (0x10) | get `00 1D 20 05`, set `00 1D 20 06 [0/1]` (LHDC) | Not applicable: ST1 is SBC/AAC |
-| Dual device | 20 (0x14) | get `00 1D 28 01`, set `00 1D 28 02 [0/1]`, list `00 1D 28 05` | Multipoint toggle, device list |
-| ANC V2 | 32 (0x20) | get `00 1D 40 03`, set `00 1D 40 04 [mode 0-5]` | Off / ANC / Transparency (newer models) |
+Supported-features payload: `[more=00]` then `(feature, version)` pairs:
+`(3,1) (5,1) (1,1) (6,2) (0,2)`.
 
-**Not yet documented anywhere we can reach:**
-- EQ preset command (Gadgetbridge implements it for ST1)
-- Touch-action command and action ids (Gadgetbridge implements it for ST1)
-- Game mode
-- Any lock or "no action" gesture value
+Opening the device screen, Link also sends core commands `0x13`, `0x14`,
+`0x15`, `0x16` with no payload. **No reply was captured for any of them**;
+meaning unknown. A core notification 0 with payload `00` followed (inferred:
+charger status = not charging).
 
-These are the main targets for our first capture.
+## EQ presets (Verified)
+
+Music processing = feature 5.
+
+| Action | TX | RX |
+|---|---|---|
+| Get selected preset | `ff04 0000 001d 0a02` | response `001d 0b02 [preset]` |
+| Set preset | `ff04 0001 001d 0a03 [preset]` | response `001d 0b03 01`, then notification `001d 0a81 [preset]` |
+
+| Preset id | Link name |
+|---|---|
+| 0 | Reference |
+| 1 | Basshead |
+| 2 | Monitor |
+
+Notes:
+- The set response payload was `01` for all three presets (meaning unknown,
+  possibly a status). Use the `0a81` notification as the source of truth.
+- Notification `0a80` (feature 5, notif 0) carried `00` at connect. Inferred:
+  EQ state; meaning of `00` unknown.
+- Link warns that switching "may cause a brief pop or restart. Lower the
+  volume first." OpenDrop should show the same warning.
 
 ## Battery
 
-Reported by [GB]: ST1 sends battery with the standard HFP `AT+IPHONEACCEV`
-command. Android already reads this (it's what shows in Bluetooth settings).
-That is one combined level, not separate left/right.
+GAIA battery (feature 13) isn't advertised. Reported by Gadgetbridge: the
+buds send battery over HFP (`AT+IPHONEACCEV`), which Android already reads;
+it is one combined level. To check: what Android shows for the buds in
+Settings → Connected devices (one value, or L/R?).
 
-Options for OpenDrop:
-1. Read Android's stored level for the device. The getter is a hidden API, so
-   it needs reflection; check it works on current Android versions.
-2. Try GAIA feature 13 anyway, in case ST1 answers it.
-3. Accept a single combined value for ST1.
+## ANC, gestures, game mode, touch lock
 
-## Codec
+None of these are in Link for this earbud, and the buds don't advertise GAIA
+ANC features. Remaining possibilities, to test with the probe's monitor mode:
 
-ST1 supports SBC and AAC only. Codec choice is made by Android's A2DP stack,
-not over GAIA. See the roadmap for the Shizuku / Developer Options approach.
+1. The buds send a notification when you long-press (ANC) or 4×-tap (game
+   mode). Then OpenDrop can at least *show* the current mode.
+2. Undocumented core commands (`0x13`–`0x16`, or others) control them.
+   Unlikely and risky to search for blindly; we won't brute-force "set" commands.
+3. Nothing: these are handled entirely on the earbuds, and no app can change them.
 
-## Open questions (Phase 0 checklist)
+Gadgetbridge reportedly supports "touch actions" on Space Travel. If the probe
+finds nothing, it's worth finding out which command Gadgetbridge sends (its
+source is AGPL; reading it for protocol facts is fine).
 
-- [ ] Confirm RFCOMM channel 1 and the SPP/GAIA service UUID in the SDP record.
-- [ ] Confirm framing (`0xFF` wrapper, version byte, checksum flag).
-- [ ] Capture EQ preset change: feature id, command, values for each preset.
-- [ ] Capture touch-action change: slots (L/R × gesture), action ids, any "none".
-- [ ] Capture ANC mode change from the Link app (if it exposes it) and from the
-      earbud long-press (look for a notification).
-- [ ] Capture game mode toggle (4× tap): is there a notification?
-- [ ] Check whether ST1 also exposes the 9ECA GATT service or the GAIA GATT
-      service (`00001100-d102-11e1-9b23-00025b00a5a5`).
-- [ ] Read-only probes for features 0, 2, 8, 13, 14, 20, 32.
+## Open questions
+
+- [ ] Confirm RFCOMM channel 1 (probe connects on it).
+- [ ] Probe results: replies to the read-only command list in `tools/gaia_probe.py`.
+- [ ] Monitor mode: notifications on ANC long-press, game mode 4×-tap, case open/close, one bud in case.
+- [ ] Meaning of core `0x0D`, `0x13`–`0x16`, EQ notif `0a80`, set-EQ response `01`.
+- [ ] Battery as shown by Android: combined or L/R.
+- [ ] Touch actions: which command (if any) Gadgetbridge uses.
+
+## Feature reference from other Moondrop models (Reported)
+
+From HyperPods-for-Moondrop `PROTOCOL.md` (GPL-3.0) and moondrop-control
+(GPL-3.0). **None of these features are advertised by ST1.**
+
+| Feature | ID | Commands |
+|---|---|---|
+| ANC v1 | 2 | get `04 01`, set `04 02 [0/1]` |
+| Audio curation | 8 | get `10 03`, set `10 04 [bitmask]` |
+| Battery | 13 | types `1A 00`, levels `1A 01 [types]` |
+| Voice prompts | 14 | get `1C 01`, set `1C 02 [en][vol][idx]` |
+| Dual device | 20 | get `28 01`, set `28 02 [0/1]` |
+| ANC v2 | 32 | get `40 03`, set `40 04 [mode]` |

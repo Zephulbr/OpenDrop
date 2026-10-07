@@ -30,9 +30,11 @@ audio devices. The first target is the **original Moondrop Space Travel**
 | Codecs | SBC, AAC | Spec sheet |
 | ANC | Off / ANC / Transparency (3 s hold on either bud) | Manual, reviews |
 | Game mode | ~55 ms latency (4x tap) | Manual |
-| Official app | MOONDROP Link (EQ presets, gestures, ANC mode) | Reviews |
-| Control channel | Qualcomm-style **GAIA V3** over Bluetooth Classic RFCOMM (channel 1), vendor `0x001D` | Gadgetbridge; **verify in Phase 0** |
-| Battery reporting | HFP `AT+IPHONEACCEV` (combined level), not GAIA | Gadgetbridge; **verify in Phase 0** |
+| Official app | MOONDROP Link 2.26: volume (AVRCP) and EQ presets only | Our capture |
+| Control channel | Qualcomm **GAIA v3** over Bluetooth Classic SPP/RFCOMM, vendor `0x001D`; no BLE | Our capture (verified) |
+| GAIA features | core, earbud, voice UI, music processing (EQ), upgrade. **No ANC, battery or gesture feature** | Our capture (verified) |
+| Firmware | 1.0.0 | Our capture |
+| Battery reporting | HFP `AT+IPHONEACCEV` (combined level), not GAIA | Gadgetbridge; GAIA absence verified |
 
 Protocol details: [protocol/space-travel.md](protocol/space-travel.md).
 
@@ -44,13 +46,13 @@ Legend: ✅ High · 🟡 Medium · ❌ Low / out of scope
 
 | Feature | Feasibility | How |
 |---|---|---|
-| Volume | ✅ | Phone volume via `AudioManager`. Any on-device volume setting (max / prompt volume) via a captured vendor command. |
-| EQ presets (Reference / Balanced / Monitor) | ✅ | Replay the command the Link app already sends. |
-| ANC mode (Off / ANC / Transparency) | ✅ | Command almost certainly exists since the touch gesture does it. |
+| Volume | ✅ | Link's slider is plain AVRCP absolute volume (verified), so this is Android media volume via `AudioManager`. No on-device volume command exists. |
+| EQ presets (Reference / Basshead / Monitor) | ✅ **Verified** | GAIA music processing: set `0a03 [0/1/2]`, get `0a02`, change notification `0a81`. |
+| ANC mode (Off / ANC / Transparency) | ❌→🟡 | Firmware advertises no ANC feature and Link has no ANC screen. Changing it from an app looks impossible. Showing the current mode is possible only if the buds send a notification on long-press (probe monitor mode). |
 | ANC strength / adaptive ANC | ❌ | Only if firmware exposes levels. Investigate, don't promise. |
-| Lock touch controls | 🟡→✅ | Native lock command if one exists (check APK); otherwise emulate by remapping all gestures to "none" and restoring the saved mapping on unlock. |
+| Lock touch controls | 🟡→❌ | No gesture feature advertised and Link has no gesture screen. Depends on finding the command Gadgetbridge reportedly uses for touch actions. |
 | Battery % (combined) | ✅ | Sent over HFP; read Android's stored level for the device (hidden API via reflection, to be checked). |
-| Battery % (left / right / case) | 🟡 | Only if ST1 answers the GAIA battery feature, which Gadgetbridge says it doesn't. Probe in Phase 0. |
+| Battery % (left / right / case) | ❌ | GAIA battery feature not advertised (verified). |
 | Bluetooth codec (SBC / AAC) | 🟡 | Android blocks this for normal apps. Options: optional **Shizuku**/root integration calling the privileged A2DP codec API; fallback deep-link to Developer Options. LDAC/aptX are impossible on this hardware. |
 
 ### Additional features
@@ -59,12 +61,12 @@ Firmware-backed (to confirm in Phase 0):
 
 | Feature | Feasibility |
 |---|---|
-| Game / low-latency mode toggle | ✅ likely |
-| Per-gesture touch remapping | ✅ likely (Link has it) |
-| Multipoint on/off, connected-device list | 🟡 |
-| Voice prompts: on/off, language, volume | 🟡 |
+| Game / low-latency mode toggle | 🟡→❌ (not advertised; check notifications) |
+| Per-gesture touch remapping | 🟡 (not in Link 2.26; Gadgetbridge reportedly has it) |
+| Multipoint on/off, connected-device list | ❌ (dual-device feature not advertised) |
+| Voice prompts: on/off, language, volume | ❌ (prompts feature not advertised) |
 | Device rename | 🟡 |
-| Firmware version display | ✅ likely |
+| Firmware version display | ✅ **Verified** (`"1.0.0"`) |
 | Find my earbuds (beep) | 🟡 |
 | Factory reset / clear pairings | 🟡 |
 
@@ -74,7 +76,7 @@ App-side (no firmware dependency):
 |---|---|
 | Phone-side parametric EQ (10-band, via Android `DynamicsProcessing`) | ✅ |
 | AutoEQ profile import / Space Travel target presets | ✅ |
-| Quick Settings tiles (ANC mode, game mode) | ✅ |
+| Quick Settings tiles (EQ preset; ANC/game mode only if supported) | ✅ |
 | Battery home-screen widget + low-battery notification | ✅ |
 | Automations (e.g. game mode when a game launches) | ✅ |
 | Tasker / broadcast-intent integration | ✅ |
@@ -116,21 +118,22 @@ the commands nobody has published (EQ, touch, game mode, lock).
 
 - [x] **Prior-art survey**: summarised in
       [protocol/space-travel.md](protocol/space-travel.md).
-- [ ] **Device info + optional GATT survey**: SDP UUIDs from `dumpsys`,
-      nRF Connect check for GAIA-over-GATT / Bluetrum 9ECA services.
-- [ ] **HCI snoop capture** of the Link app following
-      [protocol/capture-guide.md](protocol/capture-guide.md).
-- [ ] **Wireshark analysis**: confirm RFCOMM framing; decode EQ, touch
-      action, ANC and game mode commands and notifications.
-- [ ] **Safe probing**: read-only GAIA "get" commands for features
-      0, 2, 8, 13, 14, 20, 32 using the dev console (Phase 1).
+- [x] **Device info**: Classic only (SPP, HFP, A2DP, AVRCP), no BLE.
+- [x] **HCI snoop capture** of the Link app (EQ, volume, connect):
+      [captures/](protocol/captures/).
+- [x] **Analysis**: framing, connect sequence, EQ commands verified;
+      decoder and tests in `tools/`.
+- [ ] **Safe probing** with `tools/gaia_probe.py` from a PC: read-only
+      commands, plus notification monitor while pressing/tapping the buds.
+- [ ] **Touch actions**: find the command Gadgetbridge reportedly uses.
 - [ ] **APK static analysis (optional)**: `jadx` on MOONDROP Link to find
       commands it never shows for ST1 (lock, game mode, prompts).
 - [ ] Update `space-travel.md` to "verified"; commit sanitized captures as
       test fixtures under `docs/protocol/captures/`.
 
-Exit criteria: documented commands for battery, ANC mode, EQ preset and
-gesture mapping, each verified on real hardware.
+Exit criteria: EQ preset verified (done); probe results recorded for
+every feature that ST1 might support; a clear yes/no on ANC, gestures
+and game mode.
 
 ### Phase 1: Project scaffold
 
@@ -143,11 +146,11 @@ gesture mapping, each verified on real hardware.
 
 ### Phase 2: MVP (v0.1)
 
-- [ ] Device screen: connection state, battery L/R (+ case if available).
-- [ ] ANC mode selector (Off / ANC / Transparency).
-- [ ] EQ preset selector (Reference / Balanced / Monitor).
-- [ ] Game mode toggle.
-- [ ] Volume control.
+- [ ] Device screen: connection state, firmware version, battery (combined, from Android).
+- [ ] ANC mode indicator, only if the buds report mode changes (probe).
+- [ ] EQ preset selector (Reference / Basshead / Monitor).
+- [ ] Game mode indicator, only if the buds report it (probe).
+- [ ] Volume control (Android media volume).
 - [ ] State stays in sync when changed from the earbuds themselves.
 
 ### Phase 3: Controls and quality of life (v0.2)

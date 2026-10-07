@@ -144,3 +144,30 @@ Send:
 
 Put them in `docs/protocol/captures/` in a commit, or attach them to the PR.
 Only the extracted files, never the full bugreport or raw `btsnoop_hci.log`.
+
+## Step 8 (follow-up): probe from a PC
+
+After the first capture, `tools/gaia_probe.py` checks the remaining
+questions directly from a Linux or Windows PC with Bluetooth (Python 3.10+).
+It only sends payload-less query commands, plus the ones Link itself sends
+on connect. It never changes a setting.
+
+1. Pair the PC with the earbuds (they support two devices at once).
+2. Close the MOONDROP Link app on the phone.
+3. Run, using the earbuds' address:
+   ```sh
+   python3 tools/gaia_probe.py AA:BB:CC:DD:EE:FF --monitor 180
+   ```
+   If it can't connect, find the SPP channel with `sdptool browse <address>`
+   (Linux) and pass `--channel N`.
+4. During the 180 s monitor, with the earbuds in your ears, do these, noting
+   the time of each:
+   - Long-press (3 s) to cycle ANC → Transparency → Off.
+   - 4× tap to turn game mode on, then off.
+   - Put one earbud in the case and take it out.
+   - Plug the case into a charger with an earbud in it (if practical).
+5. Save the full terminal output and share it with your notes.
+   Replace the address in the first line with `XX:XX:XX:XX:XX:XX` before sharing.
+
+Also note what Android shows for the earbuds' battery in
+Settings → Connected devices (one value, or left/right?).
