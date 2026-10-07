@@ -138,21 +138,24 @@ and game mode.
 
 ### Phase 1: Project scaffold
 
-- [ ] Gradle multi-module project, CI (build + unit tests + lint) on GitHub Actions.
-- [ ] `core/protocol` with frame codec and unit tests from Phase 0 captures.
-- [ ] `core/transport-classic`: RFCOMM connect to the bonded earbuds, GAIA
-      framing, reconnect on A2DP connect.
-- [ ] `core/transport-ble`: kept for later models that use GAIA over GATT.
-- [ ] Developer packet console screen (useful right away for more research).
+- [x] Gradle project (`app`, `core:protocol`), CI on GitHub Actions
+      (protocol tests, Python tool tests, debug APK, lint).
+- [x] `core/protocol`: frame codec, Space Travel commands, session state
+      machine; unit tests replay the Phase 0 captures.
+- [x] RFCOMM connection to the paired earbuds (in `app` for now; split into
+      `core/transport-classic` when a second model needs it).
+- [ ] Reconnect automatically when the earbuds connect.
+- [ ] `core/transport-ble`: later models that use GAIA over GATT.
+- [x] Packet log on the device screen (read-only console).
 
 ### Phase 2: MVP (v0.1)
 
-- [ ] Device screen: connection state, firmware version, battery (combined, from Android).
+- [x] Device screen: connection state, firmware version, battery (from Android). *Untested on hardware.*
 - [ ] ~~ANC mode indicator~~ (not possible: buds don't report it).
-- [ ] EQ preset selector (Reference / Basshead / Monitor).
+- [x] EQ preset selector (Reference / Basshead / Monitor), with the pop warning. *Untested on hardware.*
 - [ ] ~~Game mode indicator~~ (not possible: buds don't report it).
-- [ ] Volume control (Android media volume).
-- [ ] State stays in sync when changed from the earbuds themselves.
+- [x] Volume control (Android media volume).
+- [x] EQ stays in sync via the earbuds' change notification.
 
 ### Phase 3: Controls and quality of life (v0.2)
 
