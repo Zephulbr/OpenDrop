@@ -34,4 +34,9 @@ Requires JDK 17 and the Android SDK (API 35).
 
 Protocol research tools (Python 3.10+, no dependencies) are in `tools/`.
 
+## License
+
+OpenDrop is free software under the [GNU General Public License v3.0](LICENSE).
+Protocol facts from other projects are credited in the docs; no code was copied.
+
 > OpenDrop is not affiliated with or endorsed by Moondrop.
