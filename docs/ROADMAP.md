@@ -37,6 +37,7 @@ audio devices. The first target is the **original Moondrop Space Travel**
 | Battery reporting | HFP `AT+IPHONEACCEV`, one earbud level in 10 % steps; case not reported | Our capture (verified) |
 
 Protocol details: [protocol/space-travel.md](protocol/space-travel.md).
+Other Moondrop models and what they need: [devices.md](devices.md).
 
 ## Feature list and feasibility
 
