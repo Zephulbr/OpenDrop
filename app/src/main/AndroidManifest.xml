@@ -10,9 +10,10 @@
 
     <application
         android:allowBackup="false"
+        android:enableOnBackInvokedCallback="true"
         android:label="OpenDrop"
         android:supportsRtl="true"
-        android:theme="@android:style/Theme.Material.NoActionBar">
+        android:theme="@style/Theme.OpenDrop">
         <activity
             android:name=".MainActivity"
             android:exported="true">

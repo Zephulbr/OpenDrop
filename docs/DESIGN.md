@@ -24,11 +24,14 @@ nothing on screen the earbuds can't actually do.
 
 ## Foundation
 
-- **Material 3 Expressive**, tuned. We use M3 components, shapes and the
-  motion scheme, and override color, type and spacing.
-- Needs Compose Material3 1.4+ (`MaterialExpressiveTheme`, `MotionScheme`).
-  The current BOM (2024.12.01, M3 1.3) is too old, so bump it before UI
-  work starts.
+- **Material 3**, tuned toward Expressive. We use M3 components and
+  override color, type, shapes and motion.
+- The app is on Compose Material3 1.3 for now. The Expressive APIs
+  (`MaterialExpressiveTheme`, `MotionScheme`, connected button groups) need
+  a newer Material3, compileSdk and AGP, so until that upgrade the motion
+  tokens and the segmented control are our own (`ui/theme/Motion.kt`,
+  `ui/components/Components.kt`). They follow the specs below, so switching
+  later is a swap, not a redesign.
 - Prefer flat sections on the background over cards. Use a container only
   when it groups controls that belong together.
 
@@ -81,9 +84,9 @@ Settings → Appearance → Accent:
 | Cool cyan | `#4DD8F0` | `#007A8F` |
 | Lime | `#C6F24E` | `#4F7A00` |
 
-- **Custom**: a hue/tone picker. Generate the light and dark variants from
-  the picked color with HCT (`material-color-utilities`) so contrast holds
-  in both themes.
+- **Custom**: hue and vibrance sliders. Brightness isn't user-set: for each
+  theme it's moved until the accent reaches 4.5:1 against the background,
+  so contrast holds in both themes without pulling in a color library.
 
 Each preset has a separate tone per theme because a neon that pops on
 black is unreadable on white. Contrast targets: accent against background
@@ -285,13 +288,18 @@ haptic settings. No haptics on scroll.
 
 ## Implementation notes
 
-- `ui/theme/`: `Color.kt` (neutral palettes, accent presets, HCT
-  generation), `Type.kt` (Inter + JetBrains Mono), `Motion.kt` (tokens),
-  `Theme.kt` (`OpenDropTheme` that merges neutrals + accent source).
-- Store appearance settings with DataStore.
-- Replace the current `Card` + `RadioButton` EQ selector with M3
-  connected buttons, and remove the confirmation dialog in favour of the
-  inline hint.
+- `ui/theme/`: `Color.kt` (neutral palettes, accent presets, contrast
+  solving), `Type.kt` (Inter + JetBrains Mono), `Motion.kt` (tokens and
+  reduced-motion detection), `Haptics.kt`, `Theme.kt` (`OpenDropTheme`
+  merges neutrals + accent source and provides motion and haptics).
+- `ui/components/`: press scale, rows, segmented selector, rolling number,
+  gradient slider.
+- `settings/Appearance.kt`: appearance settings in DataStore.
+- The window background (`res/values*/themes.xml`) matches the neutral
+  background, so there's no flash before the first frame.
+
+Not built yet: baseline profile, shared-element row → hero transition,
+widget/tile theming.
 
 ## Open questions
 
