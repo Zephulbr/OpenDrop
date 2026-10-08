@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.opendrop.app.MainActivity
 import org.opendrop.app.OpenDropApplication
 import org.opendrop.app.R
@@ -49,11 +50,13 @@ class PhoneEqService : Service() {
         }
         if (watcher == null) {
             val eq = PhoneEqEngine().also { engine = it }
-            watcher = scope.launch {
+            watcher = scope.launch(Dispatchers.Default) {
                 phoneEq.state.collect { state ->
                     if (!state.enabled) {
-                        stop()
+                        withContext(Dispatchers.Main) { stop() }
                     } else {
+                        // DynamicsProcessing creation/config is binder work; keep
+                        // it off the main thread so 64-band updates can't jank the UI.
                         phoneEq.failed.value = !eq.apply(state.curve)
                     }
                 }
