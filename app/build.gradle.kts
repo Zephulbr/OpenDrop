@@ -43,7 +43,11 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // Stays unsigned without a release key: the release workflow signs
+            // with the debug key itself, and F-Droid builds and signs its own.
             signingConfig = signingConfigs.findByName("release")
         }
     }
