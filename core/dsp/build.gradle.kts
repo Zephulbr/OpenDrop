@@ -10,6 +10,7 @@ java {
 }
 
 kotlin {
+    jvmToolchain(17)
     compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }
 }
 
