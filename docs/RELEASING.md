@@ -19,7 +19,9 @@ Secrets and variables → Actions):
 | `OPENDROP_KEY_ALIAS` | `opendrop` |
 | `OPENDROP_KEY_PASSWORD` | key password |
 
-Without them the release workflow still runs and attaches an unsigned APK.
+Without them the release workflow still runs and signs the APK with the
+debug key so it installs. Switching to the real release key later means
+uninstalling the debug-signed build first (Android rejects a key change).
 
 ## Each release
 
