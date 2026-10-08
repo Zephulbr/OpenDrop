@@ -36,6 +36,13 @@ random key, so uninstall those once first.
 Before connecting: pair the earbuds in Android's Bluetooth settings, take them
 out of the case, and close the MOONDROP Link app.
 
+## Languages
+
+English, 简体中文, 日本語, Español, Deutsch, Français, العربية, Português,
+한국어 and Русский. The translations are machine-assisted; corrections from
+native speakers are welcome in `app/src/main/res/values-<language>/strings.xml`
+(keep the keys and `%1$s`-style placeholders).
+
 ## Build
 
 Requires JDK 17 and the Android SDK (API 35).

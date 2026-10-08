@@ -24,7 +24,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import org.opendrop.app.R
 import org.opendrop.app.automation.Automation
 import org.opendrop.app.settings.AppSettings
 import org.opendrop.app.settings.Behavior
@@ -42,7 +44,7 @@ fun SettingsScreen(
     onBack: () -> Unit,
 ) {
     Column(Modifier.fillMaxSize()) {
-        ScreenTopBar("Settings", onBack)
+        ScreenTopBar(stringResource(R.string.settings), onBack)
         Column(
             Modifier
                 .fillMaxSize()
@@ -51,18 +53,18 @@ fun SettingsScreen(
         ) {
             Spacer(Modifier.height(8.dp))
             NavRow(
-                title = "Appearance",
-                subtitle = "Theme, accent color and haptics",
+                title = stringResource(R.string.appearance),
+                subtitle = stringResource(R.string.settings_appearance_subtitle),
                 onClick = onOpenAppearance,
             )
 
             Spacer(Modifier.height(Dimens.SectionGap))
-            SectionTitle("Audio")
+            SectionTitle(stringResource(R.string.settings_audio))
             val context = LocalContext.current
             var codecNote by remember { mutableStateOf<String?>(null) }
             NavRow(
-                title = "Bluetooth codec",
-                subtitle = "Android picks the codec. Change it in Developer options → Bluetooth audio codec.",
+                title = stringResource(R.string.settings_codec),
+                subtitle = stringResource(R.string.settings_codec_subtitle),
                 onClick = { codecNote = openDeveloperOptions(context) },
             )
             codecNote?.let {
@@ -75,20 +77,19 @@ fun SettingsScreen(
             }
 
             Spacer(Modifier.height(Dimens.SectionGap))
-            SectionTitle("Notifications")
+            SectionTitle(stringResource(R.string.settings_notifications))
             SwitchRow(
-                title = "Low battery",
-                subtitle = "Notify once when the earbuds drop to ${AppSettings.LOW_BATTERY_PERCENT} %",
+                title = stringResource(R.string.settings_low_battery),
+                subtitle = stringResource(R.string.settings_low_battery_subtitle, AppSettings.LOW_BATTERY_PERCENT),
                 checked = behavior.lowBatteryAlert,
                 onCheckedChange = { on -> onChange { it.copy(lowBatteryAlert = on) } },
             )
 
             Spacer(Modifier.height(Dimens.SectionGap))
-            SectionTitle("Automation")
+            SectionTitle(stringResource(R.string.settings_automation))
             SwitchRow(
-                title = "Allow other apps",
-                subtitle = "Tasker, MacroDroid and others can switch EQ, connect and disconnect, " +
-                    "and receive state changes",
+                title = stringResource(R.string.settings_allow_other_apps),
+                subtitle = stringResource(R.string.settings_allow_other_apps_subtitle),
                 checked = behavior.automation,
                 onCheckedChange = { on -> onChange { it.copy(automation = on) } },
             )
@@ -102,10 +103,9 @@ fun SettingsScreen(
             }
 
             Spacer(Modifier.height(Dimens.SectionGap))
-            SectionTitle("About")
+            SectionTitle(stringResource(R.string.settings_about))
             Text(
-                "OpenDrop is free software under the GPL-3.0. Not affiliated with Moondrop. " +
-                    "Fonts: Inter and JetBrains Mono, SIL Open Font License 1.1.",
+                stringResource(R.string.settings_about_text),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = Dimens.Gutter),
@@ -128,17 +128,17 @@ private fun openDeveloperOptions(context: Context): String? {
             // Fall through to the hint.
         }
     }
-    return "Developer options are off. Turn them on by tapping Build number seven times in " +
-        "Settings → About phone (Software information on Samsung), then come back here."
+    return context.getString(R.string.settings_developer_off)
 }
 
-private fun automationHelp(): String = """
-    Send a broadcast to package ${Automation.PACKAGE} with one of these actions:
-
-    ${Automation.ACTION_SET_EQ} (extra "${Automation.EXTRA_PRESET}": reference, basshead or monitor)
-    ${Automation.ACTION_NEXT_EQ}
-    ${Automation.ACTION_CONNECT}
-    ${Automation.ACTION_DISCONNECT}
-
-    OpenDrop broadcasts ${Automation.EVENT_STATE} when the connection, battery or EQ preset changes.
-""".trimIndent()
+@Composable
+private fun automationHelp(): String = listOf(
+    stringResource(R.string.automation_help_send, Automation.PACKAGE),
+    "",
+    "${Automation.ACTION_SET_EQ} (${Automation.EXTRA_PRESET}: reference / basshead / monitor)",
+    Automation.ACTION_NEXT_EQ,
+    Automation.ACTION_CONNECT,
+    Automation.ACTION_DISCONNECT,
+    "",
+    stringResource(R.string.automation_help_state, Automation.EVENT_STATE),
+).joinToString("\n")

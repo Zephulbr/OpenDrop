@@ -2,6 +2,7 @@ package org.opendrop.app.ui
 
 import android.content.Context
 import android.content.Intent
+import android.content.res.Resources
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -45,12 +46,14 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import java.util.Locale
 import kotlin.math.ln
 import kotlin.math.pow
+import org.opendrop.app.R
 import org.opendrop.app.phoneeq.PhoneEq
 import org.opendrop.app.phoneeq.PhoneEqState
 import org.opendrop.app.ui.components.ScreenTopBar
@@ -87,11 +90,11 @@ fun PhoneEqScreen(
     val clipboard = LocalClipboardManager.current
     var message by remember { mutableStateOf<String?>(null) }
     val import = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) message = importCurve(readText(context, uri), onCustom)
+        if (uri != null) message = importCurve(context.resources, readText(context, uri), onCustom)
     }
 
     Column(Modifier.fillMaxSize()) {
-        ScreenTopBar("Phone EQ", onBack)
+        ScreenTopBar(stringResource(R.string.phone_eq), onBack)
         Column(
             Modifier
                 .fillMaxSize()
@@ -100,24 +103,24 @@ fun PhoneEqScreen(
         ) {
             Spacer(Modifier.height(8.dp))
             if (!PhoneEq.supported) {
-                Note("The phone EQ needs Android 9 or newer.")
+                Note(stringResource(R.string.peq_needs_android9))
                 return@Column
             }
             SwitchRow(
-                title = "Phone EQ",
-                subtitle = "Shapes everything the phone plays, on any headphones",
+                title = stringResource(R.string.phone_eq),
+                subtitle = stringResource(R.string.peq_subtitle),
                 checked = state.enabled,
                 onCheckedChange = { on -> onChange { it.copy(enabled = on) } },
             )
             if (state.enabled && failed) {
-                Note("This phone didn't accept the EQ effect. Another EQ app may be holding it; turn that off and try again.")
+                Note(stringResource(R.string.peq_failed))
             }
 
             Spacer(Modifier.height(16.dp))
             ResponseGraph(state.curve)
 
             Spacer(Modifier.height(Dimens.SectionGap))
-            SectionTitle("Presets")
+            SectionTitle(stringResource(R.string.peq_presets))
             FlowRow(
                 Modifier.padding(horizontal = Dimens.Gutter),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -126,41 +129,42 @@ fun PhoneEqScreen(
                     FilterChip(
                         selected = state.preset == preset,
                         onClick = { onChange { it.copy(preset = preset) } },
-                        label = { Text(preset.label) },
+                        label = { Text(stringResource(preset.labelRes())) },
                     )
                 }
                 state.custom?.let {
                     FilterChip(
                         selected = state.preset == null,
                         onClick = { onChange { it.copy(preset = null) } },
-                        label = { Text("Custom") },
+                        label = { Text(stringResource(R.string.peq_custom)) },
                     )
                 }
             }
 
             Spacer(Modifier.height(Dimens.SectionGap))
-            SectionTitle("Preamp")
+            SectionTitle(stringResource(R.string.peq_preamp))
             PreampRow(state.curve) { preamp -> onCustom(state.curve.withPreamp(preamp)) }
 
             Spacer(Modifier.height(Dimens.SectionGap))
-            SectionTitle("Filters")
+            SectionTitle(stringResource(R.string.peq_filters))
             val parametric = state.parametric
             if (parametric == null) {
-                Note("Imported graphic EQ (${(state.curve as GraphicEq).points.size} points). Pick a preset to edit filters.")
+                Note(stringResource(R.string.peq_graphic_imported, (state.curve as GraphicEq).points.size))
             } else {
                 FilterList(parametric, onCustom)
             }
 
             Spacer(Modifier.height(Dimens.SectionGap))
-            SectionTitle("AutoEQ")
+            SectionTitle(stringResource(R.string.peq_autoeq))
             Note(
-                "Import a ParametricEQ.txt or GraphicEQ.txt from AutoEQ (autoeq.app) for your headphones, " +
-                    "or copy one and paste it here.",
+                stringResource(R.string.peq_autoeq_note),
             )
             Row(Modifier.padding(horizontal = Dimens.Gutter), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { import.launch(arrayOf("text/*")) }) { Text("Import file") }
-                OutlinedButton(onClick = { message = importCurve(clipboard.getText()?.text, onCustom) }) { Text("Paste") }
-                TextButton(onClick = { share(context, state.curve) }) { Text("Share") }
+                OutlinedButton(onClick = { import.launch(arrayOf("text/*")) }) { Text(stringResource(R.string.peq_import_file)) }
+                OutlinedButton(onClick = { message = importCurve(context.resources, clipboard.getText()?.text, onCustom) }) {
+                    Text(stringResource(R.string.peq_paste))
+                }
+                TextButton(onClick = { share(context, state.curve) }) { Text(stringResource(R.string.peq_share)) }
             }
             message?.let { Note(it) }
         }
@@ -168,13 +172,13 @@ fun PhoneEqScreen(
 }
 
 /** Parses AutoEQ text into the custom curve; returns a message for the user. */
-private fun importCurve(text: String?, onCustom: (EqCurve) -> Unit): String {
+private fun importCurve(res: Resources, text: String?, onCustom: (EqCurve) -> Unit): String {
     val curve = text?.take(MAX_IMPORT_CHARS)?.let(AutoEq::parse)
-        ?: return "That isn't an AutoEQ ParametricEQ or GraphicEQ text."
+        ?: return res.getString(R.string.peq_import_invalid)
     onCustom(curve)
     return when (curve) {
-        is ParametricEq -> "Imported ${curve.filters.size} filters, preamp ${fmt(curve.preamp)} dB."
-        is GraphicEq -> "Imported a graphic EQ with ${curve.points.size} points, preamp ${fmt(curve.preamp)} dB."
+        is ParametricEq -> res.getString(R.string.peq_imported_parametric, curve.filters.size, fmt(curve.preamp))
+        is GraphicEq -> res.getString(R.string.peq_imported_graphic, curve.points.size, fmt(curve.preamp))
     }
 }
 
@@ -191,7 +195,7 @@ private fun share(context: Context, curve: EqCurve) {
         .setType("text/plain")
         .putExtra(Intent.EXTRA_SUBJECT, "OpenDrop phone EQ")
         .putExtra(Intent.EXTRA_TEXT, AutoEq.write(curve))
-    context.startActivity(Intent.createChooser(send, "Share EQ"))
+    context.startActivity(Intent.createChooser(send, context.getString(R.string.peq_share_title)))
 }
 
 private fun EqCurve.withPreamp(preamp: Double): EqCurve = when (this) {
@@ -219,12 +223,15 @@ private fun Note(text: String) {
 private fun ResponseGraph(curve: EqCurve) {
     val colors = MaterialTheme.colorScheme
     val points = remember(curve) { logSpaced(MIN_HZ, MAX_HZ, 160).map { it to curve.curveDb(it) } }
-    val summary = remember(curve) {
-        val peak = points.maxBy { it.second }
-        val dip = points.minBy { it.second }
-        "EQ curve. Largest boost ${fmt(peak.second)} dB at ${hzLabel(peak.first)}, " +
-            "largest cut ${fmt(dip.second)} dB at ${hzLabel(dip.first)}."
-    }
+    val peak = points.maxBy { it.second }
+    val dip = points.minBy { it.second }
+    val summary = stringResource(
+        R.string.peq_graph_description,
+        fmt(peak.second),
+        hzLabel(peak.first),
+        fmt(dip.second),
+        hzLabel(dip.first),
+    )
     Column(Modifier.padding(horizontal = Dimens.Gutter)) {
         Canvas(
             Modifier
@@ -266,7 +273,7 @@ private fun PreampRow(curve: EqCurve, onPreamp: (Double) -> Unit) {
     Column(Modifier.padding(horizontal = Dimens.Gutter)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("${fmt(curve.preamp)} dB", style = MonoValue, modifier = Modifier.weight(1f))
-            TextButton(onClick = { onPreamp(curve.safePreamp()) }) { Text("Auto") }
+            TextButton(onClick = { onPreamp(curve.safePreamp()) }) { Text(stringResource(R.string.peq_auto)) }
         }
         Slider(
             value = curve.preamp.toFloat(),
@@ -275,7 +282,7 @@ private fun PreampRow(curve: EqCurve, onPreamp: (Double) -> Unit) {
         )
         if (curve.preamp + curve.peakDb() > 0.5) {
             Text(
-                "Boosts reach ${fmt(curve.preamp + curve.peakDb())} dB; the limiter will catch peaks. Auto avoids that.",
+                stringResource(R.string.peq_clipping, fmt(curve.preamp + curve.peakDb())),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -286,9 +293,10 @@ private fun PreampRow(curve: EqCurve, onPreamp: (Double) -> Unit) {
 @Composable
 private fun FilterList(eq: ParametricEq, onCustom: (EqCurve) -> Unit) {
     var expanded by rememberSaveable { mutableIntStateOf(-1) }
+    val resources = LocalContext.current.resources
     fun replace(i: Int, filter: PeqFilter) = onCustom(eq.copy(filters = eq.filters.toMutableList().also { it[i] = filter }))
 
-    if (eq.filters.isEmpty()) Note("No filters: the curve is flat.")
+    if (eq.filters.isEmpty()) Note(stringResource(R.string.peq_no_filters))
     eq.filters.forEachIndexed { i, filter ->
         Column(
             Modifier
@@ -298,7 +306,7 @@ private fun FilterList(eq: ParametricEq, onCustom: (EqCurve) -> Unit) {
         ) {
             Text(
                 buildString {
-                    append("${filter.type.label} · ${hzLabel(filter.frequency)}")
+                    append("${resources.getString(filter.type.labelRes())} · ${hzLabel(filter.frequency)}")
                     if (filter.type.hasGain) append(" · ${fmt(filter.gain)} dB")
                     append(" · Q ${String.format(Locale.ROOT, "%.2f", filter.q)}")
                 },
@@ -313,11 +321,11 @@ private fun FilterList(eq: ParametricEq, onCustom: (EqCurve) -> Unit) {
                     label = { it.code },
                     onSelect = { type -> replace(i, filter.copy(type = type, gain = if (type.hasGain) filter.gain else 0.0)) },
                 )
-                LabeledSlider("Frequency", hzLabel(filter.frequency), logPosition(filter.frequency, MIN_HZ, MAX_HZ)) {
+                LabeledSlider(stringResource(R.string.peq_frequency), hzLabel(filter.frequency), logPosition(filter.frequency, MIN_HZ, MAX_HZ)) {
                     replace(i, filter.copy(frequency = Math.round(fromLogPosition(it, MIN_HZ, MAX_HZ)).toDouble()))
                 }
                 if (filter.type.hasGain) {
-                    LabeledSlider("Gain", "${fmt(filter.gain)} dB", ((filter.gain + 12) / 24).toFloat()) {
+                    LabeledSlider(stringResource(R.string.peq_gain), "${fmt(filter.gain)} dB", ((filter.gain + 12) / 24).toFloat()) {
                         replace(i, filter.copy(gain = Math.round((it * 24 - 12) * 2) / 2.0))
                     }
                 }
@@ -327,7 +335,7 @@ private fun FilterList(eq: ParametricEq, onCustom: (EqCurve) -> Unit) {
                 TextButton(onClick = {
                     expanded = -1
                     onCustom(eq.copy(filters = eq.filters.filterIndexed { j, _ -> j != i }))
-                }) { Text("Remove filter") }
+                }) { Text(stringResource(R.string.peq_remove_filter)) }
             }
         }
     }
@@ -338,7 +346,7 @@ private fun FilterList(eq: ParametricEq, onCustom: (EqCurve) -> Unit) {
                 onCustom(eq.copy(filters = eq.filters + PeqFilter()))
             },
             modifier = Modifier.padding(horizontal = 8.dp),
-        ) { Text("Add filter") }
+        ) { Text(stringResource(R.string.peq_add_filter)) }
     }
 }
 

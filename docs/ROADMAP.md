@@ -24,7 +24,7 @@ deleting it.
 | [M3](#m3-everyday-convenience-v03) Everyday convenience (v0.3) | Tiles, widget, notifications | 🟡 Built, untested on hardware; touch lock waits on M2 |
 | [M4](#m4-phone-side-audio-v04) Phone-side audio (v0.4) | PEQ, AutoEQ, codec switching | 🟡 PEQ and AutoEQ built, untested on hardware; Shizuku codec switch open |
 | [M5](#m5-usb-devices-v05) USB devices (v0.5) | Dawn, Moonriver, FreeDSP, DSP IEMs | 🟡 Read-only transport and USB report; protocols need captures |
-| [M6](#m6-release-v10) Release (v1.0) | F-Droid and GitHub Releases | 🟡 Onboarding, errors, release pipeline done; translations and first release open |
+| [M6](#m6-release-v10) Release (v1.0) | F-Droid and GitHub Releases | 🟡 Onboarding, errors, translations and release pipeline done; first release open |
 
 **Next up:** try the M3 and M4 features on a phone (tile, widget, low-battery
 alert, automation, phone EQ); collect device reports and USB reports from
@@ -191,8 +191,12 @@ tests and a screen):
 - [x] Error handling: connection failures are sorted into causes (no answer,
       refused by another app, permission, Bluetooth off) with advice and a
       Try again button; the raw error stays visible as a detail.
-- [ ] Translations. The UI strings are still in the Compose code; they move
-      to `strings.xml` before the first translation.
+- [x] Translations: all UI text in `strings.xml`, translated into Simplified
+      Chinese, Japanese, Spanish, German, French, Arabic (right to left),
+      Portuguese, Korean and Russian; Android 13+ lists them in the per-app
+      language setting. Machine-assisted: native speakers, please correct
+      `app/src/main/res/values-*/strings.xml`. Device and USB reports stay in
+      English on purpose.
 - [x] Release pipeline: pushing a `v*` tag builds the release APK (signed
       when the key secrets exist) and publishes a GitHub Release; F-Droid
       listing text in `fastlane/`; steps in [RELEASING.md](RELEASING.md).

@@ -41,10 +41,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import org.opendrop.app.R
 import org.opendrop.app.settings.Appearance
 import org.opendrop.app.ui.components.GradientSlider
 import org.opendrop.app.ui.components.ScreenTopBar
@@ -75,8 +77,9 @@ fun AppearanceScreen(
     onBack: () -> Unit,
 ) {
     val haptics = LocalHaptics.current
+    val resources = LocalContext.current.resources
     Column(Modifier.fillMaxSize()) {
-        ScreenTopBar("Appearance", onBack)
+        ScreenTopBar(stringResource(R.string.appearance), onBack)
         Column(
             Modifier
                 .fillMaxSize()
@@ -84,11 +87,11 @@ fun AppearanceScreen(
                 .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 24.dp),
         ) {
             Spacer(Modifier.height(8.dp))
-            SectionTitle("Theme")
+            SectionTitle(stringResource(R.string.appearance_theme))
             SegmentedSelector(
                 options = ThemeMode.entries,
                 selected = appearance.theme,
-                label = { it.label },
+                label = { resources.getString(it.labelRes()) },
                 onSelect = { mode ->
                     haptics.segment()
                     onChange(false) { it.copy(theme = mode) }
@@ -97,23 +100,23 @@ fun AppearanceScreen(
             )
             Spacer(Modifier.height(8.dp))
             SwitchRow(
-                title = "True black",
-                subtitle = "Pure black background in dark mode",
+                title = stringResource(R.string.appearance_true_black),
+                subtitle = stringResource(R.string.appearance_true_black_subtitle),
                 checked = appearance.trueBlack,
                 onCheckedChange = { on -> onChange(false) { it.copy(trueBlack = on) } },
             )
 
             Spacer(Modifier.height(Dimens.SectionGap))
-            SectionTitle("Accent")
+            SectionTitle(stringResource(R.string.appearance_accent))
             AccentPicker(appearance.accent) { choice, debounce ->
                 onChange(debounce) { it.copy(accent = choice) }
             }
 
             Spacer(Modifier.height(Dimens.SectionGap))
-            SectionTitle("Feedback")
+            SectionTitle(stringResource(R.string.appearance_feedback))
             SwitchRow(
-                title = "Haptics",
-                subtitle = "Light ticks on presets, slider steps and connect",
+                title = stringResource(R.string.appearance_haptics),
+                subtitle = stringResource(R.string.appearance_haptics_subtitle),
                 checked = appearance.haptics,
                 onCheckedChange = { on -> onChange(false) { it.copy(haptics = on) } },
             )
@@ -132,9 +135,9 @@ private fun AccentPicker(current: AccentChoice, onPick: (AccentChoice, Boolean) 
     val custom = current as? AccentChoice.Custom
 
     val selectedLabel = when (current) {
-        AccentChoice.System -> "System"
-        is AccentChoice.Preset -> current.preset.label
-        is AccentChoice.Custom -> "Custom"
+        AccentChoice.System -> stringResource(R.string.accent_system)
+        is AccentChoice.Preset -> stringResource(current.preset.labelRes())
+        is AccentChoice.Custom -> stringResource(R.string.accent_custom)
     }
 
     Column(Modifier.fillMaxWidth()) {
@@ -146,7 +149,7 @@ private fun AccentPicker(current: AccentChoice, onPick: (AccentChoice, Boolean) 
             if (dynamicAccentAvailable) {
                 val system = remember(dark) { systemAccent(context, dark) } ?: Color.Gray
                 Swatch(
-                    label = "System",
+                    label = stringResource(R.string.accent_system),
                     fill = SolidColor(system),
                     selected = current == AccentChoice.System,
                     marker = true,
@@ -158,7 +161,7 @@ private fun AccentPicker(current: AccentChoice, onPick: (AccentChoice, Boolean) 
             AccentPreset.entries.forEach { preset ->
                 val color = presetColor(preset, dark)
                 Swatch(
-                    label = preset.label,
+                    label = stringResource(preset.labelRes()),
                     fill = SolidColor(color),
                     selected = current == AccentChoice.Preset(preset),
                 ) {
@@ -167,7 +170,7 @@ private fun AccentPicker(current: AccentChoice, onPick: (AccentChoice, Boolean) 
                 }
             }
             Swatch(
-                label = "Custom",
+                label = stringResource(R.string.accent_custom),
                 fill = Brush.sweepGradient(hueStops()),
                 selected = custom != null,
             ) {
@@ -207,18 +210,18 @@ private fun AccentPicker(current: AccentChoice, onPick: (AccentChoice, Boolean) 
                     value = hue / 360f,
                     brush = Brush.horizontalGradient(hueStops()),
                     onValueChange = { v -> onPick(AccentChoice.Custom(v * 360f, saturation), true) },
-                    contentDescription = "Hue",
+                    contentDescription = stringResource(R.string.appearance_hue),
                     thumbColor = customSeed(hue, saturation),
                 )
                 GradientSlider(
                     value = saturation,
                     brush = Brush.horizontalGradient(listOf(customSeed(hue, 0f), customSeed(hue, 1f))),
                     onValueChange = { v -> onPick(AccentChoice.Custom(hue, v), true) },
-                    contentDescription = "Vibrance",
+                    contentDescription = stringResource(R.string.appearance_vibrance),
                     thumbColor = customSeed(hue, saturation),
                 )
                 Text(
-                    "Brightness is tuned per theme so text stays readable.",
+                    stringResource(R.string.appearance_brightness_note),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

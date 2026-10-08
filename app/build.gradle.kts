@@ -64,6 +64,11 @@ android {
     buildFeatures {
         compose = true
     }
+
+    androidResources {
+        // Lists the translated languages for Android 13's per-app language setting.
+        generateLocaleConfig = true
+    }
 }
 
 dependencies {

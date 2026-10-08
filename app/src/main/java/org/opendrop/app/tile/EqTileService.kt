@@ -3,6 +3,7 @@ package org.opendrop.app.tile
 import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.Intent
+import android.content.res.Resources
 import android.graphics.drawable.Icon
 import android.os.Build
 import android.service.quicksettings.Tile
@@ -34,7 +35,7 @@ class EqTileService : TileService() {
         scope?.cancel()
         scope = MainScope().also { s ->
             s.launch {
-                controller.state.map { TileContent.of(it) }.distinctUntilChanged().collect { show(it) }
+                controller.state.map { TileContent.of(resources, it) }.distinctUntilChanged().collect { show(it) }
             }
         }
     }
@@ -60,12 +61,12 @@ class EqTileService : TileService() {
         tile.state = content.state
         tile.icon = Icon.createWithResource(this, R.drawable.ic_stat_opendrop)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            tile.label = getString(R.string.tile_eq)
+            tile.label = getString(R.string.eq)
             tile.subtitle = content.subtitle
         } else {
-            tile.label = "${getString(R.string.tile_eq)} · ${content.subtitle}"
+            tile.label = "${getString(R.string.eq)} · ${content.subtitle}"
         }
-        tile.contentDescription = "${getString(R.string.tile_eq)}, ${content.subtitle}"
+        tile.contentDescription = "${getString(R.string.eq)}, ${content.subtitle}"
         tile.updateTile()
     }
 
@@ -83,22 +84,24 @@ class EqTileService : TileService() {
 
     private data class TileContent(val state: Int, val subtitle: String) {
         companion object {
-            fun of(s: UiState): TileContent = when (s.connection) {
+            fun of(res: Resources, s: UiState): TileContent = when (s.connection) {
                 Connection.Connected -> {
                     val preset = s.device.namedEqPreset
                     when {
                         !s.device.featuresKnown || s.device.variantName == null ->
-                            TileContent(Tile.STATE_INACTIVE, "Connecting…")
-                        s.device.switchableEqPresets.isEmpty() -> TileContent(Tile.STATE_UNAVAILABLE, "Not supported")
+                            TileContent(Tile.STATE_INACTIVE, res.getString(R.string.status_connecting))
+                        s.device.switchableEqPresets.isEmpty() ->
+                            TileContent(Tile.STATE_UNAVAILABLE, res.getString(R.string.tile_not_supported))
                         preset != null -> TileContent(Tile.STATE_ACTIVE, preset.label)
                         s.device.eqPresetId == null -> TileContent(Tile.STATE_ACTIVE, "–")
-                        else -> TileContent(Tile.STATE_ACTIVE, "Custom")
+                        else -> TileContent(Tile.STATE_ACTIVE, res.getString(R.string.tile_custom))
                     }
                 }
-                Connection.Connecting, Connection.Reconnecting -> TileContent(Tile.STATE_INACTIVE, "Connecting…")
+                Connection.Connecting, Connection.Reconnecting ->
+                    TileContent(Tile.STATE_INACTIVE, res.getString(R.string.status_connecting))
                 else -> TileContent(
                     Tile.STATE_INACTIVE,
-                    if (s.autoConnect != null) "Tap to connect" else "Not connected",
+                    res.getString(if (s.autoConnect != null) R.string.tap_to_connect else R.string.status_not_connected),
                 )
             }
         }

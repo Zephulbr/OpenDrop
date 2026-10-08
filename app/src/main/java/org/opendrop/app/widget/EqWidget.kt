@@ -4,6 +4,7 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
+import android.content.res.Resources
 import android.view.View
 import android.widget.RemoteViews
 import androidx.core.content.ContextCompat
@@ -20,7 +21,7 @@ import org.opendrop.protocol.EqPreset
 class EqWidget : AppWidgetProvider() {
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
         val app = context.applicationContext as OpenDropApplication
-        manager.updateAppWidget(ids, views(context, Content.of(app.controller.state.value)))
+        manager.updateAppWidget(ids, views(context, Content.of(context.resources, app.controller.state.value)))
     }
 
     data class Content(
@@ -33,17 +34,17 @@ class EqWidget : AppWidgetProvider() {
         val tapConnects: Boolean,
     ) {
         companion object {
-            fun of(s: UiState): Content {
+            fun of(res: Resources, s: UiState): Content {
                 val name = (s.selected ?: s.autoConnect)?.name ?: "OpenDrop"
                 val connected = s.connection == Connection.Connected
                 val presets = if (connected) s.device.switchableEqPresets else emptyList()
                 val disconnected = s.connection == Connection.Disconnected || s.connection is Connection.Failed
                 val tapConnects = disconnected && s.autoConnect != null
                 val status = when {
-                    connected -> if (presets.isEmpty()) "EQ not supported on this model yet" else ""
-                    !disconnected -> "Connecting…"
-                    tapConnects -> "Not connected · tap to connect"
-                    else -> "Not connected · tap to open"
+                    connected -> if (presets.isEmpty()) res.getString(R.string.widget_eq_unsupported) else ""
+                    !disconnected -> res.getString(R.string.status_connecting)
+                    tapConnects -> res.getString(R.string.widget_tap_connect)
+                    else -> res.getString(R.string.widget_tap_open)
                 }
                 return Content(name, presets, s.device.namedEqPreset, status, tapConnects)
             }
@@ -66,7 +67,7 @@ class EqWidget : AppWidgetProvider() {
 
         private fun views(context: Context, content: Content): RemoteViews =
             RemoteViews(context.packageName, R.layout.widget_eq).apply {
-                setTextViewText(R.id.eq_name, "${content.name} · EQ")
+                setTextViewText(R.id.eq_name, "${content.name} · ${context.getString(R.string.eq)}")
                 val showButtons = content.presets.isNotEmpty()
                 setViewVisibility(R.id.eq_buttons, if (showButtons) View.VISIBLE else View.GONE)
                 setViewVisibility(R.id.eq_status, if (showButtons) View.GONE else View.VISIBLE)
@@ -80,7 +81,7 @@ class EqWidget : AppWidgetProvider() {
                         id,
                         ContextCompat.getColor(context, if (on) R.color.widget_on_accent else R.color.widget_primary),
                     )
-                    setContentDescription(id, if (on) "${preset.label}, selected" else preset.label)
+                    setContentDescription(id, if (on) context.getString(R.string.widget_selected, preset.label) else preset.label)
                     setOnClickPendingIntent(id, WidgetActionReceiver.setEq(context, preset))
                 }
                 val tap = if (content.tapConnects) WidgetActionReceiver.connect(context) else WidgetActionReceiver.openApp(context)

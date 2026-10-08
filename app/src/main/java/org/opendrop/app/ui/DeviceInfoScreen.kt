@@ -20,7 +20,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import org.opendrop.app.R
 import org.opendrop.app.device.Connection
 import org.opendrop.app.device.UiState
 import org.opendrop.app.ui.components.InfoRow
@@ -40,86 +42,89 @@ private const val LOG_LINES_SHOWN = 100
 @Composable
 fun DeviceInfoScreen(state: UiState, onBack: () -> Unit) {
     val lines = state.log.takeLast(LOG_LINES_SHOWN)
+    val waiting = waitingOnCapture(state.device)
     Column(Modifier.fillMaxSize()) {
-        ScreenTopBar("Device info", onBack)
+        ScreenTopBar(stringResource(R.string.device_info), onBack)
         LazyColumn(
             contentPadding = PaddingValues(
                 bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 24.dp,
             ),
             modifier = Modifier.fillMaxSize(),
         ) {
-            item(key = "name") { InfoRow("Name", state.selected?.name ?: "–") }
-            item(key = "address") { InfoRow("Address", state.selected?.address ?: "–") }
+            item(key = "name") { InfoRow(stringResource(R.string.info_name), state.selected?.name ?: "–") }
+            item(key = "address") { InfoRow(stringResource(R.string.info_address), state.selected?.address ?: "–") }
             item(key = "model") {
                 val device = state.device
                 InfoRow(
-                    "Model",
+                    stringResource(R.string.info_model),
                     device.model?.name ?: device.variantName ?: "–",
-                    note = device.model?.let { "${it.chip.label()} chip, controlled over GAIA" }
-                        ?: device.variantName?.let { "Not in OpenDrop's model list, so it's read-only." },
+                    note = device.model?.let { stringResource(R.string.info_model_note, it.chip.label()) }
+                        ?: device.variantName?.let { stringResource(R.string.info_model_unknown) },
                 )
             }
-            item(key = "firmware") { InfoRow("Firmware", state.device.firmwareVersion ?: "–") }
+            item(key = "firmware") { InfoRow(stringResource(R.string.info_firmware), state.device.firmwareVersion ?: "–") }
             if (state.device.featuresKnown) {
                 item(key = "features") {
                     InfoRow(
-                        "GAIA features",
+                        stringResource(R.string.info_gaia_features),
                         state.device.features.keys.size.toString(),
                         note = state.device.features.keys.sorted().joinToString(", ") { GaiaFeature.name(it) },
                     )
                 }
             }
-            waitingOnCapture(state.device)?.let { waiting ->
+            waiting?.let { list ->
                 item(key = "needsCapture") {
                     InfoRow(
-                        "Not supported yet",
-                        waiting,
-                        note = "The device has these, but OpenDrop needs a capture before it sends their commands.",
+                        stringResource(R.string.info_not_supported_yet),
+                        list,
+                        note = stringResource(R.string.info_not_supported_note),
                     )
                 }
             }
             item(key = "battery") {
                 InfoRow(
-                    "Battery",
+                    stringResource(R.string.info_battery),
                     state.battery?.let { "$it %" } ?: "–",
-                    note = "One level for both earbuds, in 10 % steps. The case isn't reported.",
+                    note = stringResource(R.string.info_battery_note),
                 )
             }
             item(key = "link") {
                 InfoRow(
-                    "Control link",
-                    when (state.connection) {
-                        Connection.Connected -> "Connected"
-                        Connection.Connecting -> "Connecting"
-                        Connection.Reconnecting -> "Reconnecting"
-                        is Connection.Failed -> "Failed"
-                        Connection.Disconnected -> "Off"
-                    },
+                    stringResource(R.string.info_control_link),
+                    stringResource(
+                        when (state.connection) {
+                            Connection.Connected -> R.string.link_connected
+                            Connection.Connecting -> R.string.link_connecting
+                            Connection.Reconnecting -> R.string.link_reconnecting
+                            is Connection.Failed -> R.string.link_failed
+                            Connection.Disconnected -> R.string.link_off
+                        },
+                    ),
                 )
             }
             item(key = "eqCurve") {
                 InfoRow(
-                    "EQ curve",
-                    "Illustrative",
-                    note = "The curve on the home screen shows each preset's general shape. It isn't measured.",
+                    stringResource(R.string.info_eq_curve),
+                    stringResource(R.string.info_eq_curve_value),
+                    note = stringResource(R.string.info_eq_curve_note),
                 )
             }
             if (state.device.featuresKnown) {
                 item(key = "report") {
                     val context = LocalContext.current
                     NavRow(
-                        title = "Share device report",
-                        subtitle = "Model, features and packet log, to help add support for your device",
+                        title = stringResource(R.string.info_share_report),
+                        subtitle = stringResource(R.string.info_share_report_subtitle),
                         onClick = { shareReport(context, state) },
                     )
                 }
             }
             item(key = "developerGap") { Spacer(Modifier.height(Dimens.SectionGap)) }
-            item(key = "developer") { SectionTitle("Developer · packet log") }
+            item(key = "developer") { SectionTitle(stringResource(R.string.info_packet_log)) }
             if (lines.isEmpty()) {
                 item(key = "empty") {
                     Text(
-                        "No packets yet.",
+                        stringResource(R.string.info_no_packets),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = Dimens.Gutter),
@@ -147,10 +152,13 @@ private fun Chip.label(): String = when (this) {
 }
 
 /** Capabilities the device has that wait on a capture, as a readable list; null if none. */
-internal fun waitingOnCapture(device: GaiaDeviceState): String? =
-    device.capabilities.filterValues { it == Support.NEEDS_CAPTURE }.keys
-        .takeIf { it.isNotEmpty() }
-        ?.joinToString(", ") { it.label }
+@Composable
+internal fun waitingOnCapture(device: GaiaDeviceState): String? {
+    val waiting = device.capabilities.filterValues { it == Support.NEEDS_CAPTURE }.keys
+    if (waiting.isEmpty()) return null
+    val resources = LocalContext.current.resources
+    return waiting.joinToString(", ") { resources.getString(it.labelRes()) }
+}
 
 /** Opens the share sheet with a plain-text report. Nothing is sent unless the user picks a target. */
 private fun shareReport(context: Context, state: UiState) {
@@ -172,5 +180,5 @@ private fun shareReport(context: Context, state: UiState) {
         putExtra(Intent.EXTRA_SUBJECT, "OpenDrop device report: ${state.device.variantName ?: state.selected?.name}")
         putExtra(Intent.EXTRA_TEXT, report)
     }
-    context.startActivity(Intent.createChooser(send, "Share device report"))
+    context.startActivity(Intent.createChooser(send, context.getString(R.string.info_share_report)))
 }

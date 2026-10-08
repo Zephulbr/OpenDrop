@@ -19,15 +19,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import org.opendrop.app.R
 import org.opendrop.app.ui.theme.Dimens
 
 private val steps = listOf(
-    "Pair first" to "Pair your Moondrop earbuds in Android's Bluetooth settings. OpenDrop finds them there.",
-    "Close MOONDROP Link" to "Only one app can talk to the earbuds at a time. Swipe Link away from recent apps.",
-    "Honest controls" to "OpenDrop shows only what your earbuds' firmware offers. Models it doesn't know yet " +
-        "are read-only, and a device report from Device info helps add them.",
-    "Also without earbuds" to "The phone EQ works with any headphones, and USB DACs show up when plugged in.",
+    R.string.onboarding_pair_title to R.string.onboarding_pair_body,
+    R.string.onboarding_link_title to R.string.onboarding_link_body,
+    R.string.onboarding_honest_title to R.string.onboarding_honest_body,
+    R.string.onboarding_more_title to R.string.onboarding_more_body,
 )
 
 /** First run: what to do before connecting, and what to expect. Shown once. */
@@ -41,9 +42,9 @@ fun OnboardingScreen(onDone: () -> Unit) {
             .padding(horizontal = Dimens.Gutter, vertical = 32.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
-        Text("Welcome to OpenDrop", style = MaterialTheme.typography.headlineMedium)
+        Text(stringResource(R.string.onboarding_title), style = MaterialTheme.typography.headlineMedium)
         Text(
-            "An open-source app for Moondrop audio devices. Not affiliated with Moondrop.",
+            stringResource(R.string.onboarding_intro),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -56,13 +57,13 @@ fun OnboardingScreen(onDone: () -> Unit) {
                     modifier = Modifier.width(28.dp),
                 )
                 Column(Modifier.weight(1f)) {
-                    Text(title, style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(title), style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(4.dp))
-                    Text(body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(body), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
         Spacer(Modifier.height(8.dp))
-        Button(onClick = onDone, modifier = Modifier.fillMaxWidth()) { Text("Get started") }
+        Button(onClick = onDone, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.onboarding_start)) }
     }
 }

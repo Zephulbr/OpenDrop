@@ -4,23 +4,26 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
+import android.content.res.Resources
 import android.widget.RemoteViews
 import androidx.core.content.ContextCompat
 import org.opendrop.app.OpenDropApplication
 import org.opendrop.app.R
 import org.opendrop.app.phoneeq.PhoneEq
 import org.opendrop.app.phoneeq.PhoneEqState
+import org.opendrop.app.ui.labelRes
 
 /** Phone EQ widget: on/off and the current curve; the button toggles it. */
 class PhoneEqWidget : AppWidgetProvider() {
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
         val app = context.applicationContext as OpenDropApplication
-        manager.updateAppWidget(ids, views(context, Content.of(app.phoneEq.state.value)))
+        manager.updateAppWidget(ids, views(context, Content.of(context.resources, app.phoneEq.state.value)))
     }
 
     data class Content(val enabled: Boolean, val curve: String) {
         companion object {
-            fun of(s: PhoneEqState) = Content(s.enabled, s.preset?.label ?: "Custom")
+            fun of(res: Resources, s: PhoneEqState) =
+                Content(s.enabled, res.getString(s.preset?.labelRes() ?: R.string.peq_custom))
         }
     }
 
@@ -34,7 +37,11 @@ class PhoneEqWidget : AppWidgetProvider() {
 
         private fun views(context: Context, content: Content): RemoteViews =
             RemoteViews(context.packageName, R.layout.widget_phone_eq).apply {
-                val state = if (content.enabled) "On · ${content.curve}" else context.getString(R.string.widget_off)
+                val state = if (content.enabled) {
+                    context.getString(R.string.widget_phone_eq_on, content.curve)
+                } else {
+                    context.getString(R.string.state_off)
+                }
                 setTextViewText(R.id.phone_eq_state, state)
                 setTextViewText(
                     R.id.phone_eq_toggle,

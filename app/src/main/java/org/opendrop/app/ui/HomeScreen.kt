@@ -58,6 +58,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
@@ -70,6 +71,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
+import org.opendrop.app.R
 import org.opendrop.app.device.Connection
 import org.opendrop.app.device.PairedDevice
 import org.opendrop.app.device.UiState
@@ -123,7 +125,7 @@ fun HomeScreen(
     val phase = state.phase
     val motion = LocalMotion.current
     val insets = WindowInsets.safeDrawing.asPaddingValues()
-    val name = if (phase == Phase.Device) state.selected?.name ?: "Earbuds" else "OpenDrop"
+    val name = if (phase == Phase.Device) state.selected?.name ?: stringResource(R.string.earbuds) else "OpenDrop"
     val battery = state.battery.takeIf { phase == Phase.Device }
     var showOthers by rememberSaveable { mutableStateOf(false) }
 
@@ -140,6 +142,7 @@ fun HomeScreen(
     }
     // Preset names (and the curve) are the Space Travel's; other models' ids mean other things.
     val shownEq = pendingEq ?: state.device.namedEqPreset
+    val supportNote = supportNote(state)
 
     Box(
         Modifier
@@ -164,7 +167,7 @@ fun HomeScreen(
                     PermissionSection(onPermissionResult, Modifier.animateItem())
                 }
                 Phase.BluetoothOff -> item(key = "bluetoothOff") {
-                    Message("Turn on Bluetooth, then come back.", Modifier.animateItem())
+                    Message(stringResource(R.string.home_bluetooth_off), Modifier.animateItem())
                 }
                 Phase.Picker -> {
                     (state.connection as? Connection.Failed)?.let { failed ->
@@ -181,10 +184,9 @@ fun HomeScreen(
                         item(key = "autoConnect") {
                             Message(
                                 if (state.autoConnectPaused) {
-                                    "Auto-connect is paused until you connect again."
+                                    stringResource(R.string.home_autoconnect_paused)
                                 } else {
-                                    "OpenDrop connects to ${remembered.name} on its own once it's connected to " +
-                                        "your phone."
+                                    stringResource(R.string.home_autoconnect_on, remembered.name)
                                 },
                                 Modifier
                                     .animateItem()
@@ -200,14 +202,14 @@ fun HomeScreen(
                     if (main.isEmpty()) {
                         item(key = "noDevices") {
                             Message(
-                                "No Moondrop devices paired. Pair your earbuds in Android's Bluetooth settings first.",
+                                stringResource(R.string.home_no_devices),
                                 Modifier
                                     .animateItem()
                                     .padding(bottom = Dimens.SectionGap),
                             )
                         }
                     } else {
-                        item(key = "pairedTitle") { SectionTitle("Paired devices", Modifier.animateItem()) }
+                        item(key = "pairedTitle") { SectionTitle(stringResource(R.string.home_paired_devices), Modifier.animateItem()) }
                         items(main, key = { it.address }) { device ->
                             DeviceRow(
                                 device,
@@ -230,9 +232,9 @@ fun HomeScreen(
                             ) {
                                 Text(
                                     if (showOthers) {
-                                        "Hide other Bluetooth devices"
+                                        stringResource(R.string.home_hide_others)
                                     } else {
-                                        "Show other Bluetooth devices (${others.size})"
+                                        stringResource(R.string.home_show_others, others.size)
                                     },
                                 )
                             }
@@ -254,11 +256,11 @@ fun HomeScreen(
                     val usb = usbDevices.filter { it.relevant }
                     if (usb.isNotEmpty()) {
                         item(key = "usbGap") { Spacer(Modifier.height(Dimens.SectionGap)) }
-                        item(key = "usbTitle") { SectionTitle("USB devices", Modifier.animateItem()) }
+                        item(key = "usbTitle") { SectionTitle(stringResource(R.string.home_usb_devices), Modifier.animateItem()) }
                         items(usb, key = { "usb:" + it.key }) { entry ->
                             NavRow(
                                 title = entry.title,
-                                subtitle = if (entry.likelyMoondrop) "Read-only for now" else "USB audio",
+                                subtitle = stringResource(if (entry.likelyMoondrop) R.string.usb_read_only else R.string.usb_audio),
                                 onClick = { onOpenUsb(entry.key) },
                                 modifier = Modifier.animateItem(),
                             )
@@ -267,9 +269,9 @@ fun HomeScreen(
                     item(key = "pickerPhoneEqGap") { Spacer(Modifier.height(Dimens.SectionGap)) }
                     item(key = "pickerPhoneEq") {
                         NavRow(
-                            title = "Phone EQ",
-                            subtitle = "EQ for any headphones, on the phone",
-                            value = if (phoneEqOn) "On" else "Off",
+                            title = stringResource(R.string.phone_eq),
+                            subtitle = stringResource(R.string.home_phone_eq_subtitle),
+                            value = stringResource(if (phoneEqOn) R.string.state_on else R.string.state_off),
                             onClick = onOpenPhoneEq,
                             modifier = Modifier.animateItem(),
                         )
@@ -292,7 +294,7 @@ fun HomeScreen(
                         }
                         item(key = "eqGap") { Spacer(Modifier.height(Dimens.SectionGap)) }
                     }
-                    supportNote(state)?.let { note ->
+                    supportNote?.let { note ->
                         item(key = "supportNote") {
                             Message(
                                 note,
@@ -309,15 +311,15 @@ fun HomeScreen(
                     item(key = "volumeGap") { Spacer(Modifier.height(Dimens.SectionGap)) }
                     item(key = "phoneEq") {
                         NavRow(
-                            title = "Phone EQ",
-                            value = if (phoneEqOn) "On" else "Off",
+                            title = stringResource(R.string.phone_eq),
+                            value = stringResource(if (phoneEqOn) R.string.state_on else R.string.state_off),
                             onClick = onOpenPhoneEq,
                             modifier = Modifier.animateItem(),
                         )
                     }
                     item(key = "deviceInfo") {
                         NavRow(
-                            title = "Device info",
+                            title = stringResource(R.string.device_info),
                             value = state.device.firmwareVersion,
                             onClick = onOpenDeviceInfo,
                             modifier = Modifier.animateItem(),
@@ -359,7 +361,7 @@ private fun NotificationPermissionRequest(connection: Connection) {
 private fun DeviceRow(device: PairedDevice, onConnect: (PairedDevice) -> Unit, modifier: Modifier = Modifier) {
     NavRow(
         title = device.name,
-        subtitle = if (device.likelyMoondrop) "Tap to connect" else "Not recognised as Moondrop",
+        subtitle = stringResource(if (device.likelyMoondrop) R.string.tap_to_connect else R.string.not_moondrop),
         onClick = { onConnect(device) },
         modifier = modifier,
     )
@@ -413,14 +415,17 @@ private fun HeroSection(state: UiState, phase: Phase, name: String, battery: Int
     }
 }
 
-private fun statusLabel(connection: Connection, phase: Phase): String = when {
-    phase == Phase.Permission || phase == Phase.BluetoothOff -> "Not connected"
-    connection == Connection.Connected -> "Connected"
-    connection == Connection.Connecting -> "Connecting…"
-    connection == Connection.Reconnecting -> "Reconnecting…"
-    connection is Connection.Failed -> "Couldn't connect"
-    else -> "Not connected"
-}
+@Composable
+private fun statusLabel(connection: Connection, phase: Phase): String = stringResource(
+    when {
+        phase == Phase.Permission || phase == Phase.BluetoothOff -> R.string.status_not_connected
+        connection == Connection.Connected -> R.string.status_connected
+        connection == Connection.Connecting -> R.string.status_connecting
+        connection == Connection.Reconnecting -> R.string.status_reconnecting
+        connection is Connection.Failed -> R.string.status_failed
+        else -> R.string.status_not_connected
+    },
+)
 
 @Composable
 private fun statusColor(connection: Connection, phase: Phase) = when {
@@ -501,24 +506,23 @@ private fun CollapsingTopBar(listState: LazyListState, name: String, battery: In
                 .align(Alignment.CenterEnd)
                 .padding(end = 4.dp),
         ) {
-            Icon(Icons.Filled.Settings, contentDescription = "Settings")
+            Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings))
         }
     }
 }
 
 /** Why controls are missing for a connected device, if they are. */
+@Composable
 private fun supportNote(state: UiState): String? {
     val device = state.device
     if (state.connection != Connection.Connected || device.variantName == null) return null
+    val waiting = waitingOnCapture(device)
     return when {
-        !device.canControl ->
-            "OpenDrop doesn't know \"${device.variantName}\" yet, so it only reads from it. " +
-                "Device info shows what it reports."
+        !device.canControl -> stringResource(R.string.support_unknown_model, device.variantName.orEmpty())
         device.support(Capability.EQ_PRESETS) == Support.READ_ONLY ->
-            "EQ preset ${device.eqPresetId ?: "–"}. Switching presets isn't supported on this model yet."
-        else -> waitingOnCapture(device)?.let {
-            "Not supported yet: $it. Sharing a device report (in Device info) helps add them."
-        }
+            stringResource(R.string.support_eq_read_only, device.eqPresetId?.toString() ?: "–")
+        waiting != null -> stringResource(R.string.support_needs_capture, waiting)
+        else -> null
     }
 }
 
@@ -532,7 +536,7 @@ private fun EqSection(
 ) {
     val haptics = LocalHaptics.current
     Column(modifier.fillMaxWidth()) {
-        SectionTitle("EQ")
+        SectionTitle(stringResource(R.string.eq))
         SegmentedSelector(
             options = options,
             selected = shown,
@@ -545,9 +549,9 @@ private fun EqSection(
         )
         Spacer(Modifier.height(8.dp))
         val hint = if (confirmedId != null && EqPreset.of(confirmedId) == null) {
-            "Unknown preset ($confirmedId). Switching may pop briefly."
+            stringResource(R.string.eq_unknown_preset, confirmedId)
         } else {
-            "Switching may pop briefly. Lower the volume first."
+            stringResource(R.string.eq_switch_hint)
         }
         Text(
             hint,
@@ -580,7 +584,7 @@ private fun VolumeSection(volume: Int, maxVolume: Int, onVolume: (Int) -> Unit, 
                 .padding(end = Dimens.Gutter),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            SectionTitle("Volume", Modifier.weight(1f))
+            SectionTitle(stringResource(R.string.volume), Modifier.weight(1f))
             RollingNumber(volume, MonoValue, color = colors.onSurfaceVariant, modifier = Modifier.padding(bottom = 8.dp))
         }
         Slider(
@@ -630,7 +634,7 @@ private fun DisconnectButton(connection: Connection, onDisconnect: () -> Unit, m
         contentAlignment = Alignment.Center,
     ) {
         TextButton(onClick = onDisconnect) {
-            Text(if (connection == Connection.Connected) "Disconnect" else "Cancel")
+            Text(stringResource(if (connection == Connection.Connected) R.string.action_disconnect else R.string.cancel))
         }
     }
 }
@@ -643,7 +647,7 @@ private fun PermissionSection(onResult: () -> Unit, modifier: Modifier = Modifie
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(
-            "OpenDrop needs permission to talk to your paired earbuds. It doesn't scan or use your location.",
+            stringResource(R.string.permission_explain),
             style = MaterialTheme.typography.bodyLarge,
         )
         Button(onClick = {
@@ -652,7 +656,7 @@ private fun PermissionSection(onResult: () -> Unit, modifier: Modifier = Modifie
             } else {
                 onResult()
             }
-        }) { Text("Allow Bluetooth access") }
+        }) { Text(stringResource(R.string.permission_allow)) }
     }
 }
 
@@ -669,18 +673,18 @@ private fun ErrorNote(deviceName: String?, message: String, onRetry: (() -> Unit
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Text(
-            "Couldn't connect to ${deviceName ?: "the earbuds"}",
+            stringResource(R.string.error_title, deviceName ?: stringResource(R.string.the_earbuds)),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.error,
         )
-        Text(LinkError.of(message).advice, style = MaterialTheme.typography.bodyMedium)
+        Text(stringResource(LinkError.of(message).adviceRes()), style = MaterialTheme.typography.bodyMedium)
         Text(
-            "Details: $message",
+            stringResource(R.string.error_details, message),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         onRetry?.let { retry ->
-            TextButton(onClick = retry) { Text("Try again") }
+            TextButton(onClick = retry) { Text(stringResource(R.string.try_again)) }
         }
     }
 }

@@ -36,11 +36,13 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import kotlin.math.exp
+import org.opendrop.app.R
 import org.opendrop.app.ui.theme.Dimens
 import org.opendrop.app.ui.theme.LocalMotion
 import org.opendrop.app.ui.theme.MonoValue
@@ -117,10 +119,11 @@ fun EqCurveHero(mode: HeroMode, preset: EqPreset?, modifier: Modifier = Modifier
     }
 
     val label = when {
-        mode == HeroMode.Disconnected -> "No EQ"
-        preset == null -> if (connected) "Unknown preset" else "EQ"
+        mode == HeroMode.Disconnected -> stringResource(R.string.hero_no_eq)
+        preset == null -> stringResource(if (connected) R.string.hero_unknown_preset else R.string.eq)
         else -> preset.label
     }
+    val curveDescription = stringResource(R.string.hero_curve_description, label)
     val grid = colors.outline
     val accent = colors.primary
     val dashed = mode == HeroMode.Disconnected
@@ -129,7 +132,7 @@ fun EqCurveHero(mode: HeroMode, preset: EqPreset?, modifier: Modifier = Modifier
         modifier
             .fillMaxWidth()
             .padding(horizontal = Dimens.Gutter)
-            .clearAndSetSemantics { contentDescription = "EQ curve, $label" },
+            .clearAndSetSemantics { contentDescription = curveDescription },
     ) {
         Text(label, style = MaterialTheme.typography.titleMedium, color = colors.onSurfaceVariant)
         Spacer(Modifier.height(12.dp))
@@ -221,8 +224,9 @@ fun BatteryMeter(level: Int, modifier: Modifier = Modifier) {
             label = "meterSegment",
         )
     }
+    val description = stringResource(R.string.hero_battery_description, level)
     Row(
-        modifier.semantics(mergeDescendants = true) { contentDescription = "Battery $level percent" },
+        modifier.semantics(mergeDescendants = true) { contentDescription = description },
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Canvas(Modifier.size(width = 84.dp, height = 10.dp)) {
