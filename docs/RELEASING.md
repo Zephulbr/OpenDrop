@@ -27,14 +27,17 @@ uninstalling the debug-signed build first (Android rejects a key change).
 
 1. Bump `versionCode` and `versionName` in `app/build.gradle.kts`.
 2. Add `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt`
-   (500 characters at most; F-Droid shows it).
+   (500 characters at most; F-Droid shows it, and the release workflow
+   also uses it as the GitHub release notes).
 3. Merge to `main`, then tag that commit and push the tag:
    ```sh
-   git tag -a v0.5.0 -m "OpenDrop 0.5.0"
-   git push origin v0.5.0
+   git tag -a v0.5.1 -m "OpenDrop 0.5.1"
+   git push origin v0.5.1
    ```
 4. The **Release** workflow checks the tag matches `versionName`, runs the
-   tests, builds the release APK and publishes a GitHub Release with it.
+   tests and lint, builds the release APK and publishes a GitHub Release
+   with it (the changelog from step 2 as the notes, plus the generated
+   PR list, marked as a full release rather than a pre-release).
 
 ## F-Droid
 
