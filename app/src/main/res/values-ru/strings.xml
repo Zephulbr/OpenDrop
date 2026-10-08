@@ -137,6 +137,7 @@
     <string name="peq_import_invalid">Это не текст ParametricEQ или GraphicEQ из AutoEQ.</string>
     <string name="peq_imported_graphic">Импортирован графический эквалайзер, точек: %1$d, предусиление %2$s dB.</string>
     <string name="peq_imported_parametric">Импортировано фильтров: %1$d, предусиление %2$s dB.</string>
+    <string name="peq_import_truncated">Удалось прочитать только первые %1$d КБ; кривая может быть обрезана.</string>
     <string name="peq_needs_android9">Эквалайзеру телефона нужен Android 9 или новее.</string>
     <string name="peq_no_filters">Фильтров нет: кривая ровная.</string>
     <string name="peq_paste">Вставить</string>

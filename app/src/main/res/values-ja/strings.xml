@@ -137,6 +137,7 @@
     <string name="peq_import_invalid">AutoEQ の ParametricEQ または GraphicEQ のテキストではありません。</string>
     <string name="peq_imported_graphic">%1$d ポイントのグラフィック EQ を読み込みました。プリアンプ %2$s dB。</string>
     <string name="peq_imported_parametric">%1$d 個のフィルターを読み込みました。プリアンプ %2$s dB。</string>
+    <string name="peq_import_truncated">最初の %1$d KB しか読み込めませんでした。カーブが途切れている可能性があります。</string>
     <string name="peq_needs_android9">スマホ EQ には Android 9 以降が必要です。</string>
     <string name="peq_no_filters">フィルターなし：カーブはフラットです。</string>
     <string name="peq_paste">貼り付け</string>

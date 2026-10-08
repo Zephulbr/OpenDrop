@@ -137,6 +137,7 @@
     <string name="peq_import_invalid">Das ist kein ParametricEQ- oder GraphicEQ-Text von AutoEQ.</string>
     <string name="peq_imported_graphic">Grafischer EQ mit %1$d Punkten importiert, Vorverstärkung %2$s dB.</string>
     <string name="peq_imported_parametric">%1$d Filter importiert, Vorverstärkung %2$s dB.</string>
+    <string name="peq_import_truncated">Nur die ersten %1$d KB konnten gelesen werden; die Kurve ist möglicherweise abgeschnitten.</string>
     <string name="peq_needs_android9">Der Handy-EQ braucht Android 9 oder neuer.</string>
     <string name="peq_no_filters">Keine Filter: Die Kurve ist neutral.</string>
     <string name="peq_paste">Einfügen</string>

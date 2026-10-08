@@ -137,6 +137,7 @@
     <string name="peq_import_invalid">AutoEQ ParametricEQ 또는 GraphicEQ 텍스트가 아닙니다.</string>
     <string name="peq_imported_graphic">%1$d개 지점의 그래픽 EQ를 가져왔습니다. 프리앰프 %2$s dB.</string>
     <string name="peq_imported_parametric">필터 %1$d개를 가져왔습니다. 프리앰프 %2$s dB.</string>
+    <string name="peq_import_truncated">처음 %1$d KB만 읽을 수 있었습니다. 커브가 잘렸을 수 있습니다.</string>
     <string name="peq_needs_android9">휴대폰 EQ는 Android 9 이상이 필요합니다.</string>
     <string name="peq_no_filters">필터 없음: 곡선이 평탄합니다.</string>
     <string name="peq_paste">붙여넣기</string>

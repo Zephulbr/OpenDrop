@@ -35,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -53,6 +54,9 @@ import androidx.compose.ui.unit.dp
 import java.util.Locale
 import kotlin.math.ln
 import kotlin.math.pow
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.opendrop.app.R
 import org.opendrop.app.phoneeq.PhoneEq
 import org.opendrop.app.phoneeq.PhoneEqState
@@ -88,9 +92,16 @@ fun PhoneEqScreen(
 ) {
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
+    val scope = rememberCoroutineScope()
     var message by remember { mutableStateOf<String?>(null) }
     val import = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) message = importCurve(context.resources, readText(context, uri), onCustom)
+        if (uri != null) {
+            scope.launch(Dispatchers.IO) {
+                val imported = readText(context, uri)
+                val result = importCurve(context.resources, imported, onCustom)
+                withContext(Dispatchers.Main) { message = result }
+            }
+        }
     }
 
     Column(Modifier.fillMaxSize()) {
@@ -160,8 +171,16 @@ fun PhoneEqScreen(
                 stringResource(R.string.peq_autoeq_note),
             )
             Row(Modifier.padding(horizontal = Dimens.Gutter), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { import.launch(arrayOf("text/*")) }) { Text(stringResource(R.string.peq_import_file)) }
-                OutlinedButton(onClick = { message = importCurve(context.resources, clipboard.getText()?.text, onCustom) }) {
+                OutlinedButton(onClick = { import.launch(arrayOf("text/*", "application/octet-stream")) }) { Text(stringResource(R.string.peq_import_file)) }
+                OutlinedButton(
+                    onClick = {
+                        message = importCurve(
+                            context.resources,
+                            ImportedText(clipboard.getText()?.text?.take(MAX_IMPORT_CHARS), truncated = false),
+                            onCustom,
+                        )
+                    },
+                ) {
                     Text(stringResource(R.string.peq_paste))
                 }
                 TextButton(onClick = { share(context, state.curve) }) { Text(stringResource(R.string.peq_share)) }
@@ -171,24 +190,35 @@ fun PhoneEqScreen(
     }
 }
 
+private data class ImportedText(val text: String?, val truncated: Boolean)
+
 /** Parses AutoEQ text into the custom curve; returns a message for the user. */
-private fun importCurve(res: Resources, text: String?, onCustom: (EqCurve) -> Unit): String {
-    val curve = text?.take(MAX_IMPORT_CHARS)?.let(AutoEq::parse)
+private fun importCurve(res: Resources, imported: ImportedText, onCustom: (EqCurve) -> Unit): String {
+    val curve = imported.text?.let(AutoEq::parse)
         ?: return res.getString(R.string.peq_import_invalid)
     onCustom(curve)
-    return when (curve) {
-        is ParametricEq -> res.getString(R.string.peq_imported_parametric, curve.filters.size, fmt(curve.preamp))
-        is GraphicEq -> res.getString(R.string.peq_imported_graphic, curve.points.size, fmt(curve.preamp))
+    return buildString {
+        append(
+            when (curve) {
+                is ParametricEq -> res.getString(R.string.peq_imported_parametric, curve.filters.size, fmt(curve.preamp))
+                is GraphicEq -> res.getString(R.string.peq_imported_graphic, curve.points.size, fmt(curve.preamp))
+            },
+        )
+        if (imported.truncated) append(' ').append(res.getString(R.string.peq_import_truncated, MAX_IMPORT_CHARS / 1_000))
     }
 }
 
-private fun readText(context: Context, uri: Uri): String? = runCatching {
+private fun readText(context: Context, uri: Uri): ImportedText = runCatching {
     context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { reader ->
-        val buffer = CharArray(MAX_IMPORT_CHARS)
+        val buffer = CharArray(MAX_IMPORT_CHARS + 1)
         val n = reader.read(buffer)
-        if (n > 0) String(buffer, 0, n) else null
-    }
-}.getOrNull()
+        when {
+            n <= 0 -> ImportedText(null, truncated = false)
+            n > MAX_IMPORT_CHARS -> ImportedText(String(buffer, 0, MAX_IMPORT_CHARS), truncated = true)
+            else -> ImportedText(String(buffer, 0, n), truncated = false)
+        }
+    } ?: ImportedText(null, truncated = false)
+}.getOrDefault(ImportedText(null, truncated = false))
 
 private fun share(context: Context, curve: EqCurve) {
     val send = Intent(Intent.ACTION_SEND)

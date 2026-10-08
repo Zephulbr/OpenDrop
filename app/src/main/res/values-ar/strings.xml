@@ -137,6 +137,7 @@
     <string name="peq_import_invalid">هذا ليس نص ParametricEQ أو GraphicEQ من AutoEQ.</string>
     <string name="peq_imported_graphic">تم استيراد معادل رسومي بـ %1$d نقطة، التضخيم المسبق %2$s dB.</string>
     <string name="peq_imported_parametric">تم استيراد %1$d مرشّحات، التضخيم المسبق %2$s dB.</string>
+    <string name="peq_import_truncated">تمت قراءة أول %1$d كيلوبايت فقط؛ وقد يكون المنحنى مقطوعًا.</string>
     <string name="peq_needs_android9">يتطلب معادل الهاتف Android 9 أو أحدث.</string>
     <string name="peq_no_filters">لا مرشّحات: المنحنى مستوٍ.</string>
     <string name="peq_paste">لصق</string>

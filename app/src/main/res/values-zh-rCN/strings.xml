@@ -137,6 +137,7 @@
     <string name="peq_import_invalid">这不是 AutoEQ 的 ParametricEQ 或 GraphicEQ 文本。</string>
     <string name="peq_imported_graphic">已导入图形 EQ，共 %1$d 个点，前级增益 %2$s dB。</string>
     <string name="peq_imported_parametric">已导入 %1$d 个滤波器，前级增益 %2$s dB。</string>
+    <string name="peq_import_truncated">只能读取前 %1$d KB；曲线可能被截断。</string>
     <string name="peq_needs_android9">手机 EQ 需要 Android 9 或更高版本。</string>
     <string name="peq_no_filters">没有滤波器：曲线是平直的。</string>
     <string name="peq_paste">粘贴</string>

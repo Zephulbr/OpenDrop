@@ -137,6 +137,7 @@
     <string name="peq_import_invalid">Isso não é um texto ParametricEQ ou GraphicEQ do AutoEQ.</string>
     <string name="peq_imported_graphic">EQ gráfico com %1$d pontos importado, pré-amplificação %2$s dB.</string>
     <string name="peq_imported_parametric">%1$d filtros importados, pré-amplificação %2$s dB.</string>
+    <string name="peq_import_truncated">Só foi possível ler os primeiros %1$d KB; a curva pode estar cortada.</string>
     <string name="peq_needs_android9">O EQ do celular precisa do Android 9 ou mais recente.</string>
     <string name="peq_no_filters">Sem filtros: a curva é plana.</string>
     <string name="peq_paste">Colar</string>
