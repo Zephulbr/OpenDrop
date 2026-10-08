@@ -132,7 +132,9 @@ class DeviceController(private val context: Context) {
             addAction(ACTION_VOLUME_CHANGED)
             addAction(BluetoothAdapter.ACTION_STATE_CHANGED)
         }
-        ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_EXPORTED)
+        // The battery and volume actions aren't protected broadcasts; NOT_EXPORTED
+        // still receives the system's copies but ignores third-party spoofs.
+        ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
         refresh()
     }
 

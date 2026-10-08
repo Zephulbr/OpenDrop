@@ -63,9 +63,9 @@ class UsbController(private val context: Context) {
             addAction(UsbManager.ACTION_USB_DEVICE_DETACHED)
             addAction(ACTION_PERMISSION)
         }
-        // Exported for the system's attach/detach broadcasts. Anyone could send
-        // these actions, but all they do is trigger a re-read.
-        ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_EXPORTED)
+        // NOT_EXPORTED: system attach/detach broadcasts still arrive, and the
+        // permission-grant broadcast is explicit to this package.
+        ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
         refresh()
     }
 
