@@ -56,13 +56,19 @@ The Space Travel runs on a Bluetrum chip yet speaks GAIA, and Link sends
 EQ gains for Bluetrum devices through its GAIA music-processing plugin. So
 GAIA is Moondrop's common protocol across chip vendors, not a Qualcomm-only one.
 
-**Other chip families in the app:**
+**GAIA is the control channel for every Bluetooth chip family.** Link's Dart
+code talks of the "normal connection" for Airoha, Bluetrum and Jieli devices
+as a GAIA connection, and disconnects GAIA before handing the device to each
+vendor's own firmware-update tool. The chip SDKs are mostly for firmware
+updates:
 
-| Family | What Link does with it | Transport |
+| Chip type (Link's names) | Beyond GAIA, Link uses | Transport |
 |---|---|---|
-| Airoha (AB1562, AB1562E, AB1565, AB1568, incl. dual/V3 variants) | Full control via the Airoha SDK: ANC, PEQ, buttons, firmware update | SPP (seen); BLE likely |
-| Bluetrum | EQ via GAIA (above); firmware update (FOTA, USB HID OTA) | SPP, BLE service `0xAE00`, USB HID |
-| Jieli | Firmware update only (RCSP OTA, USB OTA) | BLE / USB |
+| `qualcomm` | Nothing extra | SPP |
+| `bluetrum`, `bluetrum10`, `bluetrumusb` | Firmware update (FOTA over SPP, USB HID OTA) | SPP, BLE service `0xAE00`, USB HID |
+| `airoha` (AB1562, AB1562E, AB1565, AB1568, incl. dual/V3 variants) | Airoha SDK: firmware update, and PEQ and ANC on some models | SPP |
+| `jieli`, `jieliusb` | Firmware update (RCSP OTA, USB OTA) | SPP / USB |
+| `actions`, `synaptics` | Listed as chip types; no Bluetooth code seen | ? |
 
 **USB devices: three protocol families.** All on Android USB host:
 
@@ -74,10 +80,14 @@ GAIA is Moondrop's common protocol across chip vendors, not a Qualcomm-only one.
 
 Plus a fourth, smaller "Jiu" EQ path and a factory SPP tool (serial numbers).
 
-**Still unknown: which model uses which family.** That mapping is not in the
-Java layer. It lives in the Flutter (Dart) code, in `lib/arm64-v8a/libapp.so`,
-which the analysed copy didn't include. Its strings should give the model to
-family table and fill in the Protocol column below.
+**Which model uses which chip comes from Moondrop's server.** Only a few model
+names are built into the app (`ZZZ-ANGELS-OWS`, `ECHO-BP`, `MOONDROP MM3A`,
+`Moondrop U.C.T.S.`, `MOONDROP Marigold`, `MOONDROP Rays`, the four `Pill`
+editions, `PANDAER Open Air Pill`), for special cases. The product catalogue,
+with fields such as `chipType`, `connectionType` and `deviceFuncList`, is
+downloaded from `https://cdn-service.moondroplab.tech/api/v1/products/all`.
+For Bluetooth models the GAIA feature list matters more anyway: the device
+reports it itself.
 
 ## Device list
 
@@ -151,7 +161,7 @@ devices and 8 unknown.
 
 ## How to fill in the Protocol column
 
-1. **`libapp.so` from the Link APK** (see above): model-to-family mapping.
+1. **Link's product catalogue** (see above): chip and connection type per model.
 2. **Prior art.** Gadgetbridge supports some Moondrop models over GAIA. Check
    which ones and credit them (facts only, no code; see the legal note in the
    protocol notes).
@@ -168,7 +178,8 @@ devices and 8 unknown.
   reports, with small per-model overrides (like the Space Travel EQ pop warning).
   Moondrop features (13 to 35) are added one at a time as we confirm their
   commands with captures.
-- An Airoha driver next, if the model mapping shows many Airoha models.
+- Airoha's own SDK protocol only if an Airoha model turns out to need it for
+  something GAIA doesn't offer (firmware updates stay out of scope).
 - Unknown devices connect in a read-only experimental mode with the packet
   log, so owners can send us captures.
 - USB devices get their own transport and driver, later (roadmap "Later").
