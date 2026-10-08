@@ -188,6 +188,7 @@
     <string name="usb_allow_subtitle">보고서를 위해 OpenDrop이 기기 디스크립터를 읽도록 허용합니다. 기기에서 바뀌는 것은 없습니다.</string>
     <string name="usb_audio">USB 오디오</string>
     <string name="usb_device">USB 기기</string>
+    <string name="usb_device_id">USB 기기 %1$d</string>
     <string name="usb_id">USB ID</string>
     <string name="usb_interfaces">인터페이스</string>
     <string name="usb_manufacturer">제조사</string>

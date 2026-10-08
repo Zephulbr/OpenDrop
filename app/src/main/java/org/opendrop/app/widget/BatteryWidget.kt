@@ -12,6 +12,7 @@ import org.opendrop.app.MainActivity
 import org.opendrop.app.OpenDropApplication
 import org.opendrop.app.R
 import org.opendrop.app.device.Connection
+import org.opendrop.app.device.Presentation
 import org.opendrop.app.device.UiState
 import org.opendrop.app.device.isActive
 
@@ -29,7 +30,7 @@ class BatteryWidget : AppWidgetProvider() {
     data class WidgetContent(val name: String, val battery: Int?, val status: String) {
         companion object {
             fun of(res: Resources, s: UiState): WidgetContent {
-                val name = (s.selected ?: s.autoConnect)?.name ?: "OpenDrop"
+                val name = Presentation.device(s)?.name ?: "OpenDrop"
                 val status = when (s.connection) {
                     Connection.Connected ->
                         s.device.namedEqPreset?.let { res.getString(R.string.widget_eq_status, it.label) }

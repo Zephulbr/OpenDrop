@@ -188,6 +188,7 @@
     <string name="usb_allow_subtitle">允许 OpenDrop 读取设备描述符以生成报告。不会更改设备上的任何内容。</string>
     <string name="usb_audio">USB 音频</string>
     <string name="usb_device">USB 设备</string>
+    <string name="usb_device_id">USB 设备 %1$d</string>
     <string name="usb_id">USB ID</string>
     <string name="usb_interfaces">接口</string>
     <string name="usb_manufacturer">制造商</string>

@@ -43,6 +43,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import kotlin.math.exp
 import org.opendrop.app.R
+import org.opendrop.app.settings.AppSettings
 import org.opendrop.app.ui.theme.Dimens
 import org.opendrop.app.ui.theme.LocalMotion
 import org.opendrop.app.ui.theme.MonoValue
@@ -50,8 +51,6 @@ import org.opendrop.protocol.EqPreset
 
 /** How the hero should look; see the hero section in DESIGN.md. */
 enum class HeroMode { Disconnected, Connecting, Connected }
-
-private const val LOW_BATTERY = 20
 
 /** Curve points per line. */
 private const val SAMPLES = 96
@@ -212,7 +211,7 @@ fun BatteryMeter(level: Int, modifier: Modifier = Modifier) {
     val colors = MaterialTheme.colorScheme
     val lit = ((level + 5) / 10).coerceIn(0, 10)
     val onColor by animateColorAsState(
-        if (level <= LOW_BATTERY) colors.error else colors.primary,
+        if (level <= AppSettings.LOW_BATTERY_PERCENT) colors.error else colors.primary,
         motion.effectsDefault(),
         label = "meterColor",
     )

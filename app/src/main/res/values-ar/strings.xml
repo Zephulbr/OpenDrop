@@ -188,6 +188,7 @@
     <string name="usb_allow_subtitle">يتيح لـ OpenDrop قراءة واصفات الجهاز من أجل التقرير. لا يتغير أي شيء فيه.</string>
     <string name="usb_audio">صوت USB</string>
     <string name="usb_device">جهاز USB</string>
+    <string name="usb_device_id">جهاز USB %1$d</string>
     <string name="usb_id">معرّف USB</string>
     <string name="usb_interfaces">الواجهات</string>
     <string name="usb_manufacturer">الشركة المصنّعة</string>

@@ -191,6 +191,7 @@
     <string name="usb_allow_subtitle">Lets OpenDrop read the device\'s descriptors for the report. Nothing on it changes.</string>
     <string name="usb_audio">USB audio</string>
     <string name="usb_device">USB device</string>
+    <string name="usb_device_id">USB device %1$d</string>
     <string name="usb_id">USB id</string>
     <string name="usb_interfaces">Interfaces</string>
     <string name="usb_manufacturer">Manufacturer</string>

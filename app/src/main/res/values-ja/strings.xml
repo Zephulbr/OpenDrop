@@ -188,6 +188,7 @@
     <string name="usb_allow_subtitle">レポート用にデバイスのディスクリプタを読み取ります。デバイスの設定は変更しません。</string>
     <string name="usb_audio">USB オーディオ</string>
     <string name="usb_device">USB デバイス</string>
+    <string name="usb_device_id">USB デバイス %1$d</string>
     <string name="usb_id">USB ID</string>
     <string name="usb_interfaces">インターフェース</string>
     <string name="usb_manufacturer">メーカー</string>

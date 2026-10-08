@@ -259,7 +259,7 @@ fun HomeScreen(
                         item(key = "usbTitle") { SectionTitle(stringResource(R.string.home_usb_devices), Modifier.animateItem()) }
                         items(usb, key = { "usb:" + it.key }) { entry ->
                             NavRow(
-                                title = entry.title,
+                                title = entry.title ?: stringResource(R.string.usb_device_id, entry.info.id),
                                 subtitle = stringResource(if (entry.likelyMoondrop) R.string.usb_read_only else R.string.usb_audio),
                                 onClick = { onOpenUsb(entry.key) },
                                 modifier = Modifier.animateItem(),

@@ -34,7 +34,7 @@ import org.opendrop.protocol.UsbReport
 fun UsbDeviceScreen(entry: UsbEntry?, onAllow: (String) -> Unit, onBack: () -> Unit) {
     val context = LocalContext.current
     Column(Modifier.fillMaxSize()) {
-        ScreenTopBar(entry?.title ?: stringResource(R.string.usb_device), onBack)
+        ScreenTopBar(entry?.let { it.title ?: stringResource(R.string.usb_device_id, it.info.id) } ?: stringResource(R.string.usb_device), onBack)
         Column(
             Modifier
                 .fillMaxSize()
@@ -108,7 +108,7 @@ private fun shareUsbReport(context: Context, entry: UsbEntry) {
     )
     val send = Intent(Intent.ACTION_SEND)
         .setType("text/plain")
-        .putExtra(Intent.EXTRA_SUBJECT, "OpenDrop USB report: ${entry.title}")
+        .putExtra(Intent.EXTRA_SUBJECT, "OpenDrop USB report: ${entry.title ?: "USB device ${entry.info.id}"}")
         .putExtra(Intent.EXTRA_TEXT, text)
     context.startActivity(Intent.createChooser(send, context.getString(R.string.usb_share_report)))
 }

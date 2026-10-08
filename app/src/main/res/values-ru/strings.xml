@@ -188,6 +188,7 @@
     <string name="usb_allow_subtitle">OpenDrop прочитает дескрипторы устройства для отчёта. На самом устройстве ничего не изменится.</string>
     <string name="usb_audio">USB-аудио</string>
     <string name="usb_device">USB-устройство</string>
+    <string name="usb_device_id">USB-устройство %1$d</string>
     <string name="usb_id">USB ID</string>
     <string name="usb_interfaces">Интерфейсы</string>
     <string name="usb_manufacturer">Производитель</string>

@@ -11,6 +11,7 @@ import androidx.core.content.ContextCompat
 import org.opendrop.app.OpenDropApplication
 import org.opendrop.app.R
 import org.opendrop.app.device.Connection
+import org.opendrop.app.device.Presentation
 import org.opendrop.app.device.UiState
 import org.opendrop.protocol.EqPreset
 
@@ -35,10 +36,10 @@ class EqWidget : AppWidgetProvider() {
     ) {
         companion object {
             fun of(res: Resources, s: UiState): Content {
-                val name = (s.selected ?: s.autoConnect)?.name ?: "OpenDrop"
+                val name = Presentation.device(s)?.name ?: "OpenDrop"
                 val connected = s.connection == Connection.Connected
-                val presets = if (connected) s.device.switchableEqPresets else emptyList()
-                val disconnected = s.connection == Connection.Disconnected || s.connection is Connection.Failed
+                val presets = Presentation.eqPresets(s)
+                val disconnected = Presentation.isDisconnected(s)
                 val tapConnects = disconnected && s.autoConnect != null
                 val status = when {
                     connected -> if (presets.isEmpty()) res.getString(R.string.widget_eq_unsupported) else ""

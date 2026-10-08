@@ -33,7 +33,8 @@ data class UsbEntry(
     /** USB audio (DACs, DSP cables) or a recognised Moondrop device. */
     val relevant: Boolean get() = likelyMoondrop || info.interfaces.any { it.interfaceClass == USB_CLASS_AUDIO }
 
-    val title: String get() = info.model?.name ?: info.product ?: "USB device ${info.id}"
+    /** Name for lists and screens; null when only the id is known (UIs fall back to a resource). */
+    val title: String? get() = info.model?.name ?: info.product
 
     private companion object {
         const val USB_CLASS_AUDIO = 1
@@ -82,7 +83,7 @@ class UsbController(private val context: Context) {
                 Log.w(TAG, "Couldn't list USB devices", e)
                 emptyList()
             }
-            _devices.update { entries.sortedWith(compareByDescending<UsbEntry> { it.likelyMoondrop }.thenBy { it.title }) }
+            _devices.update { entries.sortedWith(compareByDescending<UsbEntry> { it.likelyMoondrop }.thenBy { it.title ?: "" }) }
         }
     }
 
