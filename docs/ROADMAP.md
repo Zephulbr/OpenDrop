@@ -71,21 +71,28 @@ newer models to switch on M2 features.
 - [x] RFCOMM connection; reconnect with backoff when the link drops.
 - [x] Connection lives outside the screens (`DeviceController`) and runs in a
       foreground service while connected, with an ongoing notification and a
-      Disconnect action. *Untested on hardware.*
+      Disconnect action.
 - [x] Remember the last device; connect on launch and when the earbuds connect
-      to the phone. *Untested on hardware.*
+      to the phone, also when Android had closed the app (manifest receiver).
+      *Retest pending.*
 - [x] Home screen: connection state, firmware, battery (Android's HFP level).
-      *Untested on hardware.*
 - [x] EQ presets Reference / Basshead / Monitor, kept in sync by the earbuds'
-      notification. *Untested on hardware.*
+      notification.
 - [x] Volume (Android media volume).
-- [x] Device info and packet log; appearance settings.
-- [ ] **Hardware test pass** on the Space Travel:
-  - [ ] Connects; firmware shows `1.0.0`; model shows "Moondrop Space Travel".
-  - [ ] Battery matches Android's Bluetooth settings.
-  - [ ] Each EQ preset switches, and a change made in Link shows up in OpenDrop.
-  - [ ] Reconnects after taking the buds out of range and back.
-  - [ ] Auto-connect works when the buds connect to the phone.
+- [x] Device info, packet log and device report; appearance settings.
+- [ ] **Hardware test pass** on the Space Travel (Galaxy S24 Ultra, Android 16,
+      2026-10-08):
+  - [x] Connects; firmware `1.0.0`; model "Moondrop Space Travel"; features
+        core, earbud, voice assistant, EQ, firmware update.
+  - [x] Battery matches Android's Bluetooth settings.
+  - [x] Each EQ preset switches, and a change made in Link shows up in OpenDrop.
+  - [x] Reconnects after taking the buds out of range and back.
+  - [x] Ongoing notification while connected, with a working Disconnect.
+  - [ ] Auto-connect, without tapping Disconnect first (an explicit
+        Disconnect pauses auto-connect on purpose):
+    - [ ] App open: buds in the case for 30 s, then out. OpenDrop reconnects.
+    - [ ] App swiped away from recents: buds in the case, then out.
+          OpenDrop connects on its own (check its notification).
 - [ ] Fix whatever the test pass finds, then tag v0.1.
 
 Won't do (firmware doesn't allow it): ANC mode and game mode control or

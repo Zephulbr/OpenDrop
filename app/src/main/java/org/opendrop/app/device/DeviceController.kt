@@ -115,11 +115,6 @@ class DeviceController(private val context: Context) {
                     _state.update { it.copy(battery = level.takeIf { l -> l in 0..100 }) }
                 }
                 ACTION_VOLUME_CHANGED -> refreshVolume()
-                BluetoothDevice.ACTION_ACL_CONNECTED -> {
-                    // The earbuds just connected to the phone; give their services a moment.
-                    val device = intent.bluetoothDevice() ?: return
-                    if (device.address == lastAddress) autoConnect(delayMs = ACL_SETTLE_MS)
-                }
                 BluetoothAdapter.ACTION_STATE_CHANGED -> refresh()
             }
         }
@@ -129,7 +124,6 @@ class DeviceController(private val context: Context) {
         val filter = IntentFilter().apply {
             addAction(ACTION_BATTERY_LEVEL_CHANGED)
             addAction(ACTION_VOLUME_CHANGED)
-            addAction(BluetoothDevice.ACTION_ACL_CONNECTED)
             addAction(BluetoothAdapter.ACTION_STATE_CHANGED)
         }
         ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_EXPORTED)
@@ -161,7 +155,7 @@ class DeviceController(private val context: Context) {
      * Connects to the remembered device when nothing else is going on: not
      * after an explicit Disconnect, and not while connected or connecting.
      * Skips the attempt when Android says the earbuds aren't connected to the
-     * phone; [BluetoothDevice.ACTION_ACL_CONNECTED] triggers it later.
+     * phone; [onAclConnected] triggers it later.
      */
     private fun autoConnect(delayMs: Long = 0) {
         val s = _state.value
@@ -178,6 +172,16 @@ class DeviceController(private val context: Context) {
                 start(target, auto = true)
             }
         }
+    }
+
+    /**
+     * A device connected to the phone. Comes from [AclReceiver], which is in
+     * the manifest so it also starts the app when Android had closed it.
+     * Give the earbuds' services a moment before connecting.
+     */
+    fun onAclConnected(intent: Intent) {
+        val device = intent.bluetoothDevice() ?: return
+        if (device.address == lastAddress) autoConnect(delayMs = ACL_SETTLE_MS)
     }
 
     /** Whether Android has the earbuds connected (hidden API; null if unknown). */
