@@ -251,7 +251,8 @@ Done (`core/protocol`: `GaiaSession`, `MoondropModels`, `GaiaFeature`):
 Next:
 
 - Moondrop features 13 to 35, one at a time, as we confirm their commands
-  with captures (battery, ANC v3 and touch controls first).
+  with captures (battery, ANC v3 and touch controls first). What the app
+  analysis found so far: [protocol/moondrop-gaia-features.md](protocol/moondrop-gaia-features.md).
 - Preset names for other models (Link downloads them per model).
 - Airoha's own SDK protocol only if an Airoha model turns out to need it for
   something GAIA doesn't offer (firmware updates stay out of scope).
