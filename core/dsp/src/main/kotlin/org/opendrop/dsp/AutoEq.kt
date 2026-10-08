@@ -1,5 +1,6 @@
 package org.opendrop.dsp
 
+import java.math.BigDecimal
 import java.util.Locale
 
 /**
@@ -77,19 +78,24 @@ object AutoEq {
         is ParametricEq -> buildString {
             appendLine("Preamp: ${fmt(eq.preamp)} dB")
             eq.filters.forEachIndexed { i, f ->
-                append("Filter ${i + 1}: ON ${f.type.code} Fc ${fmt(f.frequency, 0)} Hz")
+                append("Filter ${i + 1}: ON ${f.type.code} Fc ${fmt(f.frequency)} Hz")
                 if (f.type.hasGain) append(" Gain ${fmt(f.gain)} dB")
-                appendLine(" Q ${fmt(f.q, 2)}")
+                appendLine(" Q ${fmt(f.q)}")
             }
         }
         is GraphicEq -> buildString {
             appendLine("Preamp: ${fmt(eq.preamp)} dB")
             append("GraphicEQ: ")
-            appendLine(eq.points.joinToString("; ") { (hz, db) -> "${fmt(hz, 0)} ${fmt(db)}" })
+            appendLine(eq.points.joinToString("; ") { (hz, db) -> "${fmt(hz)} ${fmt(db)}" })
         }
     }
 
-    private fun fmt(value: Double, decimals: Int = 1): String = String.format(Locale.ROOT, "%.${decimals}f", value)
+    /**
+     * Shortest text that parses back to exactly [value]: `Double.toString` is
+     * round-trip-exact, and BigDecimal only strips the trailing ".0".
+     */
+    private fun fmt(value: Double): String =
+        BigDecimal(value.toString()).stripTrailingZeros().toPlainString()
 }
 
 /** Built-in starting points. Broad, gentle curves; not measurements of any headphone. */

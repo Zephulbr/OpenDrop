@@ -115,6 +115,24 @@ class EqTest {
     }
 
     @Test
+    fun roundTripsFractionalValuesLosslessly() {
+        // PhoneEq persists custom curves as AutoEq text (PhoneEq.kt); a lossy
+        // write mutated user data on every restart (MAINTENANCE F3).
+        val parametric = ParametricEq(
+            -6.25,
+            listOf(
+                PeqFilter(FilterType.LOW_SHELF, 105.7, 6.5, 0.7),
+                PeqFilter(FilterType.PEAK, 158.25, -2.65, 0.43),
+                PeqFilter(FilterType.HIGH_PASS, 31.5, 0.0, 0.707),
+            ),
+        )
+        assertEquals(parametric, AutoEq.parse(AutoEq.write(parametric)))
+
+        val graphic = GraphicEq(-2.375, listOf(20.5 to -1.25, 1_050.0 to 0.75))
+        assertEquals(graphic, AutoEq.parse(AutoEq.write(graphic)))
+    }
+
+    @Test
     fun presetsDontClip() {
         EqPresetCurve.entries.forEach { assertTrue(it.label, it.eq.preamp + it.eq.peakDb() <= 0.3) }
     }
