@@ -92,10 +92,27 @@ USB families.
   - [x] Reconnects after taking the buds out of range and back.
   - [x] Ongoing notification while connected, with a working Disconnect.
   - [x] Auto-connect, without tapping Disconnect first (an explicit
-        Disconnect pauses auto-connect on purpose):
+         Disconnect pauses auto-connect on purpose):
     - [x] App open: buds in the case for 30 s, then out. OpenDrop reconnects.
     - [x] App swiped away from recents: buds in the case, then out.
           OpenDrop connects on its own (check its notification).
+- [ ] Post-maintenance test pass (2026-10 fixes; see
+      [MAINTENANCE.md](MAINTENANCE.md)):
+  - [ ] Switch devices while one is still connecting: the second one wins,
+        no zombie "Connected" state, and Disconnect mid-connect sticks.
+  - [ ] Phone EQ: force-stop the app and relaunch — the effect and its
+        notification come back; the screen shows a failure note only when
+        the phone truly refused the effect.
+  - [ ] Battery, volume and ACL auto-connect still work with the receivers
+        registered NOT_EXPORTED (MAINTENANCE F11–F13).
+  - [ ] Automation: a command with the token from Settings works; a wrong
+        token is ignored; a pre-token setup keeps working until re-toggled.
+  - [ ] Dragging a phone-EQ filter slider keeps the UI smooth (the effect
+        is configured off the main thread).
+  - [ ] With Bluetooth off, the connect error is still the classified
+        "Bluetooth turned off…" one.
+  - [ ] Release (minified) APK: launch, widgets, tile, phone EQ, low-battery
+        notification — nothing stripped.
 - [ ] Fix whatever the test pass finds, then tag v0.1.
 
 Won't do (firmware doesn't allow it): ANC mode and game mode control or
