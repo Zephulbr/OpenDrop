@@ -116,6 +116,7 @@ fun HomeScreen(
     val insets = WindowInsets.safeDrawing.asPaddingValues()
     val name = if (phase == Phase.Device) state.selected?.name ?: "Earbuds" else "OpenDrop"
     val battery = state.battery.takeIf { phase == Phase.Device }
+    var showOthers by rememberSaveable { mutableStateOf(false) }
 
     // The EQ choice shows right away, in the curve and the selector; it's
     // cleared when the earbuds report back, or after a timeout (springs back).
@@ -178,26 +179,62 @@ fun HomeScreen(
                             )
                         }
                     }
-                    if (state.devices.isEmpty()) {
+                    // Moondrop devices (and the remembered one) first; the rest behind a toggle.
+                    val (main, others) = state.devices.partition {
+                        it.likelyMoondrop || it.address == state.autoConnect?.address
+                    }
+                    if (main.isEmpty()) {
                         item(key = "noDevices") {
                             Message(
-                                "No paired devices. Pair your Space Travel in Android's Bluetooth settings first.",
-                                Modifier.animateItem(),
+                                "No Moondrop devices paired. Pair your earbuds in Android's Bluetooth settings first.",
+                                Modifier
+                                    .animateItem()
+                                    .padding(bottom = Dimens.SectionGap),
                             )
                         }
                     } else {
                         item(key = "pairedTitle") { SectionTitle("Paired devices", Modifier.animateItem()) }
-                        items(state.devices, key = { it.address }) { device ->
-                            NavRow(
-                                title = device.name,
-                                subtitle = if (device.likelyMoondrop) "Tap to connect" else "Not recognised as Moondrop",
-                                onClick = { onConnect(device) },
-                                modifier = Modifier.animateItem(
+                        items(main, key = { it.address }) { device ->
+                            DeviceRow(
+                                device,
+                                onConnect,
+                                Modifier.animateItem(
                                     fadeInSpec = motion.effectsDefault(),
                                     placementSpec = motion.spatialDefault(),
                                     fadeOutSpec = motion.effectsFast(),
                                 ),
                             )
+                        }
+                    }
+                    if (others.isNotEmpty()) {
+                        item(key = "othersToggle") {
+                            TextButton(
+                                onClick = { showOthers = !showOthers },
+                                modifier = Modifier
+                                    .animateItem()
+                                    .padding(horizontal = 8.dp),
+                            ) {
+                                Text(
+                                    if (showOthers) {
+                                        "Hide other Bluetooth devices"
+                                    } else {
+                                        "Show other Bluetooth devices (${others.size})"
+                                    },
+                                )
+                            }
+                        }
+                        if (showOthers) {
+                            items(others, key = { it.address }) { device ->
+                                DeviceRow(
+                                    device,
+                                    onConnect,
+                                    Modifier.animateItem(
+                                        fadeInSpec = motion.effectsDefault(),
+                                        placementSpec = motion.spatialDefault(),
+                                        fadeOutSpec = motion.effectsFast(),
+                                    ),
+                                )
+                            }
                         }
                     }
                 }
@@ -271,6 +308,16 @@ private fun NotificationPermissionRequest(connection: Connection) {
             launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
+}
+
+@Composable
+private fun DeviceRow(device: PairedDevice, onConnect: (PairedDevice) -> Unit, modifier: Modifier = Modifier) {
+    NavRow(
+        title = device.name,
+        subtitle = if (device.likelyMoondrop) "Tap to connect" else "Not recognised as Moondrop",
+        onClick = { onConnect(device) },
+        modifier = modifier,
+    )
 }
 
 @Composable

@@ -19,14 +19,14 @@ deleting it.
 | Milestone | Goal | Status |
 |---|---|---|
 | [M0](#m0-research) Research | Know how Moondrop devices talk | ✅ Done (USB protocols still open) |
-| [M1](#m1-space-travel-mvp-v01) Space Travel MVP (v0.1) | Everything the Space Travel can do | 🟡 Built, needs hardware testing |
+| [M1](#m1-space-travel-mvp-v01) Space Travel MVP (v0.1) | Everything the Space Travel can do | 🟡 Hardware tests pass; tag v0.1 |
 | [M2](#m2-every-moondrop-bluetooth-model-v02) Every Bluetooth model (v0.2) | One GAIA driver for every Bluetooth model | 🟡 Driver done, features need captures |
 | [M3](#m3-everyday-convenience-v03) Everyday convenience (v0.3) | Tiles, widget, notifications | ⬜ Not started |
 | [M4](#m4-phone-side-audio-v04) Phone-side audio (v0.4) | PEQ, AutoEQ, codec switching | ⬜ Not started |
 | [M5](#m5-usb-devices-v05) USB devices (v0.5) | Dawn, Moonriver, FreeDSP, DSP IEMs | ⬜ Not started |
 | [M6](#m6-release-v10) Release (v1.0) | F-Droid and GitHub Releases | ⬜ Not started |
 
-**Next up:** test M1 on the Space Travel, then get captures from owners of
+**Next up:** tag v0.1, then get captures (device reports) from owners of
 newer models to switch on M2 features.
 
 ## Guiding principles
@@ -74,13 +74,14 @@ newer models to switch on M2 features.
       Disconnect action.
 - [x] Remember the last device; connect on launch and when the earbuds connect
       to the phone, also when Android had closed the app (manifest receiver).
-      *Retest pending.*
 - [x] Home screen: connection state, firmware, battery (Android's HFP level).
 - [x] EQ presets Reference / Basshead / Monitor, kept in sync by the earbuds'
       notification.
 - [x] Volume (Android media volume).
 - [x] Device info, packet log and device report; appearance settings.
-- [ ] **Hardware test pass** on the Space Travel (Galaxy S24 Ultra, Android 16,
+- [x] Device picker shows Moondrop devices; other paired devices sit behind a
+      "Show other Bluetooth devices" toggle.
+- [x] **Hardware test pass** on the Space Travel (Galaxy S24 Ultra, Android 16,
       2026-10-08):
   - [x] Connects; firmware `1.0.0`; model "Moondrop Space Travel"; features
         core, earbud, voice assistant, EQ, firmware update.
@@ -88,10 +89,10 @@ newer models to switch on M2 features.
   - [x] Each EQ preset switches, and a change made in Link shows up in OpenDrop.
   - [x] Reconnects after taking the buds out of range and back.
   - [x] Ongoing notification while connected, with a working Disconnect.
-  - [ ] Auto-connect, without tapping Disconnect first (an explicit
+  - [x] Auto-connect, without tapping Disconnect first (an explicit
         Disconnect pauses auto-connect on purpose):
-    - [ ] App open: buds in the case for 30 s, then out. OpenDrop reconnects.
-    - [ ] App swiped away from recents: buds in the case, then out.
+    - [x] App open: buds in the case for 30 s, then out. OpenDrop reconnects.
+    - [x] App swiped away from recents: buds in the case, then out.
           OpenDrop connects on its own (check its notification).
 - [ ] Fix whatever the test pass finds, then tag v0.1.
 
