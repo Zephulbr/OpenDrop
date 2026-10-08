@@ -2,20 +2,30 @@
 
 Which Moondrop devices OpenDrop could support, and what each one needs.
 
-Source: the "supported devices" list in MOONDROP Link (Android), copied by
-hand from memory, so some names may be slightly off. Link supports wireless
-earbuds, wireless headphones, wireless speakers, USB earbuds (IEMs with a
-built-in DSP) and USB dongle DACs.
+Sources: MOONDROP Link 2.26.1c for Android (static analysis, facts only) and
+its product catalogue, downloaded from Moondrop's API on 2026-10-08.
 
-## Why the names matter
+Chip types in the catalogue:
 
-Link shows the Space Travel as `Moondrop Space Travel`, which is exactly the
-GAIA **variant name** the earbuds report ([protocol notes](protocol/space-travel.md)).
-So the names below are probably the identity strings Link matches against,
-not marketing names. That makes them a good key for device detection. The
-odd spellings (`ZZZ-ANGELS-OWS`, `H.I.D.E.404_Klukai`, `SUSANOO TWS IOS`)
-point the same way. The separate `IOS` entry suggests that some models
-connect differently on iOS, most likely over BLE.
+- `airoha`: 1 Bluetooth
+- `bluetrum`: 43 Bluetooth
+- `bluetrumusb`: 1 Bluetooth
+- `jieli`: 2 Bluetooth
+- `qualcomm`: 4 Bluetooth
+- `comture`: 5 USB
+- `jieli`: 1 USB
+- `jieliusb`: 3 USB
+- `jiu`: 5 USB
+- `spv`: 14 USB
+- `synopsys`: 6 USB
+- `synopsys`: 22 WIRED
+
+## How a device is identified
+
+Each catalogue entry has a `model` string. For the Space Travel it is
+`Moondrop Space Travel`, exactly the GAIA **variant name** the earbuds report
+([protocol notes](protocol/space-travel.md)). So OpenDrop can identify a
+connected model by its variant name and look it up in the table below.
 
 ## What MOONDROP Link 2.26.1c contains
 
@@ -68,107 +78,159 @@ updates:
 | `bluetrum`, `bluetrum10`, `bluetrumusb` | Firmware update (FOTA over SPP, USB HID OTA) | SPP, BLE service `0xAE00`, USB HID |
 | `airoha` (AB1562, AB1562E, AB1565, AB1568, incl. dual/V3 variants) | Airoha SDK: firmware update, and PEQ and ANC on some models | SPP |
 | `jieli`, `jieliusb` | Firmware update (RCSP OTA, USB OTA) | SPP / USB |
-| `actions`, `synaptics` | Listed as chip types; no Bluetooth code seen | ? |
 
-**USB devices: three protocol families.** All on Android USB host:
+**USB devices: five protocol families.** All on Android USB host:
 
-| Family | Link's controls |
-|---|---|
-| Comtrue | Filter, gain level, LED, volume |
-| "SPV" | PEQ (with presets, pre-gain), CS43131 filter and working mode, DAC/ADC gain, LED, mic gain, L/R swap, firmware version; also ANC, battery, buttons and spatial audio for products that have them |
-| Synaptics / Conexant | EQ presets and PEQ saved to flash, firmware version |
+| Chip type | Link's controls | Models |
+|---|---|---|
+| `comture` (Comtrue) | Filter, gain level, LED, volume | Dawn 3.5 / 4.4 / Pro, Moonriver 2 Ti, Discdream |
+| `spv` | PEQ (presets, pre-gain), CS43131 filter and working mode, DAC/ADC gain, LED, mic gain, L/R swap, firmware version; ANC, battery, buttons and spatial audio where present | Dawn Pro 2, Moonriver 3, FreeDSP Mini / Pro, Rays, Marigold, DHA15, ... |
+| `synopsys` (Synaptics / Conexant) | EQ presets and PEQ saved to flash, firmware version | Echo-B, FreeDSP, May, Starlight, Click, Dusk-SP |
+| `jiu` | EQ registers | CDSP, CHU2 DSP, JIU, Old Fashioned |
+| `jieliusb`, `jieli` | Firmware update seen; EQ path not identified yet | Echo-BP, GM01 Pro, Gaming Maestro, Nicebuds DSP |
 
-Plus a fourth, smaller "Jiu" EQ path and a factory SPP tool (serial numbers).
+A factory SPP tool (serial numbers) is also in the app.
 
-**Which model uses which chip comes from Moondrop's server.** Only a few model
-names are built into the app (`ZZZ-ANGELS-OWS`, `ECHO-BP`, `MOONDROP MM3A`,
-`Moondrop U.C.T.S.`, `MOONDROP Marigold`, `MOONDROP Rays`, the four `Pill`
-editions, `PANDAER Open Air Pill`), for special cases. The product catalogue,
-with fields such as `chipType`, `connectionType` and `deviceFuncList`, is
-downloaded from `https://cdn-service.moondroplab.tech/api/v1/products/all`.
-For Bluetooth models the GAIA feature list matters more anyway: the device
-reports it itself.
+**The model list comes from Moondrop's server**
+(`https://cdn-service.moondroplab.tech/api/v1/products/all`), not from the app.
+Each entry gives the connection type (`BT`, `USB`, `WIRED`), `chipType`,
+the number of EQ bands and a few flags (TWS, speaker, DAC/amp, gaming).
 
 ## Device list
 
-Category: **Known** = confirmed by a product page or review, **Guess** = from
-the name or memory, needs checking, **?** = no idea yet.
+From Link's product catalogue (107 entries: 51 Bluetooth, 34 USB, 22 wired). Some models appear more than once, once per app language or with an `IOS` display name; the `model` string is what identifies the device. EQ bands is the catalogue's `eqBands` (the Space Travel's 5 matches the hidden user EQ we probed).
 
-| Link name | Category | Confidence | Protocol |
+### Bluetooth (GAIA)
+
+| Model | Kind | Chip type | EQ bands |
 |---|---|---|---|
-| Moondrop Space Travel | TWS earbuds | Known | **GAIA v3 over SPP (verified)** |
-| PANDAER Space Travel 2 | TWS earbuds | Known | ? |
-| Space Travel 2 Ultra | TWS earbuds (BT 6.0, LDAC) | Known | ? |
-| MOONDROP MOON TRAVEL | TWS earbuds | Guess | ? |
-| Space Force | TWS earbuds | Guess | ? |
-| Moondrop Golden Ages | TWS earbuds | Guess | ? |
-| Moondrop Golden Ages 2 | TWS earbuds | Guess | ? |
-| Moondrop Nekocake | TWS earbuds | Known | ? |
-| Moondrop Nekocake Acht Acht Limited | TWS earbuds (Nekocake edition) | Guess | ? |
-| Moondrop Nekocake QBZ-191 | TWS earbuds (Nekocake edition) | Guess | ? |
-| MOONDROP MOCA | TWS earbuds (BT 5.4, ANC, game mode) | Known | ? |
-| Me 163 Komet MOCA | TWS earbuds (MOCA edition) | Guess | ? |
-| Moondrop Sparks | TWS earbuds | Guess | ? |
-| Moondrop Alice | TWS earbuds | Guess | ? |
-| MOONDROP Ultrasonic | TWS earbuds | Guess | ? |
-| MOONDROP MIRAGE | TWS earbuds | Guess | ? |
-| MOONDROP Pudding | TWS earbuds | Guess | ? |
-| MOONDROP Rays | TWS earbuds | Guess | ? |
-| MOONDROP X AG Rays | TWS earbuds (Rays edition) | Guess | ? |
-| SUSANOO TWS | TWS earbuds | Known (name) | ? |
-| Moondrop SUSANOO TWS IOS | Same earbuds, iOS entry | Guess | ? (likely BLE) |
-| ZZZ-ANGELS-OWS | Open-ear earbuds (OWS) | Guess | ? |
-| PANDAER Open Air Pill | Open-ear earbuds | Guess | ? |
-| Pill Yamada Ryo | PANDAER Pill edition; maybe the speaker set | ? | ? |
-| Pill Kita Ikuyo | PANDAER Pill edition; maybe the speaker set | ? | ? |
-| Pill Ijichi Nijika | PANDAER Pill edition; maybe the speaker set | ? | ? |
-| Pill Gotoh Hitori | PANDAER Pill edition; maybe the speaker set | ? | ? |
-| H.I.D.E.404_Klukai | Collab edition, probably TWS | Guess | ? |
-| PUNISHING:GRAY RAVEN | Collab edition, probably TWS | Guess | ? |
-| BIANCA:STIGMATA | Collab edition, probably TWS | Guess | ? |
-| ROBIN'S Earphones | Collab edition, probably TWS | Guess | ? |
-| MOONDROP x YASUNO KIYONO | Collab edition | ? | ? |
-| MOONDROP EDGE | Wireless ANC headphones | Known | ? |
-| MOONDROP EDGE 2 | Wireless ANC headphones (BT 6.0, LDAC, LHDC) | Known | ? |
-| SINGER HEADPHONE | Headphones | Guess | ? |
-| MOONDROP Voyager | Bluetooth neckband | Known | ? |
-| DUSK-SP | Speaker? | ? | ? |
-| MOONDROP DAWN 3.5 | USB dongle DAC | Known | ? |
-| MOONDROP DAWN 4.4 | USB dongle DAC | Known | ? |
-| MOONDROP DAWN PRO | USB dongle DAC | Known | ? |
-| DAWN PRO2 | USB dongle DAC | Guess | ? |
-| MOONDROP Moonriver2 Ti | USB DAC | Known | ? |
-| MOONRIVER 3 | USB DAC | Guess | ? |
-| FreeDSP Mini | USB DSP cable | Known | ? |
-| FreeDSP Pro | USB DSP cable | Known | ? |
-| MOONDROP CDSP | USB DSP cable | Guess | ? |
-| ECHO-B | USB-C DSP dongle (app DSP) | Known | ? |
-| Echo-BP | Probably an Echo-B variant | Guess | ? |
-| CHU2 DSP | USB-C IEM with DSP | Known | ? |
-| MAY | USB-C IEM with DSP | Guess | ? |
-| Starlight | USB-C IEM with DSP (Japan only, EQ in Link) | Known | ? |
-| MOONDROP little white | ? | ? | ? |
-| MOONDROP Click | ? | ? | ? |
-| MOONDROP MM3A | ? | ? | ? |
-| Moondrop DHA15 | ? | ? | ? |
-| LAPLACE-OBA-II | ? | ? | ? |
-| Moondrop U.C.T.S. | ? | ? | ? |
-| Moondrop Old Fashioned | ? | ? | ? |
-| MOONDROP Marigold | ? | ? | ? |
+| MOONDROP The Garden | TWS earbuds | `airoha` | 10 |
+| BIANCA:STIGMATA | Headphones / neckband | `bluetrum` | 5 |
+| H.I.D.E.404_Klukai | TWS earbuds | `bluetrum` | 5 |
+| LAPLACE-OBA-Ⅱ | TWS earbuds | `bluetrum` | 5 |
+| Me 163 Komet MOCA | TWS earbuds | `bluetrum` | 5 |
+| MOONDROP EDGE | Headphones / neckband | `bluetrum` | 5 |
+| MOONDROP EDGE 2 | Headphones / neckband | `bluetrum` | 5 |
+| Moondrop EVO 2 | TWS earbuds | `bluetrum` | 10 |
+| MOONDROP EVO 2 | TWS earbuds | `bluetrum` | 10 |
+| Moondrop Golden Ages | TWS earbuds | `bluetrum` | 5 |
+| Moondrop Golden Ages 2 | TWS earbuds | `bluetrum` | 5 |
+| MOONDROP MOCA | TWS earbuds | `bluetrum` | 5 |
+| MOONDROP MOON TRAVEL | TWS earbuds | `bluetrum` | 5 |
+| Moondrop Nekocake | TWS earbuds | `bluetrum` | 5 |
+| Moondrop Nekocake Acht Acht Limited | TWS earbuds | `bluetrum` | 5 |
+| Moondrop Nekocake QBZ-191 | TWS earbuds | `bluetrum` | 5 |
+| MOONDROP Pill (zh-CN) | TWS earbuds | `bluetrum` | 5 |
+| MOONDROP PILL (shown as `PILL`) (ja-JP) | TWS earbuds | `bluetrum` | 5 |
+| Moondrop PUNISHING;GRAY RAVEN (shown as `Moondrop PUNISHING;GRAY RAVEN IOS`) | TWS earbuds | `bluetrum` | 5 |
+| Moondrop SINGER HEADPHONE (shown as `Moondrop SINGER HEADPHONE IOS`) | Headphones / neckband | `bluetrum` | 5 |
+| Moondrop Space Travel | TWS earbuds | `bluetrum` | 5 |
+| Moondrop SUSANOO TWS (shown as `Moondrop SUSANOO TWS IOS`) | TWS earbuds | `bluetrum` | 5 |
+| Moondrop U.C.T.S. | TWS earbuds | `bluetrum` | 5 |
+| MOONDROP Ultrasonic | TWS earbuds | `bluetrum` | 5 |
+| MOONDROP x YASUNO KIYONO | TWS earbuds | `bluetrum` | 5 |
+| PANDAER Open Air Pill | TWS earbuds | `bluetrum` | 5 |
+| PANDAER Space Travel 2 | TWS earbuds | `bluetrum` | 5 |
+| Pill Gotoh Hitori | TWS earbuds | `bluetrum` | 5 |
+| Pill Ijichi Nijika | TWS earbuds | `bluetrum` | 5 |
+| Pill Kita Ikuyo | TWS earbuds | `bluetrum` | 5 |
+| Pill Yamada Ryo | TWS earbuds | `bluetrum` | 5 |
+| PUNISHING:GRAY RAVEN | TWS earbuds | `bluetrum` | 5 |
+| Robin's earphones (ko-KR) | TWS earbuds | `bluetrum` | 5 |
+| ROBIN'S Earphones (en-US) | TWS earbuds | `bluetrum` | 5 |
+| ROBIN'S EARPHONES (ja-JP) | TWS earbuds | `bluetrum` | 5 |
+| Robin's Earphones (zh-CN) | TWS earbuds | `bluetrum` | 5 |
+| SINGER HEADPHONE | Headphones / neckband | `bluetrum` | 5 |
+| Space Force | TWS earbuds | `bluetrum` | 5 |
+| SPACE TRAVEL 2 (ja-JP) | TWS earbuds | `bluetrum` | 5 |
+| Space Travel 2 (zh-CN) | TWS earbuds | `bluetrum` | 5 |
+| SPACE TRAVEL 2 ULTRA (ja-JP) | TWS earbuds | `bluetrum` | 5 |
+| Space Travel 2 Ultra (en-US) | TWS earbuds | `bluetrum` | 5 |
+| SUSANOO TWS | TWS earbuds | `bluetrum` | 5 |
+| ZZZ-ANGELS-OWS | TWS earbuds | `bluetrum` | 5 |
+| MOONDROP MM3A | Speaker | `bluetrumusb` | 8 |
+| MOONDROP MIRAGE | TWS earbuds | `jieli` | 10 |
+| MOONDROP Pudding | TWS earbuds | `jieli` | 10 |
+| Moondrop Alice | TWS earbuds | `qualcomm` | 5 |
+| MOONDROP littlewhite | Headphones / neckband | `qualcomm` | 5 |
+| Moondrop Sparks | TWS earbuds | `qualcomm` | 5 |
+| MOONDROP Voyager | Headphones / neckband | `qualcomm` | 5 |
 
-Rough count: 37 Bluetooth earbuds, headphones, neckbands and speakers, 14 USB
-devices and 8 unknown.
+### USB
 
-## How to fill in the Protocol column
+| Model | Kind | Chip type | EQ bands |
+|---|---|---|---|
+| DISCDREAM | DSP IEM / cable | `comture` | 5 |
+| MOONDROP DAWN 3.5 | DAC/amp | `comture` | 5 |
+| MOONDROP DAWN 4.4 | DAC/amp | `comture` | 5 |
+| MOONDROP DAWN PRO | DAC/amp | `comture` | 5 |
+| MOONDROP Moonriver2 Ti | DAC/amp | `comture` | 5 |
+| MOONDROP Nicebuds DSP | DSP IEM / cable | `jieli` | 10 |
+| Echo-BP | DAC/amp | `jieliusb` | 32 |
+| MOONDROP Gaming Maestro | Gaming | `jieliusb` | 10 |
+| MOONDROP GM01 Pro | Gaming | `jieliusb` | 10 |
+| CDSP | DSP IEM / cable | `jiu` | 5 |
+| CHU2 DSP | DSP IEM / cable | `jiu` | 5 |
+| MOONDROP CDSP | DSP IEM / cable | `jiu` | 5 |
+| MOONDROP JIU | DSP IEM / cable | `jiu` | 5 |
+| Moondrop Old Fashioned | DSP IEM / cable | `jiu` | 5 |
+| DA-016 BLUE ROSE | DSP IEM / cable | `spv` | 8 |
+| DAWN PRO2 | DAC/amp | `spv` | 8 |
+| ddHiFi DSP IEM - Memory | DSP IEM / cable | `spv` | 8 |
+| Deco Audio System | DSP IEM / cable | `spv` | 8 |
+| E.S.combo | DSP IEM / cable | `spv` | 8 |
+| FreeDSP Mini | DAC/amp | `spv` | 8 |
+| FreeDSP Pro | DAC/amp | `spv` | 8 |
+| INN Deco75-DH Audio | DSP IEM / cable | `spv` | 8 |
+| Moondrop DHA15 | DSP IEM / cable | `spv` | 8 |
+| MOONDROP Marigold | DSP IEM / cable | `spv` | 8 |
+| MOONDROP Position | Gaming | `spv` | 8 |
+| MOONDROP Rays | Gaming | `spv` | 8 |
+| MOONDROP X AG Rays | Gaming | `spv` | 8 |
+| MOONRIVER 3 | DAC/amp | `spv` | 8 |
+| DUSK-SP | DSP IEM / cable | `synopsys` | 9 |
+| ECHO-B | DAC/amp | `synopsys` | 9 |
+| FreeDSP | DAC/amp | `synopsys` | 9 |
+| MAY | DSP IEM / cable | `synopsys` | 9 |
+| MOONDROP Click | DAC/amp | `synopsys` | 5 |
+| Starlight | DSP IEM / cable | `synopsys` | 9 |
 
-1. **Link's product catalogue** (see above): chip and connection type per model.
-2. **Prior art.** Gadgetbridge supports some Moondrop models over GAIA. Check
-   which ones and credit them (facts only, no code; see the legal note in the
-   protocol notes).
-3. **Community captures.** Owners of other models record an HCI snoop log
-   while using Link ([capture guide](protocol/capture-guide.md)), or a USB
-   capture for DACs. The GAIA features list alone (one read-only command)
-   already tells us most of what a model supports.
+### Wired (no electronics)
+
+Passive IEMs. Link lists them for EQ targets and frequency-response data, applied through a DSP dongle; there is nothing to connect to.
+
+| Model | Kind | Chip type | EQ bands |
+|---|---|---|---|
+| MOONDROP Aria | Passive IEM | `synopsys` | 5 |
+| MOONDROP Aria SE | Passive IEM | `synopsys` | 5 |
+| MOONDROP Blessing3 | Passive IEM | `synopsys` | 5 |
+| MOONDROP Chu | Passive IEM | `synopsys` | 5 |
+| MOONDROP Chu II | Passive IEM | `synopsys` | 5 |
+| MOONDROP Dark Saber | Passive IEM | `synopsys` | 5 |
+| MOONDROP Illumination | Passive IEM | `synopsys` | 5 |
+| MOONDROP Joker | Passive IEM | `synopsys` | 5 |
+| MOONDROP Kadenz | Passive IEM | `synopsys` | 5 |
+| MOONDROP KATO | Passive IEM | `synopsys` | 5 |
+| MOONDROP Lan | Passive IEM | `synopsys` | 5 |
+| MOONDROP PARA | Passive IEM | `synopsys` | 5 |
+| MOONDROP Quarks | Passive IEM | `synopsys` | 5 |
+| MOONDROP Solis | Passive IEM | `synopsys` | 5 |
+| MOONDROP Solis II | Passive IEM | `synopsys` | 5 |
+| MOONDROP SSP | Passive IEM | `synopsys` | 5 |
+| MOONDROP Starfield II | Passive IEM | `synopsys` | 5 |
+| MOONDROP Stellaris | Passive IEM | `synopsys` | 5 |
+| MOONDROP Variations | Passive IEM | `synopsys` | 5 |
+| MOONDROP Venus | Passive IEM | `synopsys` | 5 |
+| MOONDROP Void | Passive IEM | `synopsys` | 5 |
+| MOONDROP X Threebody Droplet | Passive IEM | `synopsys` | 5 |
+
+## Still unknown
+
+- **Each model's GAIA feature list.** It is reported by the device, so one read-only
+  command per model (from a capture or the packet log) tells us what it supports.
+- **Command bytes for Moondrop features 13 to 35.** To be read from the
+  decompiled app and confirmed with captures before OpenDrop sends them.
+- **USB protocols.** Five families, none decoded yet.
 
 ## How the app will use this
 
@@ -182,4 +244,5 @@ devices and 8 unknown.
   something GAIA doesn't offer (firmware updates stay out of scope).
 - Unknown devices connect in a read-only experimental mode with the packet
   log, so owners can send us captures.
-- USB devices get their own transport and driver, later (roadmap "Later").
+- USB devices get their own transport and drivers, later (roadmap "Later"),
+  starting with the family that covers the most models people own.
