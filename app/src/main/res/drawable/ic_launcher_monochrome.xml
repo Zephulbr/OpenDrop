@@ -1,14 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Android 13+ themed icon: the curve alone; the launcher picks the colors. -->
+<!-- Android 13+ themed icon: rim and liquid in one color; the launcher picks it. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <group>
+        <clip-path android:pathData="M29,54a25,25 0,1 0,50 0a25,25 0,1 0,-50 0Z" />
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M26,46C36,46 42,55 49,60C55,64.5 62,64.5 69,62.5C74,61 78,60.5 84,61L84,84L26,84Z" />
+    </group>
     <path
-        android:pathData="M27.12,42.92C36.08,42.92 40.56,54.12 49.52,59.72C55.12,63.08 60.72,63.08 65.2,62.52C69.68,61.96 71.92,57.48 75.28,57.48C78.08,57.48 79.2,61.4 80.88,61.96"
-        android:strokeWidth="4.5"
-        android:strokeColor="#FFFFFFFF"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round" />
+        android:pathData="M29,54a25,25 0,1 0,50 0a25,25 0,1 0,-50 0Z"
+        android:strokeWidth="2"
+        android:strokeColor="#FFFFFFFF" />
 </vector>

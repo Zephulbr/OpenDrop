@@ -312,10 +312,19 @@ haptic settings. No haptics on scroll.
 
 ## App icon
 
-An adaptive icon (`mipmap-anydpi-v26`): the Basshead curve in hot pink with
-a soft fill and a gray baseline, on the dark background `#121212`. A
-monochrome layer (the curve alone) serves Android 13+ themed icons. The
-notification icon is the same curve in white.
+A circle half full of sound: the EQ curve is the surface of a pink-to-violet
+liquid (`#FF2E88` → `#B45CFF`) with a light highlight along it, and a soft
+pink haze rises from the surface into the dark half. A thin rim
+(`#3A3340`) defines the circle on the near-black background, which has a
+faint warm glow at the top.
+
+- Adaptive icon (`mipmap-anydpi-v26`): `ic_launcher_background` (radial
+  gradient) and `ic_launcher_foreground` (circle, haze, liquid, rim).
+- Themed icon (Android 13+): `ic_launcher_monochrome`, the rim and liquid
+  in one color.
+- Status bar: `ic_stat_opendrop`, the same circle and liquid in white.
+- Only gradients, clip paths and strokes, so it stays a plain
+  VectorDrawable (no bitmaps, no blur).
 
 ## Implementation notes
 

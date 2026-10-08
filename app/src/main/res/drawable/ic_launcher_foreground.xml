@@ -1,23 +1,59 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- App icon foreground: the Basshead curve from the home screen, in hot pink. -->
+<!--
+  App icon: a circle half full of sound. The EQ curve is the surface of a
+  pink-to-violet liquid, with a soft haze rising from it into the dark half.
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <!-- The dark half of the circle. -->
     <path
-        android:fillAlpha="0.22"
-        android:fillColor="#FF2E88"
-        android:pathData="M27.12,42.92C36.08,42.92 40.56,54.12 49.52,59.72C55.12,63.08 60.72,63.08 65.2,62.52C69.68,61.96 71.92,57.48 75.28,57.48C78.08,57.48 79.2,61.4 80.88,61.96L80.88,63.08L27.12,63.08Z" />
+        android:fillColor="#FF1C1920"
+        android:pathData="M29,54a25,25 0,1 0,50 0a25,25 0,1 0,-50 0Z" />
+    <group>
+        <clip-path android:pathData="M29,54a25,25 0,1 0,50 0a25,25 0,1 0,-50 0Z" />
+        <!-- Haze above the wave. -->
+        <path android:pathData="M26,38h58v26h-58z">
+            <aapt:attr name="android:fillColor">
+                <gradient
+                    android:endX="0"
+                    android:endY="62"
+                    android:startX="0"
+                    android:startY="38"
+                    android:type="linear">
+                    <item android:color="#00FF2E88" android:offset="0" />
+                    <item android:color="#59FF2E88" android:offset="1" />
+                </gradient>
+            </aapt:attr>
+        </path>
+        <!-- The liquid. -->
+        <path android:pathData="M26,46C36,46 42,55 49,60C55,64.5 62,64.5 69,62.5C74,61 78,60.5 84,61L84,84L26,84Z">
+            <aapt:attr name="android:fillColor">
+                <gradient
+                    android:endX="0"
+                    android:endY="80"
+                    android:startX="0"
+                    android:startY="44"
+                    android:type="linear">
+                    <item android:color="#FFFF2E88" android:offset="0" />
+                    <item android:color="#FFB45CFF" android:offset="1" />
+                </gradient>
+            </aapt:attr>
+        </path>
+        <!-- Highlight along the surface. -->
+        <path
+            android:pathData="M26,46C36,46 42,55 49,60C55,64.5 62,64.5 69,62.5C74,61 78,60.5 84,61"
+            android:strokeWidth="1.6"
+            android:strokeColor="#FFFFC2DD"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+    </group>
+    <!-- Rim. -->
     <path
-        android:pathData="M27.12,63.08H80.88"
-        android:strokeWidth="2"
-        android:strokeColor="#505050"
-        android:strokeLineCap="round" />
-    <path
-        android:pathData="M27.12,42.92C36.08,42.92 40.56,54.12 49.52,59.72C55.12,63.08 60.72,63.08 65.2,62.52C69.68,61.96 71.92,57.48 75.28,57.48C78.08,57.48 79.2,61.4 80.88,61.96"
-        android:strokeWidth="4.5"
-        android:strokeColor="#FF2E88"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round" />
+        android:pathData="M29,54a25,25 0,1 0,50 0a25,25 0,1 0,-50 0Z"
+        android:strokeWidth="1.2"
+        android:strokeColor="#FF3A3340" />
 </vector>
