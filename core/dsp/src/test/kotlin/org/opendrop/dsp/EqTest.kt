@@ -133,6 +133,40 @@ class EqTest {
     }
 
     @Test
+    fun rejectsNonFiniteValues() {
+        val nines = "9".repeat(400) // parses to Infinity as a double
+        assertNull(AutoEq.parse("Filter 1: ON PK Fc $nines Hz Gain 4.0 dB Q 1.0"))
+        assertNull(AutoEq.parse("Filter 1: ON PK Fc 1000 Hz Gain $nines.0 dB Q 1.0"))
+        assertNull(AutoEq.parse("GraphicEQ: 20 $nines"))
+        // A non-finite preamp falls back to the safe preamp instead.
+        val eq = AutoEq.parse("Preamp: -$nines dB\nFilter 1: ON PK Fc 1000 Hz Gain 4.0 dB Q 1.0")!!
+        near(-4.0, eq.preamp, 0.1)
+    }
+
+    @Test
+    fun filterMathSurvivesNonFiniteInput() {
+        val f = PeqFilter(FilterType.PEAK, Double.NaN, 6.0, 1.0)
+        assertTrue(f.responseDb(1_000.0).isFinite())
+    }
+
+    @Test
+    fun graphicEqToleratesDuplicatePoints() {
+        // F7 looked like duplicates could hit 0/0; the bounds f0 < hz <= f1 make
+        // that unreachable. This pins the harmless behavior.
+        val eq = GraphicEq(0.0, listOf(50.0 to 1.0, 100.0 to 2.0, 100.0 to 3.0, 1_000.0 to 4.0))
+        assertEquals(2.0, eq.curveDb(100.0), 0.0)
+        assertTrue(eq.curveDb(500.0).isFinite())
+    }
+
+    @Test
+    fun shelvesDefaultToAutoEqQ() {
+        val shelf = AutoEq.parse("Filter 1: ON LSC Fc 105 Hz Gain 6.0 dB") as ParametricEq
+        assertEquals(0.70, shelf.filters[0].q, 1e-9)
+        val peak = AutoEq.parse("Filter 1: ON PK Fc 105 Hz Gain 6.0 dB") as ParametricEq
+        assertEquals(0.707, peak.filters[0].q, 1e-9)
+    }
+
+    @Test
     fun presetsDontClip() {
         EqPresetCurve.entries.forEach { assertTrue(it.label, it.eq.preamp + it.eq.peakDb() <= 0.3) }
     }

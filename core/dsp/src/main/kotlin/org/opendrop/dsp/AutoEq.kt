@@ -31,11 +31,13 @@ object AutoEq {
         val filters = mutableListOf<PeqFilter>()
         var graphic: List<Pair<Double, Double>>? = null
         for (line in text.lineSequence()) {
-            preampRegex.find(line)?.let { preamp = it.groupValues[1].toDouble() }
+            preampRegex.find(line)?.let { preamp = it.groupValues[1].toDoubleOrNull()?.takeIf(Double::isFinite) }
             filterRegex.find(line)?.let { m -> parseFilter(m)?.let(filters::add) }
             graphicRegex.find(line)?.let { m -> graphic = parseGraphic(m.groupValues[1]) }
         }
         val points = graphic
+        // AutoEQ files never mix the two; when a text holds both, the filters
+        // win and the GraphicEQ line is ignored.
         return when {
             filters.isNotEmpty() -> ParametricEq(preamp ?: 0.0, filters).let { eq ->
                 if (preamp == null) eq.copy(preamp = eq.safePreamp()) else eq
@@ -57,19 +59,22 @@ object AutoEq {
             "HP", "HPQ" -> FilterType.HIGH_PASS
             else -> return null
         }
-        val frequency = m.groupValues[3].toDoubleOrNull()?.takeIf { it > 0 } ?: return null
-        val gain = m.groupValues[4].toDoubleOrNull() ?: 0.0
-        // AutoEQ's default for shelves without Q is 0.7; pass filters 0.707.
-        val q = m.groupValues[5].toDoubleOrNull()?.takeIf { it > 0 } ?: 0.707
+        val frequency = m.groupValues[3].toDoubleOrNull()?.takeIf { it > 0 && it.isFinite() } ?: return null
+        val gain = (m.groupValues[4].toDoubleOrNull() ?: 0.0).takeIf(Double::isFinite) ?: return null
+        // AutoEQ's default when a filter has no Q: 0.70 for shelves, 0.707 otherwise.
+        val q = m.groupValues[5].toDoubleOrNull()?.takeIf { it > 0 && it.isFinite() } ?: defaultQ(type)
         return PeqFilter(type, frequency, if (type.hasGain) gain else 0.0, q)
     }
+
+    private fun defaultQ(type: FilterType): Double =
+        if (type == FilterType.LOW_SHELF || type == FilterType.HIGH_SHELF) 0.70 else 0.707
 
     private fun parseGraphic(body: String): List<Pair<Double, Double>> =
         body.split(';').mapNotNull { part ->
             val bits = part.trim().split(Regex("\\s+"))
             if (bits.size < 2) return@mapNotNull null
-            val hz = bits[0].toDoubleOrNull()?.takeIf { it > 0 } ?: return@mapNotNull null
-            val db = bits[1].toDoubleOrNull() ?: return@mapNotNull null
+            val hz = bits[0].toDoubleOrNull()?.takeIf { it > 0 && it.isFinite() } ?: return@mapNotNull null
+            val db = bits[1].toDoubleOrNull()?.takeIf(Double::isFinite) ?: return@mapNotNull null
             hz to db
         }
 

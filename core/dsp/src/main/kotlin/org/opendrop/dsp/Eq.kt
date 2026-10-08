@@ -48,10 +48,14 @@ data class PeqFilter(
 
     /** b0, b1, b2, a0, a1, a2. */
     private fun coefficients(fs: Double): DoubleArray {
-        val a = 10.0.pow(gain / 40)
-        val w0 = 2 * PI * frequency.coerceIn(1.0, fs / 2 - 1) / fs
+        // NaN would sail through coerceIn/coerceAtLeast, so sanitize first.
+        val g = if (gain.isFinite()) gain else 0.0
+        val f = if (frequency.isFinite()) frequency.coerceIn(1.0, fs / 2 - 1) else 1_000.0
+        val qv = if (q.isFinite() && q > 0.0) q.coerceAtLeast(0.01) else 0.7
+        val a = 10.0.pow(g / 40)
+        val w0 = 2 * PI * f / fs
         val cw = cos(w0)
-        val alpha = sin(w0) / (2 * q.coerceAtLeast(0.01))
+        val alpha = sin(w0) / (2 * qv)
         val sa = 2 * sqrt(a) * alpha
         return when (type) {
             FilterType.PEAK -> doubleArrayOf(1 + alpha * a, -2 * cw, 1 - alpha * a, 1 + alpha / a, -2 * cw, 1 - alpha / a)
