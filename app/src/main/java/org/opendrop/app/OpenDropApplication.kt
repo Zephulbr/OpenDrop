@@ -12,6 +12,7 @@ import org.opendrop.app.device.Connection
 import org.opendrop.app.device.ConnectionService
 import org.opendrop.app.device.DeviceController
 import org.opendrop.app.device.LowBatteryAlert
+import org.opendrop.app.device.UsbController
 import org.opendrop.app.device.isActive
 import org.opendrop.app.phoneeq.PhoneEq
 import org.opendrop.app.phoneeq.PhoneEqService
@@ -25,6 +26,8 @@ class OpenDropApplication : Application() {
     val settings: AppSettings by lazy { AppSettings(this) }
 
     val phoneEq: PhoneEq by lazy { PhoneEq(this) }
+
+    val usb: UsbController by lazy { UsbController(this) }
 
     override fun onCreate() {
         super.onCreate()

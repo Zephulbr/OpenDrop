@@ -73,6 +73,7 @@ import kotlinx.coroutines.delay
 import org.opendrop.app.device.Connection
 import org.opendrop.app.device.PairedDevice
 import org.opendrop.app.device.UiState
+import org.opendrop.app.device.UsbEntry
 import org.opendrop.app.ui.components.NavRow
 import org.opendrop.app.ui.components.RollingNumber
 import org.opendrop.app.ui.components.SectionTitle
@@ -112,6 +113,8 @@ fun HomeScreen(
     onOpenSettings: () -> Unit,
     phoneEqOn: Boolean,
     onOpenPhoneEq: () -> Unit,
+    usbDevices: List<UsbEntry>,
+    onOpenUsb: (String) -> Unit,
 ) {
     ConnectionHaptics(state.connection)
     NotificationPermissionRequest(state.connection)
@@ -240,6 +243,19 @@ fun HomeScreen(
                                     ),
                                 )
                             }
+                        }
+                    }
+                    val usb = usbDevices.filter { it.relevant }
+                    if (usb.isNotEmpty()) {
+                        item(key = "usbGap") { Spacer(Modifier.height(Dimens.SectionGap)) }
+                        item(key = "usbTitle") { SectionTitle("USB devices", Modifier.animateItem()) }
+                        items(usb, key = { "usb:" + it.key }) { entry ->
+                            NavRow(
+                                title = entry.title,
+                                subtitle = if (entry.likelyMoondrop) "Read-only for now" else "USB audio",
+                                onClick = { onOpenUsb(entry.key) },
+                                modifier = Modifier.animateItem(),
+                            )
                         }
                     }
                     item(key = "pickerPhoneEqGap") { Spacer(Modifier.height(Dimens.SectionGap)) }

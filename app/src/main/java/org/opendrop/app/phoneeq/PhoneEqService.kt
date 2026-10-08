@@ -75,14 +75,19 @@ class PhoneEqService : Service() {
     private fun stop() {
         watcher?.cancel()
         watcher = null
-        engine?.release()
+        releaseEngine()
         engine = null
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
 
+    /** The engine only exists on Android 9+, where the service creates it. */
+    private fun releaseEngine() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) engine?.release()
+    }
+
     override fun onDestroy() {
-        engine?.release()
+        releaseEngine()
         scope.cancel()
         super.onDestroy()
     }

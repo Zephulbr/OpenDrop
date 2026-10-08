@@ -19,16 +19,17 @@ deleting it.
 | Milestone | Goal | Status |
 |---|---|---|
 | [M0](#m0-research) Research | Know how Moondrop devices talk | ✅ Done (USB protocols still open) |
-| [M1](#m1-space-travel-mvp-v01) Space Travel MVP (v0.1) | Everything the Space Travel can do | 🟡 Hardware tests pass; tag v0.1 |
+| [M1](#m1-space-travel-mvp-v01) Space Travel MVP (v0.1) | Everything the Space Travel can do | ✅ v0.1.0 tagged (`dcbfe23`) |
 | [M2](#m2-every-moondrop-bluetooth-model-v02) Every Bluetooth model (v0.2) | One GAIA driver for every Bluetooth model | 🟡 Driver done, features need captures |
 | [M3](#m3-everyday-convenience-v03) Everyday convenience (v0.3) | Tiles, widget, notifications | 🟡 Built, untested on hardware; touch lock waits on M2 |
-| [M4](#m4-phone-side-audio-v04) Phone-side audio (v0.4) | PEQ, AutoEQ, codec switching | ⬜ Not started |
-| [M5](#m5-usb-devices-v05) USB devices (v0.5) | Dawn, Moonriver, FreeDSP, DSP IEMs | ⬜ Not started |
+| [M4](#m4-phone-side-audio-v04) Phone-side audio (v0.4) | PEQ, AutoEQ, codec switching | 🟡 PEQ and AutoEQ built, untested on hardware; Shizuku codec switch open |
+| [M5](#m5-usb-devices-v05) USB devices (v0.5) | Dawn, Moonriver, FreeDSP, DSP IEMs | 🟡 Read-only transport and USB report; protocols need captures |
 | [M6](#m6-release-v10) Release (v1.0) | F-Droid and GitHub Releases | ⬜ Not started |
 
-**Next up:** tag v0.1; try the M3 tile, widget, low-battery alert and
-automation on the Space Travel; get captures (device reports) from owners of
-newer models to switch on M2 features.
+**Next up:** try the M3 and M4 features on a phone (tile, widget, low-battery
+alert, automation, phone EQ); collect device reports and USB reports from
+owners of other models, then captures, to switch on M2 features and the M5
+USB families.
 
 ## Guiding principles
 
@@ -149,14 +150,32 @@ tests and a screen):
 
 ## M4: Phone-side audio (v0.4)
 
-- [ ] Parametric EQ on the phone (Android `DynamicsProcessing`), with a
-      response graph.
-- [ ] AutoEQ import and target-curve presets.
-- [ ] Codec switcher: optional Shizuku integration, Developer Options fallback.
+- [x] Parametric EQ on the phone (Android `DynamicsProcessing` on the output
+      mix, Android 9+), with a response graph and a filter editor. The curve
+      (`core/dsp`, RBJ biquads) is sampled into a 64-band pre-EQ; the preamp
+      is the input gain and a limiter at -1 dB catches the rest. A foreground
+      service holds the effect while it's on. *Untested on hardware*; some
+      phones refuse effects on the output mix, and the screen says so.
+- [x] AutoEQ import (ParametricEQ.txt and GraphicEQ.txt, from a file or the
+      clipboard), export through the share sheet, and built-in presets (Flat,
+      Bass boost, Warm, V-shape, Vocal, Treble boost). Not measured target
+      curves: those come per headphone from AutoEQ.
+- [x] Codec: Settings → Audio → Bluetooth codec opens Developer options
+      (with a hint when they're off).
+- [ ] Codec switcher through Shizuku. Not built: it needs hidden Bluetooth
+      APIs whose permission checks changed with the Bluetooth mainline module,
+      so it can only be written against a real phone.
 
 ## M5: USB devices (v0.5)
 
-- [ ] USB host transport and permission flow.
+- [x] USB host transport and permission flow (`core/transport-usb`): attached
+      USB audio and Moondrop devices show on Home; a device screen asks for
+      access and shares a **USB report** (ids, names, interfaces, raw and HID
+      report descriptors, read with standard requests only). It never claims
+      an interface, so audio keeps playing. USB model table from Link's
+      catalogue, matched loosely by product string. *Untested on hardware.*
+- Each family below needs a USB report plus a capture of MOONDROP Link
+  changing a setting (principle 2) before OpenDrop sends anything.
 - [ ] SPV family first (14 models: Dawn Pro 2, Moonriver 3, FreeDSP, Rays, ...).
 - [ ] Comtrue (Dawn 3.5 / 4.4 / Pro, Moonriver 2 Ti).
 - [ ] Synaptics (Echo-B, May, Starlight, Click, ...).

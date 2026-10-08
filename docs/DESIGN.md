@@ -344,6 +344,9 @@ faint warm glow at the top.
   tile and broadcast receivers read them synchronously.
 - `tile/EqTileService.kt`, `widget/BatteryWidget.kt` (RemoteViews, plain
   neutral colors per light/dark), `automation/Automation.kt`.
+- `phoneeq/`: phone EQ state, the DynamicsProcessing engine and its
+  foreground service; `ui/PhoneEqScreen.kt` (graph, presets, filters,
+  AutoEQ). `device/UsbController.kt` and `ui/UsbDeviceScreen.kt` for USB.
 - The window background (`res/values*/themes.xml`) matches the neutral
   background, so there's no flash before the first frame.
 

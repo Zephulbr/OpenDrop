@@ -17,6 +17,7 @@ class DeviceViewModel(app: Application) : AndroidViewModel(app) {
     private val controller = (app as OpenDropApplication).controller
     private val settings = (app as OpenDropApplication).settings
     private val phoneEqStore = (app as OpenDropApplication).phoneEq
+    private val usb = (app as OpenDropApplication).usb
 
     val state: StateFlow<UiState> = controller.state
 
@@ -32,7 +33,14 @@ class DeviceViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setCustomEq(curve: EqCurve) = phoneEqStore.setCustom(curve)
 
-    fun refresh() = controller.refresh()
+    fun refresh() {
+        controller.refresh()
+        usb.refresh()
+    }
+
+    val usbDevices: StateFlow<List<UsbEntry>> = usb.devices
+
+    fun requestUsbPermission(key: String) = usb.requestPermission(key)
 
     fun connect(target: PairedDevice) = controller.connect(target)
 
