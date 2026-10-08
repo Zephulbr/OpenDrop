@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import java.util.UUID
 import org.opendrop.app.R
 import org.opendrop.app.automation.Automation
 import org.opendrop.app.settings.AppSettings
@@ -91,15 +92,31 @@ fun SettingsScreen(
                 title = stringResource(R.string.settings_allow_other_apps),
                 subtitle = stringResource(R.string.settings_allow_other_apps_subtitle),
                 checked = behavior.automation,
-                onCheckedChange = { on -> onChange { it.copy(automation = on) } },
+                onCheckedChange = { on ->
+                    onChange {
+                        when {
+                            on && it.automationToken.isEmpty() -> it.copy(automation = true, automationToken = newToken())
+                            !on -> it.copy(automation = false)
+                            else -> it.copy(automation = true)
+                        }
+                    }
+                },
             )
             AnimatedVisibility(behavior.automation) {
-                Text(
-                    automationHelp(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = Dimens.Gutter, vertical = 8.dp),
-                )
+                Column {
+                    Text(
+                        automationHelp(),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = Dimens.Gutter, vertical = 8.dp),
+                    )
+                    Text(
+                        stringResource(R.string.automation_token, behavior.automationToken),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = Dimens.Gutter, vertical = 8.dp),
+                    )
+                }
             }
 
             Spacer(Modifier.height(Dimens.SectionGap))
@@ -142,3 +159,5 @@ private fun automationHelp(): String = listOf(
     "",
     stringResource(R.string.automation_help_state, Automation.EVENT_STATE),
 ).joinToString("\n")
+
+private fun newToken(): String = UUID.randomUUID().toString().replace("-", "").take(8)

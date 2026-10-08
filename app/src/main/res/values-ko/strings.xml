@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Machine-assisted translation; corrections welcome. -->
 <resources>
     <string name="accent_cool_cyan">쿨 시안</string>
@@ -23,6 +23,7 @@
     <string name="appearance_vibrance">선명도</string>
     <string name="automation_help_send">다음 작업 중 하나로 패키지 %1$s에 브로드캐스트를 보내세요:</string>
     <string name="automation_help_state">연결, 배터리 또는 EQ 프리셋이 바뀌면 OpenDrop이 %1$s을(를) 브로드캐스트합니다.</string>
+    <string name="automation_token">명령에 이 토큰이 포함되어야 합니다: \"token\"이라는 이름의 extra에 %1$s 값을 넣으세요. 이 값을 아는 앱은 EQ를 변경할 수 있으니 비공개로 유지하세요.</string>
     <string name="back">뒤로</string>
     <string name="cancel">취소</string>
     <string name="capability_auto_power_off">자동 전원 끄기</string>

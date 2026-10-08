@@ -11,6 +11,8 @@ data class Behavior(
     val lowBatteryAlert: Boolean = true,
     /** Accept commands from other apps (Tasker etc.) and broadcast state changes. */
     val automation: Boolean = false,
+    /** Shared secret automation commands must carry; empty accepts any (pre-token setups). */
+    val automationToken: String = "",
     /** The first-run screen was dismissed. */
     val onboarded: Boolean = false,
 )
@@ -26,6 +28,7 @@ class AppSettings(context: Context) {
         Behavior(
             lowBatteryAlert = prefs.getBoolean(KEY_LOW_BATTERY, true),
             automation = prefs.getBoolean(KEY_AUTOMATION, false),
+            automationToken = prefs.getString(KEY_AUTOMATION_TOKEN, "") ?: "",
             onboarded = prefs.getBoolean(KEY_ONBOARDED, false),
         ),
     )
@@ -37,6 +40,7 @@ class AppSettings(context: Context) {
         prefs.edit()
             .putBoolean(KEY_LOW_BATTERY, next.lowBatteryAlert)
             .putBoolean(KEY_AUTOMATION, next.automation)
+            .putString(KEY_AUTOMATION_TOKEN, next.automationToken)
             .putBoolean(KEY_ONBOARDED, next.onboarded)
             .apply()
     }
@@ -45,6 +49,7 @@ class AppSettings(context: Context) {
         const val LOW_BATTERY_PERCENT = 20
         private const val KEY_LOW_BATTERY = "low_battery_alert"
         private const val KEY_AUTOMATION = "automation"
+        private const val KEY_AUTOMATION_TOKEN = "automation_token"
         private const val KEY_ONBOARDED = "onboarded"
     }
 }

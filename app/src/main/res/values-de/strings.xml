@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Machine-assisted translation; corrections welcome. -->
 <resources>
     <string name="accent_cool_cyan">Kühles Cyan</string>
@@ -23,6 +23,7 @@
     <string name="appearance_vibrance">Lebendigkeit</string>
     <string name="automation_help_send">Sende einen Broadcast an das Paket %1$s mit einer dieser Aktionen:</string>
     <string name="automation_help_state">OpenDrop sendet %1$s, wenn sich Verbindung, Akku oder EQ-Preset ändern.</string>
+    <string name="automation_token">Befehle müssen dieses Token enthalten: ein Extra namens \"token\" mit dem Wert %1$s. Jede App, die es kennt, kann deine EQ wechseln – halte es geheim.</string>
     <string name="back">Zurück</string>
     <string name="cancel">Abbrechen</string>
     <string name="capability_auto_power_off">Automatisches Ausschalten</string>

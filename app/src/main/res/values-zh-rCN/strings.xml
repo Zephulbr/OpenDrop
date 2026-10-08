@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Machine-assisted translation; corrections welcome. -->
 <resources>
     <string name="accent_cool_cyan">清凉青</string>
@@ -23,6 +23,7 @@
     <string name="appearance_vibrance">鲜艳度</string>
     <string name="automation_help_send">向软件包 %1$s 发送广播，使用以下操作之一：</string>
     <string name="automation_help_state">当连接、电量或 EQ 预设变化时，OpenDrop 会广播 %1$s。</string>
+    <string name="automation_token">命令必须携带此令牌：添加一个名为 \"token\" 的 extra，值为 %1$s。任何知道它的应用都能切换你的 EQ，请保密。</string>
     <string name="back">返回</string>
     <string name="cancel">取消</string>
     <string name="capability_auto_power_off">自动关机</string>

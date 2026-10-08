@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Source strings. Translations in values-*/ are generated to have the same keys. -->
 <resources>
     <string name="accent_cool_cyan">Cool cyan</string>
@@ -23,6 +23,7 @@
     <string name="appearance_vibrance">Vibrance</string>
     <string name="automation_help_send">Send a broadcast to package %1$s with one of these actions:</string>
     <string name="automation_help_state">OpenDrop broadcasts %1$s when the connection, battery or EQ preset changes.</string>
+    <string name="automation_token">Commands must carry this token: an extra named \"token\" with the value %1$s. Any app that knows it can switch your EQ, so keep it private.</string>
     <string name="back">Back</string>
     <string name="cancel">Cancel</string>
     <string name="capability_auto_power_off">Auto power-off</string>

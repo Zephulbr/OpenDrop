@@ -29,6 +29,9 @@ object Automation {
      */
     const val EXTRA_PRESET = "preset"
 
+    /** [ACTION_*]: the shared secret from Settings; required once the user has one. */
+    const val EXTRA_TOKEN = "token"
+
     /** Sent when the connection, battery or EQ preset changes. */
     const val EVENT_STATE = "org.opendrop.app.event.STATE"
 
@@ -74,6 +77,11 @@ class AutomationReceiver : BroadcastReceiver() {
         val app = context.applicationContext as OpenDropApplication
         if (!app.settings.state.value.automation) {
             Log.i(TAG, "Ignored ${intent.action}: automation is off in Settings")
+            return
+        }
+        val expected = app.settings.state.value.automationToken
+        if (expected.isNotEmpty() && intent.getStringExtra(Automation.EXTRA_TOKEN) != expected) {
+            Log.w(TAG, "Ignored ${intent.action}: wrong automation token")
             return
         }
         val controller = app.controller

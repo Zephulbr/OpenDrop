@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Machine-assisted translation; corrections welcome. -->
 <resources>
     <string name="accent_cool_cyan">Cyan frais</string>
@@ -23,6 +23,7 @@
     <string name="appearance_vibrance">Éclat</string>
     <string name="automation_help_send">Envoyez une diffusion au paquet %1$s avec l’une de ces actions :</string>
     <string name="automation_help_state">OpenDrop diffuse %1$s quand la connexion, la batterie ou le préréglage d’EQ change.</string>
+    <string name="automation_token">Les commandes doivent contenir ce jeton : un extra nommé « token » avec la valeur %1$s. Toute application qui le connaît peut changer votre EQ ; gardez-le privé.</string>
     <string name="back">Retour</string>
     <string name="cancel">Annuler</string>
     <string name="capability_auto_power_off">Arrêt automatique</string>

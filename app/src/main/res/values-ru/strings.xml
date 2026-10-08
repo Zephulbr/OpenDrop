@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Machine-assisted translation; corrections welcome. -->
 <resources>
     <string name="accent_cool_cyan">Холодный циан</string>
@@ -23,6 +23,7 @@
     <string name="appearance_vibrance">Насыщенность</string>
     <string name="automation_help_send">Отправьте широковещательное сообщение пакету %1$s с одним из этих действий:</string>
     <string name="automation_help_state">OpenDrop рассылает %1$s, когда меняются подключение, заряд или пресет эквалайзера.</string>
+    <string name="automation_token">Команды должны содержать этот токен: extra с именем \"token\" и значением %1$s. Любое приложение, которое его знает, может переключить ваш эквалайзер — держите его в секрете.</string>
     <string name="back">Назад</string>
     <string name="cancel">Отмена</string>
     <string name="capability_auto_power_off">Автовыключение</string>
