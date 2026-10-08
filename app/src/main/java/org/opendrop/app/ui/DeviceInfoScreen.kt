@@ -23,6 +23,8 @@ import org.opendrop.app.ui.components.InfoRow
 import org.opendrop.app.ui.components.ScreenTopBar
 import org.opendrop.app.ui.components.SectionTitle
 import org.opendrop.app.ui.theme.Dimens
+import org.opendrop.protocol.Chip
+import org.opendrop.protocol.GaiaFeature
 
 private const val LOG_LINES_SHOWN = 100
 
@@ -39,7 +41,25 @@ fun DeviceInfoScreen(state: UiState, onBack: () -> Unit) {
         ) {
             item(key = "name") { InfoRow("Name", state.selected?.name ?: "–") }
             item(key = "address") { InfoRow("Address", state.selected?.address ?: "–") }
+            item(key = "model") {
+                val device = state.device
+                InfoRow(
+                    "Model",
+                    device.model?.name ?: device.variantName ?: "–",
+                    note = device.model?.let { "${it.chip.label()} chip, controlled over GAIA" }
+                        ?: device.variantName?.let { "Not in OpenDrop's model list, so it's read-only." },
+                )
+            }
             item(key = "firmware") { InfoRow("Firmware", state.device.firmwareVersion ?: "–") }
+            if (state.device.featuresKnown) {
+                item(key = "features") {
+                    InfoRow(
+                        "GAIA features",
+                        state.device.features.keys.size.toString(),
+                        note = state.device.features.keys.sorted().joinToString(", ") { GaiaFeature.name(it) },
+                    )
+                }
+            }
             item(key = "battery") {
                 InfoRow(
                     "Battery",
@@ -89,4 +109,11 @@ fun DeviceInfoScreen(state: UiState, onBack: () -> Unit) {
             }
         }
     }
+}
+
+private fun Chip.label(): String = when (this) {
+    Chip.BLUETRUM -> "Bluetrum"
+    Chip.QUALCOMM -> "Qualcomm"
+    Chip.JIELI -> "Jieli"
+    Chip.AIROHA -> "Airoha"
 }

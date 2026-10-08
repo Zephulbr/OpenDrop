@@ -123,7 +123,9 @@ fun HomeScreen(
             pendingEq = null
         }
     }
-    val shownEq = pendingEq ?: confirmedEq?.let(EqPreset::of)
+    // Preset names (and the curve) are the Space Travel's; other models' ids mean other things.
+    val namedPresets = state.device.model?.spaceTravelPresets == true
+    val shownEq = pendingEq ?: confirmedEq?.takeIf { namedPresets }?.let(EqPreset::of)
 
     Box(
         Modifier
@@ -196,9 +198,11 @@ fun HomeScreen(
                     }
                 }
                 Phase.Device -> {
-                    if (state.connection == Connection.Connected && state.device.supportsEq) {
+                    val device = state.device
+                    if (state.connection == Connection.Connected && device.switchableEqPresets.isNotEmpty()) {
                         item(key = "eq") {
                             EqSection(
+                                options = device.switchableEqPresets,
                                 shown = shownEq,
                                 confirmedId = confirmedEq,
                                 onSelect = { preset ->
@@ -209,6 +213,17 @@ fun HomeScreen(
                             )
                         }
                         item(key = "eqGap") { Spacer(Modifier.height(Dimens.SectionGap)) }
+                    }
+                    supportNote(state)?.let { note ->
+                        item(key = "supportNote") {
+                            Message(
+                                note,
+                                Modifier
+                                    .animateItem()
+                                    .padding(bottom = Dimens.SectionGap),
+                                secondary = true,
+                            )
+                        }
                     }
                     item(key = "volume") {
                         VolumeSection(state.volume, state.maxVolume, onVolume, Modifier.animateItem())
@@ -374,8 +389,23 @@ private fun CollapsingTopBar(listState: LazyListState, name: String, battery: In
     }
 }
 
+/** Why controls are missing for a connected device, if they are. */
+private fun supportNote(state: UiState): String? {
+    val device = state.device
+    if (state.connection != Connection.Connected || device.variantName == null) return null
+    return when {
+        !device.canControl ->
+            "OpenDrop doesn't know \"${device.variantName}\" yet, so it only reads from it. " +
+                "Device info shows what it reports."
+        device.supportsEq && device.switchableEqPresets.isEmpty() ->
+            "EQ preset ${device.eqPresetId ?: "–"}. Switching presets isn't supported on this model yet."
+        else -> null
+    }
+}
+
 @Composable
 private fun EqSection(
+    options: List<EqPreset>,
     shown: EqPreset?,
     confirmedId: Int?,
     onSelect: (EqPreset) -> Unit,
@@ -385,7 +415,7 @@ private fun EqSection(
     Column(modifier.fillMaxWidth()) {
         SectionTitle("EQ")
         SegmentedSelector(
-            options = EqPreset.entries,
+            options = options,
             selected = shown,
             label = { it.label },
             onSelect = { preset ->

@@ -35,8 +35,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.opendrop.protocol.EqPreset
 import org.opendrop.protocol.GaiaFrame
-import org.opendrop.protocol.SpaceTravelSession
-import org.opendrop.protocol.SpaceTravelState
+import org.opendrop.protocol.GaiaDeviceState
+import org.opendrop.protocol.GaiaSession
+import org.opendrop.protocol.MoondropModels
 
 data class PairedDevice(val name: String, val address: String, val likelyMoondrop: Boolean)
 
@@ -54,7 +55,7 @@ data class UiState(
     val devices: List<PairedDevice> = emptyList(),
     val selected: PairedDevice? = null,
     val connection: Connection = Connection.Disconnected,
-    val device: SpaceTravelState = SpaceTravelState(),
+    val device: GaiaDeviceState = GaiaDeviceState(),
     /** Percent, from the HFP battery report Android already keeps. */
     val battery: Int? = null,
     val volume: Int = 0,
@@ -77,7 +78,7 @@ class DeviceViewModel(app: Application) : AndroidViewModel(app) {
     /** The session isn't thread-safe; every call into it runs on this thread. */
     private val sessionThread = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     private var link: RfcommLink? = null
-    private var session: SpaceTravelSession? = null
+    private var session: GaiaSession? = null
     private var readJob: Job? = null
 
     /** The last device the user connected to; auto-connect target. */
@@ -179,7 +180,8 @@ class DeviceViewModel(app: Application) : AndroidViewModel(app) {
             .map { d ->
                 val name = d.name ?: d.address
                 val lower = name.lowercase(Locale.ROOT)
-                PairedDevice(name, d.address, "moondrop" in lower || "space travel" in lower)
+                val known = MoondropModels.find(name) != null || "moondrop" in lower || "pandaer" in lower
+                PairedDevice(name, d.address, known)
             }
             .sortedWith(compareByDescending<PairedDevice> { it.likelyMoondrop }.thenBy { it.name })
 
@@ -193,7 +195,7 @@ class DeviceViewModel(app: Application) : AndroidViewModel(app) {
         val device = bluetooth?.getRemoteDevice(target.address) ?: return
         stop()
         _state.update {
-            it.copy(selected = target, connection = Connection.Connecting, device = SpaceTravelState(), log = emptyList())
+            it.copy(selected = target, connection = Connection.Connecting, device = GaiaDeviceState(), log = emptyList())
         }
         readBattery(device)
         readJob = viewModelScope.launch(Dispatchers.IO) { keepConnected(device, auto) }
@@ -225,7 +227,7 @@ class DeviceViewModel(app: Application) : AndroidViewModel(app) {
             }
             val wait = RETRY_DELAYS_MS[(failures - 1).coerceAtLeast(0)]
             logEvent("${ended.reason}. Reconnecting in ${wait / 1000} s")
-            _state.update { it.copy(connection = Connection.Reconnecting, device = SpaceTravelState()) }
+            _state.update { it.copy(connection = Connection.Reconnecting, device = GaiaDeviceState()) }
             delay(wait)
         }
     }
@@ -243,7 +245,7 @@ class DeviceViewModel(app: Application) : AndroidViewModel(app) {
         }
         val connectedAt = System.currentTimeMillis()
         link = newLink
-        val newSession = SpaceTravelSession(
+        val newSession = GaiaSession(
             send = { bytes -> newLink.write(bytes) },
             onState = { s -> _state.update { it.copy(device = s) } },
             onFrame = ::logFrame,

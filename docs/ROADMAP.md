@@ -147,6 +147,8 @@ and game mode.
       `core/transport-classic` when a second model needs it).
 - [x] Reconnect automatically (with backoff) when the earbuds drop the link.
 - [x] Remember the last device; connect on launch and when the earbuds connect to the phone. *Untested on hardware.*
+- [x] Generic GAIA driver: model detection by variant name, feature list,
+      read-only mode for unknown models ([devices.md](devices.md)).
 - [ ] `core/transport-ble`: later models that use GAIA over GATT.
 - [x] Packet log on the device screen (read-only console).
 

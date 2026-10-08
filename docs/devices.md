@@ -232,17 +232,28 @@ Passive IEMs. Link lists them for EQ targets and frequency-response data, applie
   decompiled app and confirmed with captures before OpenDrop sends them.
 - **USB protocols.** Five families, none decoded yet.
 
-## How the app will use this
+## How the app uses this
 
-- Detect the model by its GAIA variant name, falling back to the Bluetooth
-  name, then pick a driver.
-- One generic GAIA v3 driver that builds the UI from the features the device
-  reports, with small per-model overrides (like the Space Travel EQ pop warning).
-  Moondrop features (13 to 35) are added one at a time as we confirm their
-  commands with captures.
+Done (`core/protocol`: `GaiaSession`, `MoondropModels`, `GaiaFeature`):
+
+- One GAIA v3 session for every Bluetooth model. After Link's connect
+  sequence it also reads the variant name and the available EQ presets (both
+  read-only, verified on the Space Travel), and follows feature lists that
+  come in several parts.
+- The variant name is looked up in the model table above. Device info shows
+  the model, chip and the features the device reports.
+- **Unknown devices are read-only**: OpenDrop shows what they report and the
+  packet log, and sends nothing that changes them.
+- EQ switching is offered only for models whose preset names we know (the
+  Space Travel for now), and only for presets the device says it has.
+  Other known models show the current preset id.
+
+Next:
+
+- Moondrop features 13 to 35, one at a time, as we confirm their commands
+  with captures (battery, ANC v3 and touch controls first).
+- Preset names for other models (Link downloads them per model).
 - Airoha's own SDK protocol only if an Airoha model turns out to need it for
   something GAIA doesn't offer (firmware updates stay out of scope).
-- Unknown devices connect in a read-only experimental mode with the packet
-  log, so owners can send us captures.
 - USB devices get their own transport and drivers, later (roadmap "Later"),
   starting with the family that covers the most models people own.
