@@ -69,6 +69,9 @@ newer models to switch on M2 features.
 
 - [x] Gradle project, CI (protocol tests, Python tool tests, debug APK, lint).
 - [x] RFCOMM connection; reconnect with backoff when the link drops.
+- [x] Connection lives outside the screens (`DeviceController`) and runs in a
+      foreground service while connected, with an ongoing notification and a
+      Disconnect action. *Untested on hardware.*
 - [x] Remember the last device; connect on launch and when the earbuds connect
       to the phone. *Untested on hardware.*
 - [x] Home screen: connection state, firmware, battery (Android's HFP level).

@@ -163,6 +163,12 @@ Scale (Compose `Typography` overrides):
   dashed curve, a list of paired devices, Moondrop devices first. Errors
   show inline above the list, with the fix ("take them out of the case,
   close MOONDROP Link").
+- **Connection notification**: while connected or reconnecting, a quiet
+  ongoing notification ("Space Travel — Connected · Basshead · 80 %") with a
+  Disconnect action; tapping it opens the app. It belongs to the foreground
+  service that keeps the connection alive in the background. The status bar
+  icon is the EQ curve. Android 13+ asks for notification permission once,
+  on the first connection.
 - **Permission**: one sentence on why, one button. No multi-page onboarding
   until Phase 5.
 - **Sub-screens** (touch controls, codec, PEQ later) slide in as full
@@ -304,6 +310,22 @@ haptic settings. No haptics on scroll.
 - Accent: System (12+) / presets / Custom
 - Haptics: on/off
 
+## App icon
+
+A circle half full of sound: the EQ curve is the surface of a pink-to-violet
+liquid (`#FF2E88` → `#B45CFF`) with a light highlight along it, and a soft
+pink haze rises from the surface into the dark half. A thin rim
+(`#3A3340`) defines the circle on the near-black background, which has a
+faint warm glow at the top.
+
+- Adaptive icon (`mipmap-anydpi-v26`): `ic_launcher_background` (radial
+  gradient) and `ic_launcher_foreground` (circle, haze, liquid, rim).
+- Themed icon (Android 13+): `ic_launcher_monochrome`, the rim and liquid
+  in one color.
+- Status bar: `ic_stat_opendrop`, the same circle and liquid in white.
+- Only gradients, clip paths and strokes, so it stays a plain
+  VectorDrawable (no bitmaps, no blur).
+
 ## Implementation notes
 
 - `ui/theme/`: `Color.kt` (neutral palettes, accent presets, contrast
@@ -324,4 +346,3 @@ widget/tile theming.
 - Measured preset curves, to replace the illustrative ones.
 - Whether a home-screen widget and QS tile follow the same accent (likely
   yes, via Glance theming).
-- App icon.

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 13+ themed icon: rim and liquid in one color; the launcher picks it. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group>
+        <clip-path android:pathData="M29,54a25,25 0,1 0,50 0a25,25 0,1 0,-50 0Z" />
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M26,46C36,46 42,55 49,60C55,64.5 62,64.5 69,62.5C74,61 78,60.5 84,61L84,84L26,84Z" />
+    </group>
+    <path
+        android:pathData="M29,54a25,25 0,1 0,50 0a25,25 0,1 0,-50 0Z"
+        android:strokeWidth="2"
+        android:strokeColor="#FFFFFFFF" />
+</vector>

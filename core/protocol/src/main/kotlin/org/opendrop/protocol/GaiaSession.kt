@@ -35,6 +35,9 @@ data class GaiaDeviceState(
         }
 
     val eqPreset: EqPreset? get() = eqPresetId?.let(EqPreset::of)
+
+    /** [eqPreset], but only for models whose preset ids mean the Space Travel's names. */
+    val namedEqPreset: EqPreset? get() = eqPreset?.takeIf { model?.spaceTravelPresets == true }
 }
 
 /**

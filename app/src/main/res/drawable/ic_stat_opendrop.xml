@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Status bar icon: the app icon's circle and liquid, white on transparent. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="54"
+    android:viewportHeight="54">
+    <group
+        android:translateX="-27"
+        android:translateY="-27">
+        <group>
+            <clip-path android:pathData="M29,54a25,25 0,1 0,50 0a25,25 0,1 0,-50 0Z" />
+            <path
+                android:fillColor="#FFFFFFFF"
+                android:pathData="M26,46C36,46 42,55 49,60C55,64.5 62,64.5 69,62.5C74,61 78,60.5 84,61L84,84L26,84Z" />
+        </group>
+        <path
+            android:pathData="M30.5,54a23.5,23.5 0,1 0,47 0a23.5,23.5 0,1 0,-47 0Z"
+            android:strokeWidth="3"
+            android:strokeColor="#FFFFFFFF" />
+    </group>
+</vector>
