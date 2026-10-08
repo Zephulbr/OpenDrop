@@ -1,0 +1,18 @@
+OpenDrop is an unofficial, open-source app for Moondrop audio devices.
+
+<b>Moondrop Bluetooth earbuds</b> (controlled over GAIA, like the MOONDROP Link app):
+<ul>
+<li>Connection, firmware and battery, with auto-connect when the earbuds connect to the phone</li>
+<li>EQ presets (Space Travel: Reference, Basshead, Monitor)</li>
+<li>Quick Settings tile, home-screen widgets and a low-battery notification</li>
+<li>Opt-in automation intents for Tasker and similar apps</li>
+<li>Read-only support and a shareable device report for models OpenDrop doesn't know yet</li>
+</ul>
+
+<b>Any headphones</b>: a phone-side parametric EQ with a response graph, built-in presets and AutoEQ import.
+
+<b>Moondrop USB DACs and DSP cables</b>: recognised when plugged in, with a read-only USB report to help add support.
+
+OpenDrop only uses what the firmware offers and never sends a command that hasn't been captured from a real device first. No firmware updates, no tracking, no network access.
+
+OpenDrop is not affiliated with or endorsed by Moondrop.

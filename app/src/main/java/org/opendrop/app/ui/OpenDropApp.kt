@@ -75,6 +75,10 @@ fun OpenDropApp(
 
     // Surface sets the default content color, so plain Text and Icons follow the theme.
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        if (!behavior.onboarded) {
+            OnboardingScreen(onDone = { viewModel.updateBehavior { it.copy(onboarded = true) } })
+            return@Surface
+        }
         AnimatedContent(
             targetState = destination,
             transitionSpec = { sharedAxis(motion, forward = targetState.depth > initialState.depth) },

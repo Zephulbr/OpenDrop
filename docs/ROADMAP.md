@@ -24,7 +24,7 @@ deleting it.
 | [M3](#m3-everyday-convenience-v03) Everyday convenience (v0.3) | Tiles, widget, notifications | 🟡 Built, untested on hardware; touch lock waits on M2 |
 | [M4](#m4-phone-side-audio-v04) Phone-side audio (v0.4) | PEQ, AutoEQ, codec switching | 🟡 PEQ and AutoEQ built, untested on hardware; Shizuku codec switch open |
 | [M5](#m5-usb-devices-v05) USB devices (v0.5) | Dawn, Moonriver, FreeDSP, DSP IEMs | 🟡 Read-only transport and USB report; protocols need captures |
-| [M6](#m6-release-v10) Release (v1.0) | F-Droid and GitHub Releases | ⬜ Not started |
+| [M6](#m6-release-v10) Release (v1.0) | F-Droid and GitHub Releases | 🟡 Onboarding, errors, release pipeline done; translations and first release open |
 
 **Next up:** try the M3 and M4 features on a phone (tile, widget, low-battery
 alert, automation, phone EQ); collect device reports and USB reports from
@@ -141,6 +141,9 @@ tests and a screen):
       the next one; while disconnected a tap connects. *Untested on hardware.*
 - [x] Battery widget (name, battery, EQ preset or connection state) and a
       low-battery notification at 20 %, on by default. *Untested on hardware.*
+- [x] More widgets: earbuds EQ (a button per preset, current one highlighted;
+      tap to connect while disconnected) and a Phone EQ on/off toggle.
+      *Untested on hardware.*
 - [ ] Touch lock, native where a model has it, otherwise not offered. No
       model's touch lock command is known yet; it comes with touch controls
       (M2, needs a capture), so nothing is offered for now.
@@ -183,9 +186,18 @@ tests and a screen):
 
 ## M6: Release (v1.0)
 
-- [ ] Onboarding and error handling for first-time users.
-- [ ] Translations.
-- [ ] Release on GitHub Releases and F-Droid.
+- [x] Onboarding: a first-run screen (pair first, close Link, honest
+      controls, phone EQ and USB). *Untested on hardware.*
+- [x] Error handling: connection failures are sorted into causes (no answer,
+      refused by another app, permission, Bluetooth off) with advice and a
+      Try again button; the raw error stays visible as a detail.
+- [ ] Translations. The UI strings are still in the Compose code; they move
+      to `strings.xml` before the first translation.
+- [x] Release pipeline: pushing a `v*` tag builds the release APK (signed
+      when the key secrets exist) and publishes a GitHub Release; F-Droid
+      listing text in `fastlane/`; steps in [RELEASING.md](RELEASING.md).
+- [ ] First GitHub Release, and the F-Droid submission (fdroiddata merge
+      request), once the M3/M4 features pass a hardware test.
 
 Out of scope: firmware updates or flashing, LDAC/aptX on hardware that lacks
 it, ANC filter tuning, anything requiring modified firmware.

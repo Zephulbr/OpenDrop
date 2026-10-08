@@ -7,7 +7,7 @@ First target: the original **Moondrop Space Travel** earbuds.
 paired Space Travel earbuds and shows firmware version and battery, switches
 EQ presets (Reference / Basshead / Monitor), controls media volume, and shows
 a packet log. Also: a Quick Settings tile for the EQ preset, a battery
-widget, a low-battery notification, opt-in automation intents for Tasker
+widget, EQ and Phone EQ widgets, a low-battery notification, opt-in automation intents for Tasker
 ([docs/automation.md](docs/automation.md)), a phone-side parametric EQ with
 AutoEQ import (any headphones), and a read-only USB report for Moondrop USB
 DACs and DSP cables.
@@ -19,7 +19,12 @@ game mode can't be controlled by any app) is documented in
 [docs/devices.md](docs/devices.md) and the UI direction in
 [docs/DESIGN.md](docs/DESIGN.md).
 
-## Install a test build
+## Install
+
+Releases are on the [Releases page](https://github.com/Zephulbr/OpenDrop/releases)
+(F-Droid listing to follow). To make one, see [docs/RELEASING.md](docs/RELEASING.md).
+
+### Test builds
 
 Every push builds a debug APK on GitHub Actions: open the **Actions** tab,
 pick the latest green "Android" run, and download `opendrop-debug-apk`.

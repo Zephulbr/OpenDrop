@@ -85,6 +85,7 @@ import org.opendrop.app.ui.theme.LocalMotion
 import org.opendrop.app.ui.theme.MonoValue
 import org.opendrop.protocol.Capability
 import org.opendrop.protocol.EqPreset
+import org.opendrop.protocol.LinkError
 import org.opendrop.protocol.Support
 import org.opendrop.protocol.support
 
@@ -168,7 +169,12 @@ fun HomeScreen(
                 Phase.Picker -> {
                     (state.connection as? Connection.Failed)?.let { failed ->
                         item(key = "error") {
-                            ErrorNote(state.selected?.name, failed.message, Modifier.animateItem())
+                            ErrorNote(
+                                state.selected?.name,
+                                failed.message,
+                                onRetry = state.selected?.let { device -> { onConnect(device) } },
+                                modifier = Modifier.animateItem(),
+                            )
                         }
                     }
                     state.autoConnect?.let { remembered ->
@@ -651,7 +657,7 @@ private fun PermissionSection(onResult: () -> Unit, modifier: Modifier = Modifie
 }
 
 @Composable
-private fun ErrorNote(deviceName: String?, message: String, modifier: Modifier = Modifier) {
+private fun ErrorNote(deviceName: String?, message: String, onRetry: (() -> Unit)?, modifier: Modifier = Modifier) {
     Column(
         modifier
             .fillMaxWidth()
@@ -667,10 +673,15 @@ private fun ErrorNote(deviceName: String?, message: String, modifier: Modifier =
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.error,
         )
+        Text(LinkError.of(message).advice, style = MaterialTheme.typography.bodyMedium)
         Text(
-            "$message. Make sure they're out of the case and connected, and the MOONDROP Link app is closed.",
-            style = MaterialTheme.typography.bodyMedium,
+            "Details: $message",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        onRetry?.let { retry ->
+            TextButton(onClick = retry) { Text("Try again") }
+        }
     }
 }
 
