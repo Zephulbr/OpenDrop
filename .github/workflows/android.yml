@@ -18,8 +18,8 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Protocol tests
-        run: ./gradlew :core:protocol:test
+      - name: Protocol and DSP tests
+        run: ./gradlew :core:protocol:test :core:dsp:test
 
       - name: Python tool tests
         run: python3 -m unittest discover -s tools

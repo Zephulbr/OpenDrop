@@ -110,6 +110,8 @@ fun HomeScreen(
     onVolume: (Int) -> Unit,
     onOpenDeviceInfo: () -> Unit,
     onOpenSettings: () -> Unit,
+    phoneEqOn: Boolean,
+    onOpenPhoneEq: () -> Unit,
 ) {
     ConnectionHaptics(state.connection)
     NotificationPermissionRequest(state.connection)
@@ -240,6 +242,16 @@ fun HomeScreen(
                             }
                         }
                     }
+                    item(key = "pickerPhoneEqGap") { Spacer(Modifier.height(Dimens.SectionGap)) }
+                    item(key = "pickerPhoneEq") {
+                        NavRow(
+                            title = "Phone EQ",
+                            subtitle = "EQ for any headphones, on the phone",
+                            value = if (phoneEqOn) "On" else "Off",
+                            onClick = onOpenPhoneEq,
+                            modifier = Modifier.animateItem(),
+                        )
+                    }
                 }
                 Phase.Device -> {
                     val device = state.device
@@ -273,6 +285,14 @@ fun HomeScreen(
                         VolumeSection(state.volume, state.maxVolume, onVolume, Modifier.animateItem())
                     }
                     item(key = "volumeGap") { Spacer(Modifier.height(Dimens.SectionGap)) }
+                    item(key = "phoneEq") {
+                        NavRow(
+                            title = "Phone EQ",
+                            value = if (phoneEqOn) "On" else "Off",
+                            onClick = onOpenPhoneEq,
+                            modifier = Modifier.animateItem(),
+                        )
+                    }
                     item(key = "deviceInfo") {
                         NavRow(
                             title = "Device info",

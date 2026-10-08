@@ -32,6 +32,7 @@ import org.opendrop.app.ui.theme.MotionTokens
 private enum class Destination(val parent: Destination?) {
     Home(null),
     DeviceInfo(Home),
+    PhoneEq(Home),
     Settings(Home),
     Appearance(Settings),
 }
@@ -46,6 +47,8 @@ fun OpenDropApp(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val behavior by viewModel.behavior.collectAsStateWithLifecycle()
+    val phoneEq by viewModel.phoneEq.collectAsStateWithLifecycle()
+    val phoneEqFailed by viewModel.phoneEqFailed.collectAsStateWithLifecycle()
     val motion = LocalMotion.current
     var destination by rememberSaveable { mutableStateOf(Destination.Home) }
     // 0..1 while the user drags the system back gesture (Android 14+).
@@ -99,8 +102,17 @@ fun OpenDropApp(
                         onVolume = viewModel::setVolume,
                         onOpenDeviceInfo = { open(Destination.DeviceInfo) },
                         onOpenSettings = { open(Destination.Settings) },
+                        phoneEqOn = phoneEq.enabled,
+                        onOpenPhoneEq = { open(Destination.PhoneEq) },
                     )
                     Destination.DeviceInfo -> DeviceInfoScreen(state, onBack = back)
+                    Destination.PhoneEq -> PhoneEqScreen(
+                        state = phoneEq,
+                        failed = phoneEqFailed,
+                        onChange = viewModel::updatePhoneEq,
+                        onCustom = viewModel::setCustomEq,
+                        onBack = back,
+                    )
                     Destination.Settings -> SettingsScreen(
                         behavior = behavior,
                         onChange = viewModel::updateBehavior,

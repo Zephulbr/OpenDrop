@@ -12,6 +12,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
     <!-- Android 13+: show the connection notification (and its Disconnect button) in the shade. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Phone EQ: an audio effect on the output mix, kept alive by a foreground service. -->
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
     <application
         android:name=".OpenDropApplication"
@@ -71,6 +74,14 @@
             <meta-data
                 android:name="android.service.quicksettings.ACTIVE_TILE"
                 android:value="false" />
+        </service>
+        <service
+            android:name=".phoneeq.PhoneEqService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Keeps a user-enabled system-wide audio equalizer effect running" />
         </service>
         <service
             android:name=".device.ConnectionService"

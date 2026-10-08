@@ -34,7 +34,7 @@ out of the case, and close the MOONDROP Link app.
 Requires JDK 17 and the Android SDK (API 35).
 
 ```sh
-./gradlew :core:protocol:test   # protocol unit tests (no Android SDK needed)
+./gradlew :core:protocol:test :core:dsp:test   # unit tests (no Android SDK needed)
 ./gradlew :app:assembleDebug    # app/build/outputs/apk/debug/
 ```
 
@@ -42,6 +42,8 @@ Modules:
 
 - `core/protocol`: GAIA session, model table and capability model, pure
   Kotlin and unit tested against captured traces.
+- `core/dsp`: phone-side EQ math (biquads, AutoEQ import/export, presets),
+  pure Kotlin and unit tested.
 - `core/transport-classic`: the Bluetooth Classic (RFCOMM) link.
 - `app`: the Android app.
 

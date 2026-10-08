@@ -1,5 +1,9 @@
 package org.opendrop.app.ui
 
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.Intent
+import android.provider.Settings
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -14,7 +18,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import org.opendrop.app.automation.Automation
 import org.opendrop.app.settings.AppSettings
@@ -46,6 +55,24 @@ fun SettingsScreen(
                 subtitle = "Theme, accent color and haptics",
                 onClick = onOpenAppearance,
             )
+
+            Spacer(Modifier.height(Dimens.SectionGap))
+            SectionTitle("Audio")
+            val context = LocalContext.current
+            var codecNote by remember { mutableStateOf<String?>(null) }
+            NavRow(
+                title = "Bluetooth codec",
+                subtitle = "Android picks the codec. Change it in Developer options → Bluetooth audio codec.",
+                onClick = { codecNote = openDeveloperOptions(context) },
+            )
+            codecNote?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = Dimens.Gutter, vertical = 8.dp),
+                )
+            }
 
             Spacer(Modifier.height(Dimens.SectionGap))
             SectionTitle("Notifications")
@@ -85,6 +112,24 @@ fun SettingsScreen(
             )
         }
     }
+}
+
+/**
+ * Opens Developer options, where Android lets the user pick the Bluetooth
+ * codec. Returns a hint when that screen isn't available (not unlocked yet).
+ */
+private fun openDeveloperOptions(context: Context): String? {
+    val developerOn = Settings.Global.getInt(context.contentResolver, Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 0) == 1
+    if (developerOn) {
+        try {
+            context.startActivity(Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS))
+            return null
+        } catch (e: ActivityNotFoundException) {
+            // Fall through to the hint.
+        }
+    }
+    return "Developer options are off. Turn them on by tapping Build number seven times in " +
+        "Settings → About phone (Software information on Samsung), then come back here."
 }
 
 private fun automationHelp(): String = """
