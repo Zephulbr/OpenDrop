@@ -212,12 +212,19 @@ private fun importCurve(res: Resources, imported: ImportedText, onCustom: (EqCur
 
 private fun readText(context: Context, uri: Uri): ImportedText = runCatching {
     context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { reader ->
+        // Loop: a slow provider can return short reads mid-file, and a single
+        // read would silently cut the file (and miss the truncation notice).
         val buffer = CharArray(MAX_IMPORT_CHARS + 1)
-        val n = reader.read(buffer)
+        var filled = 0
+        while (filled < buffer.size) {
+            val n = reader.read(buffer, filled, buffer.size - filled)
+            if (n < 0) break
+            filled += n
+        }
         when {
-            n <= 0 -> ImportedText(null, truncated = false)
-            n > MAX_IMPORT_CHARS -> ImportedText(String(buffer, 0, MAX_IMPORT_CHARS), truncated = true)
-            else -> ImportedText(String(buffer, 0, n), truncated = false)
+            filled <= 0 -> ImportedText(null, truncated = false)
+            filled > MAX_IMPORT_CHARS -> ImportedText(String(buffer, 0, MAX_IMPORT_CHARS), truncated = true)
+            else -> ImportedText(String(buffer, 0, filled), truncated = false)
         }
     } ?: ImportedText(null, truncated = false)
 }.getOrDefault(ImportedText(null, truncated = false))

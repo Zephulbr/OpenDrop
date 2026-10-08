@@ -14,7 +14,9 @@ or component is named).
 Commands sent while a token is set (Settings → Automation shows it) must
 also carry a `token` extra with that value; commands with a wrong token
 are ignored. Setups enabled before the token existed keep working without
-one until automation is turned off and on again.
+one until automation is turned off and on again — which also rotates the
+token (switching automation off clears it, switching it back on mints a
+fresh one).
 
 | Action | Extras | Does |
 |---|---|---|

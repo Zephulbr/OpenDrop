@@ -96,7 +96,9 @@ fun SettingsScreen(
                     onChange {
                         when {
                             on && it.automationToken.isEmpty() -> it.copy(automation = true, automationToken = newToken())
-                            !on -> it.copy(automation = false)
+                            // Off clears the token, so turning automation back
+                            // on mints a fresh one (rotation after a leak).
+                            !on -> it.copy(automation = false, automationToken = "")
                             else -> it.copy(automation = true)
                         }
                     }

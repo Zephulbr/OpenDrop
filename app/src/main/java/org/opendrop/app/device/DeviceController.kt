@@ -95,8 +95,8 @@ class DeviceController(private val context: Context) {
     @Volatile private var session: GaiaSession? = null
     private var readJob: Job? = null
 
-    /** Bumped by every [stop]; an attempt whose token is stale exits quietly. */
-    private var generation = 0
+    /** Bumped by every [stop]; an attempt whose token is stale publishes nothing. */
+    @Volatile private var generation = 0
 
     /** Immutable and thread-safe; `log` runs on main and IO coroutines alike. */
     private val logClock: DateTimeFormatter =
@@ -238,30 +238,54 @@ class DeviceController(private val context: Context) {
         var everConnected = false
         while (true) {
             val ended = connectOnce(device, gen)
-            if (gen != generation) return // superseded by a newer connect/disconnect
-            if (!currentCoroutineContext().isActive) return // user disconnected
-            everConnected = everConnected || ended.connected
-            if (!everConnected) {
-                // First attempt failed: report it now; the user can tap again.
-                if (auto) logEvent("Auto-connect failed: ${ended.reason}")
-                _state.update {
-                    it.copy(connection = if (auto) Connection.Disconnected else Connection.Failed(ended.reason))
+            // Every publish happens on the main thread, serialized against
+            // stop(); a superseded generation publishes nothing. Null = stop.
+            val next: Long? = withContext(Dispatchers.Main.immediate) {
+                when {
+                    gen != generation -> null // superseded by a newer connect/disconnect
+                    !currentCoroutineContext().isActive -> null // user disconnected
+                    else -> {
+                        everConnected = everConnected || ended.connected
+                        if (!everConnected) {
+                            // First attempt failed: report it; the user can tap again.
+                            if (auto) logEvent("Auto-connect failed: ${ended.reason}")
+                            _state.update {
+                                it.copy(connection = if (auto) Connection.Disconnected else Connection.Failed(ended.reason))
+                            }
+                            null
+                        } else {
+                            failures = if (ended.lastedMs >= STABLE_CONNECTION_MS) 0 else failures + 1
+                            if (failures > RETRY_DELAYS_MS.size) {
+                                _state.update { it.copy(connection = Connection.Failed(ended.reason)) }
+                                null
+                            } else {
+                                val wait = RETRY_DELAYS_MS[(failures - 1).coerceAtLeast(0)]
+                                logEvent("${ended.reason}. Reconnecting in ${wait / 1000} s")
+                                _state.update { it.copy(connection = Connection.Reconnecting, device = GaiaDeviceState()) }
+                                wait
+                            }
+                        }
+                    }
                 }
-                return
             }
-            failures = if (ended.lastedMs >= STABLE_CONNECTION_MS) 0 else failures + 1
-            if (failures > RETRY_DELAYS_MS.size) {
-                _state.update { it.copy(connection = Connection.Failed(ended.reason)) }
-                return
-            }
-            val wait = RETRY_DELAYS_MS[(failures - 1).coerceAtLeast(0)]
-            logEvent("${ended.reason}. Reconnecting in ${wait / 1000} s")
-            _state.update { it.copy(connection = Connection.Reconnecting, device = GaiaDeviceState()) }
-            delay(wait)
+            if (next == null) return
+            delay(next)
         }
     }
 
     private class Ended(val reason: String, val connected: Boolean, val lastedMs: Long)
+
+    /** Publishes a fresh link as the connected one. Main-thread only; false if superseded. */
+    private fun takeOver(gen: Int, newLink: GaiaLink, newSession: GaiaSession, device: BluetoothDevice): Boolean {
+        if (gen != generation) return false
+        link = newLink
+        session = newSession
+        _state.update { it.copy(connection = Connection.Connected) }
+        lastAddress = device.address
+        _state.update { it.copy(autoConnect = it.selected) }
+        logEvent("Connected")
+        return true
+    }
 
     /** One connection, from connect to close. Returns why it ended. */
     private suspend fun connectOnce(device: BluetoothDevice, gen: Int): Ended {
@@ -272,14 +296,6 @@ class DeviceController(private val context: Context) {
             newLink.close()
             return Ended(e.message ?: e.javaClass.simpleName, connected = false, lastedMs = 0)
         }
-        if (gen != generation) {
-            // A newer connect() or disconnect() won while the native socket
-            // call blocked; drop this attempt without touching link/session/state.
-            newLink.close()
-            return Ended("Superseded", connected = false, lastedMs = 0)
-        }
-        val connectedAt = System.currentTimeMillis()
-        link = newLink
         val newSession = GaiaSession(
             send = { bytes -> newLink.write(bytes) },
             onState = { s -> _state.update { it.copy(device = s) } },
@@ -288,11 +304,14 @@ class DeviceController(private val context: Context) {
                 logEvent("Device rejected f${e.feature} 0x${"%02x".format(e.cmd)}: ${e.payload.toHex()}")
             },
         )
-        session = newSession
-        _state.update { it.copy(connection = Connection.Connected) }
-        lastAddress = device.address
-        _state.update { it.copy(autoConnect = it.selected) }
-        logEvent("Connected")
+        // Publish on the main thread, serialized against stop(); a newer
+        // attempt that won while the native socket call blocked gets nothing.
+        val connectedAt = System.currentTimeMillis()
+        val tookOver = withContext(Dispatchers.Main.immediate) { takeOver(gen, newLink, newSession, device) }
+        if (!tookOver) {
+            newLink.close()
+            return Ended("Superseded", connected = false, lastedMs = 0)
+        }
 
         val buffer = ByteArray(1024)
         val reason = try {

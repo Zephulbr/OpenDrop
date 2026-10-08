@@ -108,6 +108,19 @@ class GaiaTest {
     }
 
     @Test
+    fun resumesAcrossHeaderPayloadSplitsAndTrailingGarbage() {
+        val first = Gaia.encode(0, 1, byteArrayOf(1, 2, 3))
+        val second = Gaia.encode(0, 2, byteArrayOf(9))
+        val stream = first + second + byteArrayOf(0x77)
+        val decoder = GaiaStreamDecoder()
+        assertEquals(0, decoder.feed(stream.copyOfRange(0, 3)).size) // partial header
+        assertEquals(0, decoder.feed(stream.copyOfRange(3, 5)).size) // more header
+        val frames = decoder.feed(stream.copyOfRange(5, stream.size))
+        assertEquals(listOf(1, 2), frames.map { it.cmd })
+        assertEquals(listOf(3, 1), frames.map { it.payload.size })
+    }
+
+    @Test
     fun availableEqCountByteHeuristic() {
         // The Space Travel sends "count, ids…"; ids-only payloads are ambiguous
         // (a leading id equal to count-1 looks like a count byte). Pinned until
