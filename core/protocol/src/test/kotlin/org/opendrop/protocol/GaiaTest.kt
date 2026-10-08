@@ -3,6 +3,7 @@ package org.opendrop.protocol
 import java.io.File
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -115,5 +116,14 @@ class GaiaTest {
             GaiaParser.parse(GaiaStreamDecoder().feed(hex.hexToBytes()).single())
         assertEquals(GaiaEvent.AvailableEqPresets(listOf(0, 1, 2, 63)), ids("ff040005001d0b01040001023f"))
         assertEquals(GaiaEvent.AvailableEqPresets(listOf(2)), ids("ff040002001d0b010102"))
+    }
+
+    @Test
+    fun rejectsOutOfBandIdsAndBadHex() {
+        assertThrows(IllegalArgumentException::class.java) { Gaia.encode(0x80, 1) }
+        assertThrows(IllegalArgumentException::class.java) { Gaia.encode(0, 0x80) }
+        assertThrows(IllegalArgumentException::class.java) { "zz".hexToBytes() }
+        // Callers mask type ids to 2 bits; anything else falls back, not throws.
+        assertEquals(GaiaType.COMMAND, GaiaType.of(9))
     }
 }

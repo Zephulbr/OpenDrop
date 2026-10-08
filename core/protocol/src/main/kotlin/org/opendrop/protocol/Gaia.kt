@@ -24,7 +24,9 @@ object Gaia {
     const val VERSION_V3 = 0x04
 
     fun encode(feature: Int, cmd: Int, payload: ByteArray = ByteArray(0), type: GaiaType = GaiaType.COMMAND): ByteArray {
-        val command = (feature shl 9) or (type.id shl 7) or (cmd and 0x7F)
+        require(feature in 0..0x7F) { "feature id $feature doesn't fit the 7-bit field" }
+        require(cmd in 0..0x7F) { "command id $cmd doesn't fit the 7-bit field" }
+        val command = (feature shl 9) or (type.id shl 7) or cmd
         return frame(VERSION_V3, VENDOR_V3, command, payload)
     }
 
@@ -52,7 +54,8 @@ enum class GaiaType(val id: Int) {
     COMMAND(0), NOTIFICATION(1), RESPONSE(2), ERROR(3);
 
     companion object {
-        fun of(id: Int): GaiaType = entries.first { it.id == id }
+        /** Frame.type masks ids to 2 bits; anything else falls back to COMMAND. */
+        fun of(id: Int): GaiaType = entries.firstOrNull { it.id == id } ?: COMMAND
     }
 }
 
@@ -138,5 +141,6 @@ fun ByteArray.toHex(): String = joinToString(" ") { "%02x".format(it) }
 fun String.hexToBytes(): ByteArray {
     val clean = filterNot { it.isWhitespace() }
     require(clean.length % 2 == 0) { "odd hex length" }
+    require(clean.matches(Regex("[0-9a-fA-F]*"))) { "not hex: \"$clean\"" }
     return ByteArray(clean.length / 2) { clean.substring(it * 2, it * 2 + 2).toInt(16).toByte() }
 }
