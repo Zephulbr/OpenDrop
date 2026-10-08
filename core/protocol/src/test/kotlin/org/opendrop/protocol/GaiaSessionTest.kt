@@ -133,4 +133,29 @@ class GaiaSessionTest {
         assertEquals(Chip.QUALCOMM, MoondropModels.find("Moondrop Sparks")?.chip)
         assertNull(MoondropModels.find("Galaxy Buds"))
     }
+
+    @Test
+    fun nextEqPresetWraps() {
+        connectSpaceTravel() // on Reference
+        assertEquals(EqPreset.BASSHEAD, session.state.nextEqPreset)
+        buds("ff040001001d0a8102") // Monitor
+        assertEquals(EqPreset.REFERENCE, session.state.nextEqPreset)
+        buds("ff040001001d0a813f") // hidden user EQ: start from the first
+        assertEquals(EqPreset.REFERENCE, session.state.nextEqPreset)
+    }
+
+    @Test
+    fun noNextEqPresetWithoutNames() {
+        assertNull(GaiaDeviceState().nextEqPreset)
+    }
+
+    @Test
+    fun parsesEqPresetFromAutomations() {
+        assertEquals(EqPreset.BASSHEAD, EqPreset.parse("basshead"))
+        assertEquals(EqPreset.MONITOR, EqPreset.parse(" MONITOR "))
+        assertEquals(EqPreset.REFERENCE, EqPreset.parse("0"))
+        assertNull(EqPreset.parse("63"))
+        assertNull(EqPreset.parse("loud"))
+        assertNull(EqPreset.parse(null))
+    }
 }

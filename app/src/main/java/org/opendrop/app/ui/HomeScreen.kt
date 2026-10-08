@@ -109,7 +109,7 @@ fun HomeScreen(
     onEq: (EqPreset) -> Unit,
     onVolume: (Int) -> Unit,
     onOpenDeviceInfo: () -> Unit,
-    onOpenAppearance: () -> Unit,
+    onOpenSettings: () -> Unit,
 ) {
     ConnectionHaptics(state.connection)
     NotificationPermissionRequest(state.connection)
@@ -288,7 +288,7 @@ fun HomeScreen(
             }
         }
 
-        CollapsingTopBar(listState, name, battery, onOpenAppearance)
+        CollapsingTopBar(listState, name, battery, onOpenSettings)
     }
 }
 
@@ -405,7 +405,7 @@ private fun StatusText(text: String) {
  * the hero scrolls away; scroll is read in draw/layer lambdas only.
  */
 @Composable
-private fun CollapsingTopBar(listState: LazyListState, name: String, battery: Int?, onOpenAppearance: () -> Unit) {
+private fun CollapsingTopBar(listState: LazyListState, name: String, battery: Int?, onOpenSettings: () -> Unit) {
     val collapseDistance = with(LocalDensity.current) { 140.dp.toPx() }
     val collapse by remember(listState) {
         derivedStateOf {
@@ -454,12 +454,12 @@ private fun CollapsingTopBar(listState: LazyListState, name: String, battery: In
             }
         }
         IconButton(
-            onClick = onOpenAppearance,
+            onClick = onOpenSettings,
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .padding(end = 4.dp),
         ) {
-            Icon(Icons.Filled.Settings, contentDescription = "Appearance settings")
+            Icon(Icons.Filled.Settings, contentDescription = "Settings")
         }
     }
 }

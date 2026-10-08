@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import kotlinx.coroutines.flow.StateFlow
 import org.opendrop.app.OpenDropApplication
+import org.opendrop.app.settings.Behavior
 import org.opendrop.protocol.EqPreset
 
 /**
@@ -12,8 +13,13 @@ import org.opendrop.protocol.EqPreset
  */
 class DeviceViewModel(app: Application) : AndroidViewModel(app) {
     private val controller = (app as OpenDropApplication).controller
+    private val settings = (app as OpenDropApplication).settings
 
     val state: StateFlow<UiState> = controller.state
+
+    val behavior: StateFlow<Behavior> = settings.state
+
+    fun updateBehavior(transform: (Behavior) -> Behavior) = settings.update(transform)
 
     fun refresh() = controller.refresh()
 

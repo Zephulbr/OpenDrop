@@ -310,6 +310,26 @@ class DeviceController(private val context: Context) {
         session = null
     }
 
+    /**
+     * Connects to the remembered device, as if the user had tapped it (clears
+     * a paused auto-connect). For the tile and automations. False if there is
+     * no remembered device, or a connection is already on.
+     */
+    fun connectRemembered(): Boolean {
+        val s = _state.value
+        val target = s.autoConnect ?: return false
+        if (!s.hasPermission || !s.bluetoothOn || s.connection.isActive) return false
+        connect(target)
+        return true
+    }
+
+    /** Switches to the next switchable EQ preset. False if there is none. */
+    fun nextEq(): Boolean {
+        val next = _state.value.device.nextEqPreset ?: return false
+        setEq(next)
+        return true
+    }
+
     fun setEq(preset: EqPreset) {
         val s = session ?: return
         scope.launch(sessionThread) { runCatching { s.setEq(preset) }.onFailure(::reportSendError) }
