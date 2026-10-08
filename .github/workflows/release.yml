@@ -29,9 +29,13 @@ jobs:
             echo "Tag $GITHUB_REF_NAME doesn't match versionName $version" >&2
             exit 1
           fi
+          echo "VERSION_CODE=$(sed -n 's/.*versionCode = \(.*\)/\1/p' app/build.gradle.kts)" >> "$GITHUB_ENV"
 
       - name: Tests
         run: ./gradlew :core:protocol:test :core:dsp:test
+
+      - name: Lint
+        run: ./gradlew :app:lintRelease
 
       - name: Release key
         env:
@@ -68,7 +72,21 @@ jobs:
             esac
           done
 
+      - name: Release notes
+        run: |
+          # The fastlane changelog doubles as the GitHub release body;
+          # the generated PR list is appended below it.
+          changelog="fastlane/metadata/android/en-US/changelogs/$VERSION_CODE.txt"
+          if [ -f "$changelog" ]; then
+            cp "$changelog" "$RUNNER_TEMP/release-notes.md"
+          else
+            echo "::warning::No changelog at $changelog; generated notes only."
+            touch "$RUNNER_TEMP/release-notes.md"
+          fi
+
       - uses: softprops/action-gh-release@v2
         with:
           files: out/*.apk
+          body_path: ${{ runner.temp }}/release-notes.md
           generate_release_notes: true
+          prerelease: false
