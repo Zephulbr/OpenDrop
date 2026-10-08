@@ -1,5 +1,8 @@
 package org.opendrop.app.ui
 
+import android.content.Context
+import android.content.Intent
+import android.os.Build
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -16,14 +19,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import org.opendrop.app.device.Connection
 import org.opendrop.app.device.UiState
 import org.opendrop.app.ui.components.InfoRow
+import org.opendrop.app.ui.components.NavRow
 import org.opendrop.app.ui.components.ScreenTopBar
 import org.opendrop.app.ui.components.SectionTitle
 import org.opendrop.app.ui.theme.Dimens
 import org.opendrop.protocol.Chip
+import org.opendrop.protocol.DeviceReport
 import org.opendrop.protocol.GaiaFeature
 
 private const val LOG_LINES_SHOWN = 100
@@ -86,6 +92,16 @@ fun DeviceInfoScreen(state: UiState, onBack: () -> Unit) {
                     note = "The curve on the home screen shows each preset's general shape. It isn't measured.",
                 )
             }
+            if (state.device.featuresKnown) {
+                item(key = "report") {
+                    val context = LocalContext.current
+                    NavRow(
+                        title = "Share device report",
+                        subtitle = "Model, features and packet log, to help add support for your device",
+                        onClick = { shareReport(context, state) },
+                    )
+                }
+            }
             item(key = "developerGap") { Spacer(Modifier.height(Dimens.SectionGap)) }
             item(key = "developer") { SectionTitle("Developer · packet log") }
             if (lines.isEmpty()) {
@@ -116,4 +132,27 @@ private fun Chip.label(): String = when (this) {
     Chip.QUALCOMM -> "Qualcomm"
     Chip.JIELI -> "Jieli"
     Chip.AIROHA -> "Airoha"
+}
+
+/** Opens the share sheet with a plain-text report. Nothing is sent unless the user picks a target. */
+private fun shareReport(context: Context, state: UiState) {
+    val appVersion = runCatching {
+        @Suppress("DEPRECATION")
+        context.packageManager.getPackageInfo(context.packageName, 0).versionName
+    }.getOrNull() ?: "?"
+    val report = DeviceReport.build(
+        state.device,
+        context = listOf(
+            "OpenDrop" to appVersion,
+            "Phone" to "${Build.MANUFACTURER} ${Build.MODEL}, Android ${Build.VERSION.RELEASE}",
+            "Bluetooth name" to (state.selected?.name ?: "?"),
+        ),
+        log = state.log,
+    )
+    val send = Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(Intent.EXTRA_SUBJECT, "OpenDrop device report: ${state.device.variantName ?: state.selected?.name}")
+        putExtra(Intent.EXTRA_TEXT, report)
+    }
+    context.startActivity(Intent.createChooser(send, "Share device report"))
 }

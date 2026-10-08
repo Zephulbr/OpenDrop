@@ -99,8 +99,9 @@ Foundation:
       (including multi-part lists), read-only mode for unknown models.
 - [x] Model table from Link's catalogue; Device info shows model, chip and
       reported features.
-- [ ] "Send a report" button: exports the packet log, feature list and model
-      name, so owners of other models can contribute without a PC.
+- [x] "Share device report" in Device info: model, firmware, feature list and
+      packet log as text through the share sheet (no Bluetooth address), so
+      owners of other models can contribute without a PC. *Untested on hardware.*
 - [ ] EQ preset names per model, so switching works beyond the Space Travel.
 - [ ] Split `core/transport-classic` out of `app` and add a capability model
       in `core`, before the UI grows per-feature screens.
