@@ -84,7 +84,9 @@ class UsbProbe(private val manager: UsbManager) {
         const val REQUEST_TYPE_STANDARD_INTERFACE_IN = 0x81
         const val REQUEST_GET_DESCRIPTOR = 0x06
         const val HID_REPORT_DESCRIPTOR = 0x22
-        const val MAX_REPORT_DESCRIPTOR = 4096
+
+        /** HID report descriptors are usually <1 KB; 16 KB covers exotic ones. */
+        const val MAX_REPORT_DESCRIPTOR = 16_384
         const val TIMEOUT_MS = 500
     }
 }

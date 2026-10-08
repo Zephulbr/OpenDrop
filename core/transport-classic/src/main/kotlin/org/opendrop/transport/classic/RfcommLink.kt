@@ -10,15 +10,22 @@ import org.opendrop.protocol.GaiaLink
 /** Blocking RFCOMM (Serial Port Profile) connection to the earbuds' GAIA channel. */
 @SuppressLint("MissingPermission") // callers check BLUETOOTH_CONNECT first
 class RfcommLink(private val device: BluetoothDevice) : GaiaLink {
-    private var socket: BluetoothSocket? = null
+    @Volatile private var socket: BluetoothSocket? = null
 
     /** Connects via the SPP service record; falls back to channel 1 (verified on Space Travel). */
     override fun connect() {
         socket = try {
             open(device.createRfcommSocketToServiceRecord(SPP_UUID))
-        } catch (e: IOException) {
-            val method = device.javaClass.getMethod("createRfcommSocket", Int::class.javaPrimitiveType)
-            open(method.invoke(device, FALLBACK_CHANNEL) as BluetoothSocket)
+        } catch (first: IOException) {
+            try {
+                val method = device.javaClass.getMethod("createRfcommSocket", Int::class.javaPrimitiveType)
+                open(method.invoke(device, FALLBACK_CHANNEL) as BluetoothSocket)
+            } catch (fallback: Exception) {
+                // Hidden-API fallback unavailable (or it failed too): surface
+                // the original SPP failure — it carries the actionable cause
+                // that LinkError classifies.
+                throw IOException(first.message ?: first.javaClass.simpleName, first)
+            }
         }
     }
 
