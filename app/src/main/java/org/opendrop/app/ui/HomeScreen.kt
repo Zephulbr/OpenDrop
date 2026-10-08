@@ -82,7 +82,10 @@ import org.opendrop.app.ui.theme.Dimens
 import org.opendrop.app.ui.theme.LocalHaptics
 import org.opendrop.app.ui.theme.LocalMotion
 import org.opendrop.app.ui.theme.MonoValue
+import org.opendrop.protocol.Capability
 import org.opendrop.protocol.EqPreset
+import org.opendrop.protocol.Support
+import org.opendrop.protocol.support
 
 /** If the earbuds don't confirm a preset change in this time, the selector springs back. */
 private const val EQ_CONFIRM_TIMEOUT_MS = 2_000L
@@ -106,7 +109,7 @@ fun HomeScreen(
     onEq: (EqPreset) -> Unit,
     onVolume: (Int) -> Unit,
     onOpenDeviceInfo: () -> Unit,
-    onOpenAppearance: () -> Unit,
+    onOpenSettings: () -> Unit,
 ) {
     ConnectionHaptics(state.connection)
     NotificationPermissionRequest(state.connection)
@@ -285,7 +288,7 @@ fun HomeScreen(
             }
         }
 
-        CollapsingTopBar(listState, name, battery, onOpenAppearance)
+        CollapsingTopBar(listState, name, battery, onOpenSettings)
     }
 }
 
@@ -402,7 +405,7 @@ private fun StatusText(text: String) {
  * the hero scrolls away; scroll is read in draw/layer lambdas only.
  */
 @Composable
-private fun CollapsingTopBar(listState: LazyListState, name: String, battery: Int?, onOpenAppearance: () -> Unit) {
+private fun CollapsingTopBar(listState: LazyListState, name: String, battery: Int?, onOpenSettings: () -> Unit) {
     val collapseDistance = with(LocalDensity.current) { 140.dp.toPx() }
     val collapse by remember(listState) {
         derivedStateOf {
@@ -451,12 +454,12 @@ private fun CollapsingTopBar(listState: LazyListState, name: String, battery: In
             }
         }
         IconButton(
-            onClick = onOpenAppearance,
+            onClick = onOpenSettings,
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .padding(end = 4.dp),
         ) {
-            Icon(Icons.Filled.Settings, contentDescription = "Appearance settings")
+            Icon(Icons.Filled.Settings, contentDescription = "Settings")
         }
     }
 }
@@ -469,9 +472,11 @@ private fun supportNote(state: UiState): String? {
         !device.canControl ->
             "OpenDrop doesn't know \"${device.variantName}\" yet, so it only reads from it. " +
                 "Device info shows what it reports."
-        device.supportsEq && device.switchableEqPresets.isEmpty() ->
+        device.support(Capability.EQ_PRESETS) == Support.READ_ONLY ->
             "EQ preset ${device.eqPresetId ?: "–"}. Switching presets isn't supported on this model yet."
-        else -> null
+        else -> waitingOnCapture(device)?.let {
+            "Not supported yet: $it. Sharing a device report (in Device info) helps add them."
+        }
     }
 }
 

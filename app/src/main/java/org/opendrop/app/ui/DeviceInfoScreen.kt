@@ -30,7 +30,10 @@ import org.opendrop.app.ui.components.SectionTitle
 import org.opendrop.app.ui.theme.Dimens
 import org.opendrop.protocol.Chip
 import org.opendrop.protocol.DeviceReport
+import org.opendrop.protocol.GaiaDeviceState
 import org.opendrop.protocol.GaiaFeature
+import org.opendrop.protocol.Support
+import org.opendrop.protocol.capabilities
 
 private const val LOG_LINES_SHOWN = 100
 
@@ -63,6 +66,15 @@ fun DeviceInfoScreen(state: UiState, onBack: () -> Unit) {
                         "GAIA features",
                         state.device.features.keys.size.toString(),
                         note = state.device.features.keys.sorted().joinToString(", ") { GaiaFeature.name(it) },
+                    )
+                }
+            }
+            waitingOnCapture(state.device)?.let { waiting ->
+                item(key = "needsCapture") {
+                    InfoRow(
+                        "Not supported yet",
+                        waiting,
+                        note = "The device has these, but OpenDrop needs a capture before it sends their commands.",
                     )
                 }
             }
@@ -133,6 +145,12 @@ private fun Chip.label(): String = when (this) {
     Chip.JIELI -> "Jieli"
     Chip.AIROHA -> "Airoha"
 }
+
+/** Capabilities the device has that wait on a capture, as a readable list; null if none. */
+internal fun waitingOnCapture(device: GaiaDeviceState): String? =
+    device.capabilities.filterValues { it == Support.NEEDS_CAPTURE }.keys
+        .takeIf { it.isNotEmpty() }
+        ?.joinToString(", ") { it.label }
 
 /** Opens the share sheet with a plain-text report. Nothing is sent unless the user picks a target. */
 private fun shareReport(context: Context, state: UiState) {

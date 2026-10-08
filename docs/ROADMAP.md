@@ -21,12 +21,13 @@ deleting it.
 | [M0](#m0-research) Research | Know how Moondrop devices talk | ✅ Done (USB protocols still open) |
 | [M1](#m1-space-travel-mvp-v01) Space Travel MVP (v0.1) | Everything the Space Travel can do | 🟡 Hardware tests pass; tag v0.1 |
 | [M2](#m2-every-moondrop-bluetooth-model-v02) Every Bluetooth model (v0.2) | One GAIA driver for every Bluetooth model | 🟡 Driver done, features need captures |
-| [M3](#m3-everyday-convenience-v03) Everyday convenience (v0.3) | Tiles, widget, notifications | ⬜ Not started |
+| [M3](#m3-everyday-convenience-v03) Everyday convenience (v0.3) | Tiles, widget, notifications | 🟡 Built, untested on hardware; touch lock waits on M2 |
 | [M4](#m4-phone-side-audio-v04) Phone-side audio (v0.4) | PEQ, AutoEQ, codec switching | ⬜ Not started |
 | [M5](#m5-usb-devices-v05) USB devices (v0.5) | Dawn, Moonriver, FreeDSP, DSP IEMs | ⬜ Not started |
 | [M6](#m6-release-v10) Release (v1.0) | F-Droid and GitHub Releases | ⬜ Not started |
 
-**Next up:** tag v0.1, then get captures (device reports) from owners of
+**Next up:** tag v0.1; try the M3 tile, widget, low-battery alert and
+automation on the Space Travel; get captures (device reports) from owners of
 newer models to switch on M2 features.
 
 ## Guiding principles
@@ -111,8 +112,10 @@ Foundation:
       packet log as text through the share sheet (no Bluetooth address), so
       owners of other models can contribute without a PC. *Untested on hardware.*
 - [ ] EQ preset names per model, so switching works beyond the Space Travel.
-- [ ] Split `core/transport-classic` out of `app` and add a capability model
-      in `core`, before the UI grows per-feature screens.
+- [x] Split `core/transport-classic` out of `app` and add a capability model
+      in `core`: each reported capability is *control*, *read only* or
+      *needs capture*; Device info, the home screen and the device report
+      list what needs a capture.
 - [ ] BLE GATT transport, only if a model turns out to need it on Android.
 
 Moondrop features (each needs a capture from a model that has it, then code,
@@ -131,10 +134,18 @@ tests and a screen):
 
 ## M3: Everyday convenience (v0.3)
 
-- [ ] Quick Settings tile for EQ preset.
-- [ ] Battery widget and low-battery notification.
-- [ ] Touch lock, native where a model has it, otherwise not offered.
-- [ ] Automations and Tasker / broadcast intents.
+- [x] Settings screen (gear on Home): Appearance, Notifications, Automation,
+      About.
+- [x] Quick Settings tile for EQ preset: shows the preset, a tap switches to
+      the next one; while disconnected a tap connects. *Untested on hardware.*
+- [x] Battery widget (name, battery, EQ preset or connection state) and a
+      low-battery notification at 20 %, on by default. *Untested on hardware.*
+- [ ] Touch lock, native where a model has it, otherwise not offered. No
+      model's touch lock command is known yet; it comes with touch controls
+      (M2, needs a capture), so nothing is offered for now.
+- [x] Automations: opt-in broadcast intents for Tasker and similar apps
+      (set / next EQ, connect, disconnect, state broadcast), see
+      [automation.md](automation.md). *Untested on hardware.*
 
 ## M4: Phone-side audio (v0.4)
 

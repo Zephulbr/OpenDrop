@@ -11,6 +11,12 @@ enum class EqPreset(val id: Int, val label: String) {
         const val USER_ID = 63
 
         fun of(id: Int): EqPreset? = entries.firstOrNull { it.id == id }
+
+        /** By name ("basshead", any case) or id ("1"), as automations send it. */
+        fun parse(value: String?): EqPreset? {
+            val text = value?.trim() ?: return null
+            return entries.firstOrNull { it.name.equals(text, ignoreCase = true) } ?: text.toIntOrNull()?.let(::of)
+        }
     }
 }
 

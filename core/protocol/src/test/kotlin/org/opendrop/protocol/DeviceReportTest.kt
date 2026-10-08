@@ -21,6 +21,8 @@ class DeviceReportTest {
             "Known model: Space Travel 2 (bluetrum)",
             "Firmware: 1.2.0",
             "  13: Battery, v1",
+            "  EQ presets: read only",
+            "  Battery (left, right, case): needs capture",
             "EQ presets available: 0, 1, 63",
             "EQ preset selected: 1",
             "12:00:00.000 RX f0 response 0x01 00",

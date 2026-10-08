@@ -36,6 +36,18 @@ data class GaiaDeviceState(
 
     val eqPreset: EqPreset? get() = eqPresetId?.let(EqPreset::of)
 
+    /**
+     * The switchable preset after the current one, wrapping around; the first
+     * one if the current preset isn't switchable. For one-tap cycling (tile,
+     * automations). Null if nothing is switchable.
+     */
+    val nextEqPreset: EqPreset?
+        get() {
+            val options = switchableEqPresets
+            if (options.isEmpty()) return null
+            return options[(options.indexOf(namedEqPreset) + 1) % options.size]
+        }
+
     /** [eqPreset], but only for models whose preset ids mean the Space Travel's names. */
     val namedEqPreset: EqPreset? get() = eqPreset?.takeIf { model?.spaceTravelPresets == true }
 }

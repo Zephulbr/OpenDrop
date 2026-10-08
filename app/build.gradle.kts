@@ -49,6 +49,7 @@ android {
 
 dependencies {
     implementation(project(":core:protocol"))
+    implementation(project(":core:transport-classic"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

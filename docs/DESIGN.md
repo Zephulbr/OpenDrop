@@ -303,6 +303,11 @@ haptic settings. No haptics on scroll.
 - Supports font scale up to 200 % without clipping; the hero shrinks first.
 - State is never shown by color alone (status dot also has a label).
 
+## Settings
+
+The gear on Home opens Settings: Appearance ›, Notifications (low battery),
+Automation (allow other apps, [automation.md](automation.md)) and About.
+
 ## Settings → Appearance
 
 - Theme: System / Light / Dark
@@ -335,11 +340,15 @@ faint warm glow at the top.
 - `ui/components/`: press scale, rows, segmented selector, rolling number,
   gradient slider.
 - `settings/Appearance.kt`: appearance settings in DataStore.
+  `settings/AppSettings.kt`: the rest, in SharedPreferences, because the
+  tile and broadcast receivers read them synchronously.
+- `tile/EqTileService.kt`, `widget/BatteryWidget.kt` (RemoteViews, plain
+  neutral colors per light/dark), `automation/Automation.kt`.
 - The window background (`res/values*/themes.xml`) matches the neutral
   background, so there's no flash before the first frame.
 
 Not built yet: baseline profile, shared-element row → hero transition,
-widget/tile theming.
+accent-themed widget (it uses plain neutrals for now).
 
 ## Open questions
 

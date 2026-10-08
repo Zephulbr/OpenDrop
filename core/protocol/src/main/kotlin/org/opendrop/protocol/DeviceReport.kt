@@ -23,6 +23,14 @@ object DeviceReport {
         state.features.toSortedMap().forEach { (id, version) ->
             appendLine("  $id: ${GaiaFeature.name(id)}, v$version")
         }
+        if (state.featuresKnown) {
+            appendLine()
+            appendLine("OpenDrop support:")
+            if (state.capabilities.isEmpty()) appendLine("  none")
+            state.capabilities.forEach { (capability, support) ->
+                appendLine("  ${capability.label}: ${support.name.lowercase().replace('_', ' ')}")
+            }
+        }
         if (state.supportsEq) {
             appendLine()
             appendLine("EQ presets available: ${state.availableEqPresets?.joinToString(", ") ?: "not reported"}")

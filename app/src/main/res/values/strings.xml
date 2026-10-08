@@ -3,4 +3,8 @@
     <string name="channel_connection">Connection</string>
     <string name="channel_connection_description">Shown while OpenDrop is connected to your earbuds</string>
     <string name="action_disconnect">Disconnect</string>
+    <string name="tile_eq">EQ</string>
+    <string name="channel_battery">Low battery</string>
+    <string name="channel_battery_description">When the earbuds\' battery runs low</string>
+    <string name="widget_description">Battery, EQ preset and connection of your earbuds</string>
 </resources>

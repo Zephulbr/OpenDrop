@@ -118,15 +118,6 @@ fun AppearanceScreen(
                 onCheckedChange = { on -> onChange(false) { it.copy(haptics = on) } },
             )
 
-            Spacer(Modifier.height(Dimens.SectionGap))
-            SectionTitle("About")
-            Text(
-                "OpenDrop is free software under the GPL-3.0. Not affiliated with Moondrop. " +
-                    "Fonts: Inter and JetBrains Mono, SIL Open Font License 1.1.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = Dimens.Gutter),
-            )
         }
     }
 }

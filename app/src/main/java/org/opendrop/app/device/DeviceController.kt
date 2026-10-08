@@ -35,8 +35,10 @@ import kotlinx.coroutines.withContext
 import org.opendrop.protocol.EqPreset
 import org.opendrop.protocol.GaiaDeviceState
 import org.opendrop.protocol.GaiaFrame
+import org.opendrop.protocol.GaiaLink
 import org.opendrop.protocol.GaiaSession
 import org.opendrop.protocol.MoondropModels
+import org.opendrop.transport.classic.RfcommLink
 
 data class PairedDevice(val name: String, val address: String, val likelyMoondrop: Boolean)
 
@@ -87,7 +89,7 @@ class DeviceController(private val context: Context) {
 
     /** The session isn't thread-safe; every call into it runs on this thread. */
     private val sessionThread = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
-    private var link: RfcommLink? = null
+    private var link: GaiaLink? = null
     private var session: GaiaSession? = null
     private var readJob: Job? = null
 
@@ -250,7 +252,7 @@ class DeviceController(private val context: Context) {
 
     /** One connection, from connect to close. Returns why it ended. */
     private suspend fun connectOnce(device: BluetoothDevice): Ended {
-        val newLink = RfcommLink(device)
+        val newLink: GaiaLink = RfcommLink(device)
         try {
             newLink.connect()
         } catch (e: Exception) {
@@ -306,6 +308,26 @@ class DeviceController(private val context: Context) {
         link?.close()
         link = null
         session = null
+    }
+
+    /**
+     * Connects to the remembered device, as if the user had tapped it (clears
+     * a paused auto-connect). For the tile and automations. False if there is
+     * no remembered device, or a connection is already on.
+     */
+    fun connectRemembered(): Boolean {
+        val s = _state.value
+        val target = s.autoConnect ?: return false
+        if (!s.hasPermission || !s.bluetoothOn || s.connection.isActive) return false
+        connect(target)
+        return true
+    }
+
+    /** Switches to the next switchable EQ preset. False if there is none. */
+    fun nextEq(): Boolean {
+        val next = _state.value.device.nextEqPreset ?: return false
+        setEq(next)
+        return true
     }
 
     fun setEq(preset: EqPreset) {

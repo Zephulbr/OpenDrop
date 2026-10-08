@@ -29,7 +29,14 @@ import org.opendrop.app.settings.Appearance
 import org.opendrop.app.ui.theme.LocalMotion
 import org.opendrop.app.ui.theme.MotionTokens
 
-private enum class Destination { Home, DeviceInfo, Appearance }
+private enum class Destination(val parent: Destination?) {
+    Home(null),
+    DeviceInfo(Home),
+    Settings(Home),
+    Appearance(Settings),
+}
+
+private val Destination.depth: Int get() = parent?.let { it.depth + 1 } ?: 0
 
 @Composable
 fun OpenDropApp(
@@ -38,6 +45,7 @@ fun OpenDropApp(
     onAppearanceChange: (debounce: Boolean, transform: (Appearance) -> Appearance) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val behavior by viewModel.behavior.collectAsStateWithLifecycle()
     val motion = LocalMotion.current
     var destination by rememberSaveable { mutableStateOf(Destination.Home) }
     // 0..1 while the user drags the system back gesture (Android 14+).
@@ -51,7 +59,8 @@ fun OpenDropApp(
     PredictiveBackHandler(enabled = destination != Destination.Home) { events ->
         try {
             events.collect { backProgress = it.progress }
-            destination = Destination.Home
+            backProgress = 0f
+            destination = destination.parent ?: Destination.Home
         } catch (e: CancellationException) {
             backProgress = 0f
             throw e
@@ -62,10 +71,10 @@ fun OpenDropApp(
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         AnimatedContent(
             targetState = destination,
-            transitionSpec = { sharedAxis(motion, forward = targetState != Destination.Home) },
+            transitionSpec = { sharedAxis(motion, forward = targetState.depth > initialState.depth) },
             label = "screens",
         ) { screen ->
-            val back = { destination = Destination.Home }
+            val back = { destination = screen.parent ?: Destination.Home }
             Box(
                 Modifier
                     .fillMaxSize()
@@ -89,9 +98,15 @@ fun OpenDropApp(
                         onEq = viewModel::setEq,
                         onVolume = viewModel::setVolume,
                         onOpenDeviceInfo = { open(Destination.DeviceInfo) },
-                        onOpenAppearance = { open(Destination.Appearance) },
+                        onOpenSettings = { open(Destination.Settings) },
                     )
                     Destination.DeviceInfo -> DeviceInfoScreen(state, onBack = back)
+                    Destination.Settings -> SettingsScreen(
+                        behavior = behavior,
+                        onChange = viewModel::updateBehavior,
+                        onOpenAppearance = { open(Destination.Appearance) },
+                        onBack = back,
+                    )
                     Destination.Appearance -> AppearanceScreen(appearance, onAppearanceChange, onBack = back)
                 }
             }
