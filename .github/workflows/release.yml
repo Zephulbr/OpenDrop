@@ -54,7 +54,16 @@ jobs:
           mkdir -p out
           for apk in app/build/outputs/apk/release/*.apk; do
             case "$apk" in
-              *unsigned*) cp "$apk" "out/opendrop-$GITHUB_REF_NAME-unsigned.apk" ;;
+              *unsigned*)
+                # Android refuses to install an unsigned APK ("App not
+                # installed"), so sideloadable builds get the debug key.
+                # Gradle's output stays unsigned for F-Droid.
+                apksigner=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n1)
+                "$apksigner" sign --ks app/debug.keystore --ks-pass pass:android \
+                  --ks-key-alias androiddebugkey --key-pass pass:android \
+                  --out "out/opendrop-$GITHUB_REF_NAME.apk" "$apk"
+                "$apksigner" verify "out/opendrop-$GITHUB_REF_NAME.apk"
+                ;;
               *) cp "$apk" "out/opendrop-$GITHUB_REF_NAME.apk" ;;
             esac
           done
