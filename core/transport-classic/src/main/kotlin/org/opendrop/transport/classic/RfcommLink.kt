@@ -1,19 +1,19 @@
-package org.opendrop.app.device
+package org.opendrop.transport.classic
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothSocket
-import java.io.Closeable
 import java.io.IOException
 import java.util.UUID
+import org.opendrop.protocol.GaiaLink
 
 /** Blocking RFCOMM (Serial Port Profile) connection to the earbuds' GAIA channel. */
 @SuppressLint("MissingPermission") // callers check BLUETOOTH_CONNECT first
-class RfcommLink(private val device: BluetoothDevice) : Closeable {
+class RfcommLink(private val device: BluetoothDevice) : GaiaLink {
     private var socket: BluetoothSocket? = null
 
     /** Connects via the SPP service record; falls back to channel 1 (verified on Space Travel). */
-    fun connect() {
+    override fun connect() {
         socket = try {
             open(device.createRfcommSocketToServiceRecord(SPP_UUID))
         } catch (e: IOException) {
@@ -32,14 +32,13 @@ class RfcommLink(private val device: BluetoothDevice) : Closeable {
         }
     }
 
-    fun write(data: ByteArray) {
+    override fun write(data: ByteArray) {
         val out = checkNotNull(socket) { "not connected" }.outputStream
         out.write(data)
         out.flush()
     }
 
-    /** Blocks until data arrives. Returns -1 when the connection closes. */
-    fun read(buffer: ByteArray): Int = checkNotNull(socket) { "not connected" }.inputStream.read(buffer)
+    override fun read(buffer: ByteArray): Int = checkNotNull(socket) { "not connected" }.inputStream.read(buffer)
 
     override fun close() {
         runCatching { socket?.close() }

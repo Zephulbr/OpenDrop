@@ -111,8 +111,10 @@ Foundation:
       packet log as text through the share sheet (no Bluetooth address), so
       owners of other models can contribute without a PC. *Untested on hardware.*
 - [ ] EQ preset names per model, so switching works beyond the Space Travel.
-- [ ] Split `core/transport-classic` out of `app` and add a capability model
-      in `core`, before the UI grows per-feature screens.
+- [x] Split `core/transport-classic` out of `app` and add a capability model
+      in `core`: each reported capability is *control*, *read only* or
+      *needs capture*; Device info, the home screen and the device report
+      list what needs a capture.
 - [ ] BLE GATT transport, only if a model turns out to need it on Android.
 
 Moondrop features (each needs a capture from a model that has it, then code,

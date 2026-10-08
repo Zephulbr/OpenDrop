@@ -234,7 +234,8 @@ Passive IEMs. Link lists them for EQ targets and frequency-response data, applie
 
 ## How the app uses this
 
-Done (`core/protocol`: `GaiaSession`, `MoondropModels`, `GaiaFeature`):
+Done (`core/protocol`: `GaiaSession`, `MoondropModels`, `GaiaFeature`,
+`Capability`; `core/transport-classic`: `RfcommLink`):
 
 - One GAIA v3 session for every Bluetooth model. After Link's connect
   sequence it also reads the variant name and the available EQ presets (both
@@ -250,6 +251,10 @@ Done (`core/protocol`: `GaiaSession`, `MoondropModels`, `GaiaFeature`):
 - EQ switching is offered only for models whose preset names we know (the
   Space Travel for now), and only for presets the device says it has.
   Other known models show the current preset id.
+- Each capability the device reports (EQ presets, battery, ANC, touch
+  controls, ...) is marked *control*, *read only* or *needs capture*. Device
+  info and the device report list the ones that need a capture, so owners
+  know a report helps.
 
 Next:
 

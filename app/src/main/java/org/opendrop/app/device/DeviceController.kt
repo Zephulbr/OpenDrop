@@ -35,8 +35,10 @@ import kotlinx.coroutines.withContext
 import org.opendrop.protocol.EqPreset
 import org.opendrop.protocol.GaiaDeviceState
 import org.opendrop.protocol.GaiaFrame
+import org.opendrop.protocol.GaiaLink
 import org.opendrop.protocol.GaiaSession
 import org.opendrop.protocol.MoondropModels
+import org.opendrop.transport.classic.RfcommLink
 
 data class PairedDevice(val name: String, val address: String, val likelyMoondrop: Boolean)
 
@@ -87,7 +89,7 @@ class DeviceController(private val context: Context) {
 
     /** The session isn't thread-safe; every call into it runs on this thread. */
     private val sessionThread = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
-    private var link: RfcommLink? = null
+    private var link: GaiaLink? = null
     private var session: GaiaSession? = null
     private var readJob: Job? = null
 
@@ -250,7 +252,7 @@ class DeviceController(private val context: Context) {
 
     /** One connection, from connect to close. Returns why it ended. */
     private suspend fun connectOnce(device: BluetoothDevice): Ended {
-        val newLink = RfcommLink(device)
+        val newLink: GaiaLink = RfcommLink(device)
         try {
             newLink.connect()
         } catch (e: Exception) {

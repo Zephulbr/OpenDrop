@@ -36,6 +36,13 @@ Requires JDK 17 and the Android SDK (API 35).
 ./gradlew :app:assembleDebug    # app/build/outputs/apk/debug/
 ```
 
+Modules:
+
+- `core/protocol`: GAIA session, model table and capability model, pure
+  Kotlin and unit tested against captured traces.
+- `core/transport-classic`: the Bluetooth Classic (RFCOMM) link.
+- `app`: the Android app.
+
 Protocol research tools (Python 3.10+, no dependencies) are in `tools/`.
 
 ## License

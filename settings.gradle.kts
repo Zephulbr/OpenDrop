@@ -18,3 +18,4 @@ rootProject.name = "OpenDrop"
 
 include(":app")
 include(":core:protocol")
+include(":core:transport-classic")
