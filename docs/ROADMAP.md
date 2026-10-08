@@ -147,6 +147,9 @@ and game mode.
       `core/transport-classic` when a second model needs it).
 - [x] Reconnect automatically (with backoff) when the earbuds drop the link.
 - [x] Remember the last device; connect on launch and when the earbuds connect to the phone. *Untested on hardware.*
+- [x] Connection lives outside the screens (`DeviceController`) and runs in a foreground
+      service while connected, with an ongoing notification and a Disconnect action.
+      Groundwork for tiles, widgets and notifications. *Untested on hardware.*
 - [ ] `core/transport-ble`: later models that use GAIA over GATT.
 - [x] Packet log on the device screen (read-only console).
 
