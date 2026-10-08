@@ -3,6 +3,7 @@ package org.opendrop.app.device
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Application
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.content.BroadcastReceiver
@@ -59,6 +60,10 @@ data class UiState(
     val volume: Int = 0,
     val maxVolume: Int = 15,
     val log: List<String> = emptyList(),
+    /** The remembered device OpenDrop connects to on its own, if paired. */
+    val autoConnect: PairedDevice? = null,
+    /** True after an explicit Disconnect, until the user connects again. */
+    val autoConnectPaused: Boolean = false,
 )
 
 class DeviceViewModel(app: Application) : AndroidViewModel(app) {
@@ -75,6 +80,20 @@ class DeviceViewModel(app: Application) : AndroidViewModel(app) {
     private var session: SpaceTravelSession? = null
     private var readJob: Job? = null
 
+    /** The last device the user connected to; auto-connect target. */
+    private val prefs = context.getSharedPreferences("device", Context.MODE_PRIVATE)
+    private var lastAddress: String?
+        get() = prefs.getString(KEY_LAST_ADDRESS, null)
+        set(value) = prefs.edit().putString(KEY_LAST_ADDRESS, value).apply()
+
+    /** Set by an explicit Disconnect; auto-connect stays off until the user connects again. */
+    private var userDisconnected = false
+        set(value) {
+            field = value
+            _state.update { it.copy(autoConnectPaused = value) }
+        }
+    private var autoConnectJob: Job? = null
+
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(c: Context, intent: Intent) {
             when (intent.action) {
@@ -85,6 +104,12 @@ class DeviceViewModel(app: Application) : AndroidViewModel(app) {
                     _state.update { it.copy(battery = level.takeIf { l -> l in 0..100 }) }
                 }
                 ACTION_VOLUME_CHANGED -> refreshVolume()
+                BluetoothDevice.ACTION_ACL_CONNECTED -> {
+                    // The earbuds just connected to the phone; give their services a moment.
+                    val device = intent.bluetoothDevice() ?: return
+                    if (device.address == lastAddress) autoConnect(delayMs = ACL_SETTLE_MS)
+                }
+                BluetoothAdapter.ACTION_STATE_CHANGED -> refresh()
             }
         }
     }
@@ -93,25 +118,60 @@ class DeviceViewModel(app: Application) : AndroidViewModel(app) {
         val filter = IntentFilter().apply {
             addAction(ACTION_BATTERY_LEVEL_CHANGED)
             addAction(ACTION_VOLUME_CHANGED)
+            addAction(BluetoothDevice.ACTION_ACL_CONNECTED)
+            addAction(BluetoothAdapter.ACTION_STATE_CHANGED)
         }
         ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_EXPORTED)
         refresh()
     }
 
-    /** Re-reads permission, paired devices and volume. Call after permission changes. */
+    /**
+     * Re-reads permission, paired devices and volume, then connects to the
+     * remembered device if it's around. Call after permission changes.
+     */
     fun refresh() {
         val granted = Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
             ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) ==
             PackageManager.PERMISSION_GRANTED
+        val devices = if (granted) pairedDevices() else emptyList()
         _state.update {
             it.copy(
                 hasPermission = granted,
                 bluetoothOn = bluetooth?.isEnabled == true,
-                devices = if (granted) pairedDevices() else emptyList(),
+                devices = devices,
+                autoConnect = devices.firstOrNull { d -> d.address == lastAddress },
             )
         }
         refreshVolume()
+        autoConnect()
     }
+
+    /**
+     * Connects to the remembered device when nothing else is going on: not
+     * after an explicit Disconnect, and not while connected or connecting.
+     * Skips the attempt when Android says the earbuds aren't connected to the
+     * phone; [BluetoothDevice.ACTION_ACL_CONNECTED] triggers it later.
+     */
+    private fun autoConnect(delayMs: Long = 0) {
+        val s = _state.value
+        val target = s.autoConnect ?: return
+        if (userDisconnected || !s.hasPermission || !s.bluetoothOn) return
+        if (s.connection != Connection.Disconnected && s.connection !is Connection.Failed) return
+        val device = bluetooth?.getRemoteDevice(target.address) ?: return
+        if (delayMs == 0L && device.isConnectedToPhone() == false) return
+        autoConnectJob?.cancel()
+        autoConnectJob = viewModelScope.launch {
+            delay(delayMs)
+            val now = _state.value.connection
+            if (!userDisconnected && (now == Connection.Disconnected || now is Connection.Failed)) {
+                start(target, auto = true)
+            }
+        }
+    }
+
+    /** Whether Android has the earbuds connected (hidden API; null if unknown). */
+    private fun BluetoothDevice.isConnectedToPhone(): Boolean? =
+        runCatching { javaClass.getMethod("isConnected").invoke(this) as Boolean }.getOrNull()
 
     @SuppressLint("MissingPermission")
     private fun pairedDevices(): List<PairedDevice> =
@@ -123,18 +183,27 @@ class DeviceViewModel(app: Application) : AndroidViewModel(app) {
             }
             .sortedWith(compareByDescending<PairedDevice> { it.likelyMoondrop }.thenBy { it.name })
 
+    /** User tapped a device: connect, and remember it for next time. */
     fun connect(target: PairedDevice) {
+        userDisconnected = false
+        start(target, auto = false)
+    }
+
+    private fun start(target: PairedDevice, auto: Boolean) {
         val device = bluetooth?.getRemoteDevice(target.address) ?: return
-        disconnect()
+        stop()
         _state.update {
             it.copy(selected = target, connection = Connection.Connecting, device = SpaceTravelState(), log = emptyList())
         }
         readBattery(device)
-        readJob = viewModelScope.launch(Dispatchers.IO) { keepConnected(device) }
+        readJob = viewModelScope.launch(Dispatchers.IO) { keepConnected(device, auto) }
     }
 
-    /** Connects, and reconnects with backoff when the earbuds drop the link. */
-    private suspend fun keepConnected(device: BluetoothDevice) {
+    /**
+     * Connects, and reconnects with backoff when the earbuds drop the link.
+     * A failed automatic first attempt is quiet: back to the picker, no error.
+     */
+    private suspend fun keepConnected(device: BluetoothDevice, auto: Boolean) {
         var failures = 0
         var everConnected = false
         while (true) {
@@ -143,7 +212,10 @@ class DeviceViewModel(app: Application) : AndroidViewModel(app) {
             everConnected = everConnected || ended.connected
             if (!everConnected) {
                 // First attempt failed: report it now; the user can tap again.
-                _state.update { it.copy(connection = Connection.Failed(ended.reason)) }
+                if (auto) logEvent("Auto-connect failed: ${ended.reason}")
+                _state.update {
+                    it.copy(connection = if (auto) Connection.Disconnected else Connection.Failed(ended.reason))
+                }
                 return
             }
             failures = if (ended.lastedMs >= STABLE_CONNECTION_MS) 0 else failures + 1
@@ -178,6 +250,8 @@ class DeviceViewModel(app: Application) : AndroidViewModel(app) {
         )
         session = newSession
         _state.update { it.copy(connection = Connection.Connected) }
+        lastAddress = device.address
+        _state.update { it.copy(autoConnect = it.selected) }
         logEvent("Connected")
 
         val buffer = ByteArray(1024)
@@ -202,13 +276,20 @@ class DeviceViewModel(app: Application) : AndroidViewModel(app) {
         return Ended(reason, connected = true, lastedMs = System.currentTimeMillis() - connectedAt)
     }
 
+    /** User tapped Disconnect (or Cancel): stop, and don't reconnect on our own. */
     fun disconnect() {
+        userDisconnected = true
+        autoConnectJob?.cancel()
+        stop()
+        _state.update { it.copy(connection = Connection.Disconnected) }
+    }
+
+    private fun stop() {
         readJob?.cancel()
         readJob = null
         link?.close()
         link = null
         session = null
-        _state.update { it.copy(connection = Connection.Disconnected) }
     }
 
     fun setEq(preset: EqPreset) {
@@ -251,7 +332,7 @@ class DeviceViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     override fun onCleared() {
-        disconnect()
+        stop()
         runCatching { context.unregisterReceiver(receiver) }
         sessionThread.close()
     }
@@ -273,5 +354,8 @@ class DeviceViewModel(app: Application) : AndroidViewModel(app) {
         private val RETRY_DELAYS_MS = longArrayOf(1_000, 3_000, 10_000)
         /** A connection that lasted this long resets the retry count. */
         private const val STABLE_CONNECTION_MS = 30_000L
+        /** Wait after the earbuds connect to the phone before opening RFCOMM. */
+        private const val ACL_SETTLE_MS = 1_500L
+        private const val KEY_LAST_ADDRESS = "last_address"
     }
 }
