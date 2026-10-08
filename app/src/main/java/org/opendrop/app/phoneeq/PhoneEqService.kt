@@ -19,6 +19,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.opendrop.app.MainActivity
 import org.opendrop.app.OpenDropApplication
@@ -56,6 +59,7 @@ class PhoneEqService : Service() {
                 }
             }
         }
+        _running.value = true
         return START_NOT_STICKY
     }
 
@@ -73,6 +77,7 @@ class PhoneEqService : Service() {
     }
 
     private fun stop() {
+        _running.value = false
         watcher?.cancel()
         watcher = null
         releaseEngine()
@@ -87,6 +92,7 @@ class PhoneEqService : Service() {
     }
 
     override fun onDestroy() {
+        _running.value = false // the system can kill the service without stop()
         releaseEngine()
         scope.cancel()
         super.onDestroy()
@@ -119,6 +125,11 @@ class PhoneEqService : Service() {
     }
 
     companion object {
+        private val _running = MutableStateFlow(false)
+
+        /** True while the service holds the effect; "EQ on but not running" is a failure. */
+        val running: StateFlow<Boolean> = _running.asStateFlow()
+
         private const val TAG = "PhoneEqService"
         private const val CHANNEL_ID = "phone_eq"
         private const val NOTIFICATION_ID = 3

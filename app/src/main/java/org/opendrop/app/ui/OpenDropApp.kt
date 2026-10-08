@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlin.coroutines.cancellation.CancellationException
 import org.opendrop.app.device.DeviceViewModel
+import org.opendrop.app.phoneeq.PhoneEqService
 import org.opendrop.app.settings.Appearance
 import org.opendrop.app.ui.theme.LocalMotion
 import org.opendrop.app.ui.theme.MotionTokens
@@ -50,6 +51,7 @@ fun OpenDropApp(
     val behavior by viewModel.behavior.collectAsStateWithLifecycle()
     val phoneEq by viewModel.phoneEq.collectAsStateWithLifecycle()
     val phoneEqFailed by viewModel.phoneEqFailed.collectAsStateWithLifecycle()
+    val phoneEqRunning by PhoneEqService.running.collectAsStateWithLifecycle()
     val usbDevices by viewModel.usbDevices.collectAsStateWithLifecycle()
     var usbKey by rememberSaveable { mutableStateOf<String?>(null) }
     val motion = LocalMotion.current
@@ -125,7 +127,7 @@ fun OpenDropApp(
                     )
                     Destination.PhoneEq -> PhoneEqScreen(
                         state = phoneEq,
-                        failed = phoneEqFailed,
+                        failed = phoneEqFailed || (phoneEq.enabled && !phoneEqRunning),
                         onChange = viewModel::updatePhoneEq,
                         onCustom = viewModel::setCustomEq,
                         onBack = back,

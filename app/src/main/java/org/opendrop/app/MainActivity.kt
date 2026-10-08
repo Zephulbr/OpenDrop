@@ -11,6 +11,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.opendrop.app.device.DeviceViewModel
+import org.opendrop.app.phoneeq.PhoneEqService
 import org.opendrop.app.settings.AppearanceViewModel
 import org.opendrop.app.ui.OpenDropApp
 import org.opendrop.app.ui.theme.LocalDarkTheme
@@ -47,6 +48,11 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         // Pick up permission or pairing changes made in system settings.
         viewModel.refresh()
+        // Android 12+ may have refused the service start while the process was
+        // in the background; bring the phone EQ back now that we're in the foreground.
+        if ((application as OpenDropApplication).phoneEq.state.value.enabled) {
+            PhoneEqService.start(this)
+        }
     }
 
     private companion object {
