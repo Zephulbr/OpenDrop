@@ -1,201 +1,188 @@
 # OpenDrop Roadmap
 
 OpenDrop is an unofficial, open-source Android app for controlling Moondrop
-audio devices. The first target is the **original Moondrop Space Travel**
-(2023, MD-TWS-022) true-wireless earbuds. USB DACs come later.
+audio devices. It started with the **original Moondrop Space Travel** and now
+aims at every Moondrop Bluetooth model MOONDROP Link supports (51 entries, all
+controlled over GAIA), with USB DACs and DSP dongles after that. The model
+list is in [devices.md](devices.md).
 
 > OpenDrop is not affiliated with or endorsed by Moondrop. "Moondrop" is used
 > only to describe device compatibility.
 
+**How to use this file:** tick a box when the work is merged to `main`.
+Mark things that work in code but haven't been tried on a real device with
+*Untested on hardware.* Move an item to "Won't do" with the reason rather than
+deleting it.
+
+## Status at a glance
+
+| Milestone | Goal | Status |
+|---|---|---|
+| [M0](#m0-research) Research | Know how Moondrop devices talk | ✅ Done (USB protocols still open) |
+| [M1](#m1-space-travel-mvp-v01) Space Travel MVP (v0.1) | Everything the Space Travel can do | 🟡 Hardware tests pass; tag v0.1 |
+| [M2](#m2-every-moondrop-bluetooth-model-v02) Every Bluetooth model (v0.2) | One GAIA driver for every Bluetooth model | 🟡 Driver done, features need captures |
+| [M3](#m3-everyday-convenience-v03) Everyday convenience (v0.3) | Tiles, widget, notifications | ⬜ Not started |
+| [M4](#m4-phone-side-audio-v04) Phone-side audio (v0.4) | PEQ, AutoEQ, codec switching | ⬜ Not started |
+| [M5](#m5-usb-devices-v05) USB devices (v0.5) | Dawn, Moonriver, FreeDSP, DSP IEMs | ⬜ Not started |
+| [M6](#m6-release-v10) Release (v1.0) | F-Droid and GitHub Releases | ⬜ Not started |
+
+**Next up:** tag v0.1, then get captures (device reports) from owners of
+newer models to switch on M2 features.
+
 ## Guiding principles
 
-1. **Firmware is the limit.** OpenDrop can only send commands the earbud
-   firmware already understands. We expose hidden firmware features; we do not
-   invent features the hardware lacks.
+1. **Firmware is the limit.** OpenDrop can only send commands the firmware
+   already understands. We expose hidden firmware features; we do not invent
+   features the hardware lacks.
 2. **Never brick a device.** No firmware flashing, no writes we don't fully
-   understand. Unknown commands are only ever tried read-only first.
+   understand. Unknown commands are only ever tried read-only first, and a
+   command found only by app analysis needs a capture before OpenDrop sends it.
 3. **Protocol first, UI second.** Every feature is backed by a documented,
    captured command before it gets a screen.
 4. **Testable without hardware.** Protocol code is pure Kotlin and is unit
    tested against real captured byte traces.
-5. **Built for more models.** Space Travel is the first driver behind a generic
-   device interface, not a one-off.
+5. **Driven by what the device reports.** GAIA devices list their own
+   features; the UI shows only what the connected device supports. Unknown
+   models are read-only.
 
-## Target device: Moondrop Space Travel (original)
+## M0: Research
+
+- [x] Space Travel: HCI capture of MOONDROP Link, decoder and tests
+      ([space-travel.md](protocol/space-travel.md), [captures/](protocol/captures/)).
+- [x] Space Travel: read-only probe from a PC (`tools/gaia_probe.py`); clear
+      no on ANC, game mode, gestures and per-bud battery over GAIA.
+- [x] MOONDROP Link static analysis: GAIA is the control protocol for every
+      Bluetooth chip family; Moondrop features 13 to 35 identified.
+- [x] Model catalogue: chip and connection type for all 107 products
+      ([devices.md](devices.md)).
+- [x] Commands for Moondrop features from the app (unverified):
+      [moondrop-gaia-features.md](protocol/moondrop-gaia-features.md).
+- [ ] Space Travel hidden "User" EQ (preset 63): run the one opt-in test
+      (`gaia_probe.py --try-user-eq`) to settle whether it works.
+- [ ] Preset names per model: Link downloads them
+      (`/api/v1/ota-config-equalizers/all`); fetch once and record them.
+- [ ] Touch controls: map the 10 gesture slots and the action codes.
+- [ ] Older ANC (2) and ANC v2 (32), touch controls v3 (26): analyse.
+- [ ] USB protocols (SPV, Comtrue, Synaptics, Jiu, Jieli USB): analyse.
+
+## M1: Space Travel MVP (v0.1)
+
+- [x] Gradle project, CI (protocol tests, Python tool tests, debug APK, lint).
+- [x] RFCOMM connection; reconnect with backoff when the link drops.
+- [x] Connection lives outside the screens (`DeviceController`) and runs in a
+      foreground service while connected, with an ongoing notification and a
+      Disconnect action.
+- [x] Remember the last device; connect on launch and when the earbuds connect
+      to the phone, also when Android had closed the app (manifest receiver).
+- [x] Home screen: connection state, firmware, battery (Android's HFP level).
+- [x] EQ presets Reference / Basshead / Monitor, kept in sync by the earbuds'
+      notification.
+- [x] Volume (Android media volume).
+- [x] Device info, packet log and device report; appearance settings.
+- [x] Device picker shows Moondrop devices; other paired devices sit behind a
+      "Show other Bluetooth devices" toggle.
+- [x] **Hardware test pass** on the Space Travel (Galaxy S24 Ultra, Android 16,
+      2026-10-08):
+  - [x] Connects; firmware `1.0.0`; model "Moondrop Space Travel"; features
+        core, earbud, voice assistant, EQ, firmware update.
+  - [x] Battery matches Android's Bluetooth settings.
+  - [x] Each EQ preset switches, and a change made in Link shows up in OpenDrop.
+  - [x] Reconnects after taking the buds out of range and back.
+  - [x] Ongoing notification while connected, with a working Disconnect.
+  - [x] Auto-connect, without tapping Disconnect first (an explicit
+        Disconnect pauses auto-connect on purpose):
+    - [x] App open: buds in the case for 30 s, then out. OpenDrop reconnects.
+    - [x] App swiped away from recents: buds in the case, then out.
+          OpenDrop connects on its own (check its notification).
+- [ ] Fix whatever the test pass finds, then tag v0.1.
+
+Won't do (firmware doesn't allow it): ANC mode and game mode control or
+display, separate left / right / case battery.
+
+## M2: Every Moondrop Bluetooth model (v0.2)
+
+Foundation:
+
+- [x] Generic GAIA session: model detection by variant name, feature list
+      (including multi-part lists), read-only mode for unknown models.
+- [x] Model table from Link's catalogue; Device info shows model, chip and
+      reported features.
+- [x] "Share device report" in Device info: model, firmware, feature list and
+      packet log as text through the share sheet (no Bluetooth address), so
+      owners of other models can contribute without a PC. *Untested on hardware.*
+- [ ] EQ preset names per model, so switching works beyond the Space Travel.
+- [ ] Split `core/transport-classic` out of `app` and add a capability model
+      in `core`, before the UI grows per-feature screens.
+- [ ] BLE GATT transport, only if a model turns out to need it on Android.
+
+Moondrop features (each needs a capture from a model that has it, then code,
+tests and a screen):
+
+- [ ] Battery (13): left, right and case levels.
+- [ ] ANC v3 (33): mode (off, ANC, transparency, anti-wind, adaptive), anti-wind.
+- [ ] ANC (2) / ANC v2 (32) for older models.
+- [ ] Touch controls v2 / v3 / v4 (22, 26, 31): remap gestures.
+- [ ] Find my earbuds (34).
+- [ ] Codec (16): LDAC / LHDC on models that have it.
+- [ ] Auto power-off (25), LED (19), wear sensor (17), multipoint (20).
+- [ ] Spatial audio and head tracking (18), dynamic bass (27), left/right
+      swap (30), dual-mic noise reduction (35), voice prompts (14).
+- [ ] On-device user EQ (music processing 5 to 8) where the firmware supports it.
+
+## M3: Everyday convenience (v0.3)
+
+- [ ] Quick Settings tile for EQ preset.
+- [ ] Battery widget and low-battery notification.
+- [ ] Touch lock, native where a model has it, otherwise not offered.
+- [ ] Automations and Tasker / broadcast intents.
+
+## M4: Phone-side audio (v0.4)
+
+- [ ] Parametric EQ on the phone (Android `DynamicsProcessing`), with a
+      response graph.
+- [ ] AutoEQ import and target-curve presets.
+- [ ] Codec switcher: optional Shizuku integration, Developer Options fallback.
+
+## M5: USB devices (v0.5)
+
+- [ ] USB host transport and permission flow.
+- [ ] SPV family first (14 models: Dawn Pro 2, Moonriver 3, FreeDSP, Rays, ...).
+- [ ] Comtrue (Dawn 3.5 / 4.4 / Pro, Moonriver 2 Ti).
+- [ ] Synaptics (Echo-B, May, Starlight, Click, ...).
+- [ ] Jiu (CHU2 DSP, CDSP, ...) and Jieli USB (Echo-BP, gaming headsets).
+
+## M6: Release (v1.0)
+
+- [ ] Onboarding and error handling for first-time users.
+- [ ] Translations.
+- [ ] Release on GitHub Releases and F-Droid.
+
+Out of scope: firmware updates or flashing, LDAC/aptX on hardware that lacks
+it, ANC filter tuning, anything requiring modified firmware.
+
+## Space Travel facts
 
 | Property | Value | Source |
 |---|---|---|
 | SoC | Bluetrum BT8892E (BT889x family) | Teardown (Gough Lui) |
-| Bluetooth | 5.3, multipoint (2 devices) | Spec sheet |
-| Codecs | SBC, AAC | Spec sheet |
-| ANC | Off / ANC / Transparency (3 s hold on either bud) | Manual, reviews |
-| Game mode | ~55 ms latency (4x tap) | Manual |
-| Official app | MOONDROP Link 2.26: volume (AVRCP) and EQ presets only | Our capture |
-| Control channel | Qualcomm **GAIA v3** over Bluetooth Classic SPP/RFCOMM, vendor `0x001D`; no BLE | Our capture (verified) |
-| GAIA features | core, earbud, voice UI, music processing (EQ), upgrade. **No ANC, battery or gesture feature** | Our capture (verified) |
+| Control channel | GAIA v3 over Bluetooth Classic SPP/RFCOMM, vendor `0x001D`; no BLE | Our capture (verified) |
+| GAIA features | core, earbud, voice UI, music processing (EQ), upgrade | Our capture (verified) |
 | Firmware | 1.0.0 | Our capture |
-| Battery reporting | HFP `AT+IPHONEACCEV`, one earbud level in 10 % steps; case not reported | Our capture (verified) |
+| Battery | HFP `AT+IPHONEACCEV`, one level in 10 % steps; case not reported | Our capture (verified) |
+| ANC, game mode | Long-press and 4× tap send no traffic; not visible to any app | Our capture (verified) |
 
-Protocol details: [protocol/space-travel.md](protocol/space-travel.md).
-Other Moondrop models and what they need: [devices.md](devices.md).
-
-## Feature list and feasibility
-
-Legend: ✅ High · 🟡 Medium · ❌ Low / out of scope
-
-### Requested features
-
-| Feature | Feasibility | How |
-|---|---|---|
-| Volume | ✅ | Link's slider is plain AVRCP absolute volume (verified), so this is Android media volume via `AudioManager`. No on-device volume command exists. |
-| EQ presets (Reference / Basshead / Monitor) | ✅ **Verified** | GAIA music processing: set `0a03 [0/1/2]`, get `0a02`, change notification `0a81`. |
-| ANC mode (Off / ANC / Transparency) | ❌ **Verified** | No GAIA feature, and long-press changes send no traffic at all. Neither settable nor visible to any app. |
-| ANC strength / adaptive ANC | ❌ | Only if firmware exposes levels. Investigate, don't promise. |
-| Lock touch controls | 🟡→❌ | No gesture feature advertised and Link has no gesture screen. Depends on finding the command Gadgetbridge reportedly uses for touch actions. |
-| Battery % (earbuds) | ✅ **Verified** | One value over HFP, 10 % steps, already in Android. Read it in-app (hidden API via reflection, to be checked). |
-| Battery % (left / right / case) | ❌ **Verified** | Not sent anywhere. |
-| Bluetooth codec (SBC / AAC) | 🟡 | Android blocks this for normal apps. Options: optional **Shizuku**/root integration calling the privileged A2DP codec API; fallback deep-link to Developer Options. LDAC/aptX are impossible on this hardware. |
-
-### Additional features
-
-Firmware-backed:
-
-| Feature | Feasibility |
-|---|---|
-| Game / low-latency mode toggle | ❌ **Verified** (4× tap sends no traffic) |
-| On-device custom EQ (hidden "User" preset 63, 5 bands) | 🟡→❌ config reads as all zeros, likely a stub; one opt-in test left |
-| Per-gesture touch remapping | 🟡 (not in Link 2.26; Gadgetbridge reportedly has it) |
-| Multipoint on/off, connected-device list | ❌ (dual-device feature not advertised) |
-| Voice prompts: on/off, language, volume | ❌ (prompts feature not advertised) |
-| Device rename | ❌ (no feature advertised) |
-| Firmware version display | ✅ **Verified** (`"1.0.0"`) |
-| Find my earbuds (beep) | ❌ (no feature advertised) |
-| Factory reset / clear pairings | 🟡 |
-
-App-side (no firmware dependency):
-
-| Feature | Feasibility |
-|---|---|
-| Phone-side parametric EQ (10-band, via Android `DynamicsProcessing`) | ✅ |
-| AutoEQ profile import / Space Travel target presets | ✅ |
-| Quick Settings tile (EQ preset) | ✅ |
-| Battery home-screen widget + low-battery notification | ✅ |
-| Automations (e.g. game mode when a game launches) | ✅ |
-| Tasker / broadcast-intent integration | ✅ |
-| Developer packet console (send/receive raw frames, log export) | ✅ |
-
-Explicitly out of scope: firmware updates/flashing, LDAC/aptX, ANC filter
-tuning, anything requiring modified firmware.
-
-## Architecture (planned)
-
-```
-app/                    Jetpack Compose UI, navigation, tiles, widgets
-core/model/             Capability model (Battery, AncMode, EqPreset, Gesture, ...)
-core/protocol/          Pure Kotlin: frame encode/decode, checksums, command table
-core/transport-classic/ RFCOMM/SPP transport (Space Travel)
-core/transport-ble/     BLE GATT transport (newer models, GAIA over GATT)
-core/audio/             Phone-side EQ (DynamicsProcessing), codec helper (Shizuku)
-devices/spacetravel/    Space Travel driver: maps capabilities -> protocol commands
-```
-
-- Each device driver implements a common `DeviceDriver` interface and advertises
-  a **capability set**; the UI shows only what the connected device supports.
-- State is a `StateFlow<DeviceState>`, updated from device notifications.
-- Kotlin, Jetpack Compose, Coroutines/Flow, Hilt. `minSdk 26`, target latest.
-- Android 12+ permissions: `BLUETOOTH_CONNECT` (plus `BLUETOOTH_SCAN` for BLE models)
-  with `neverForLocation`. Device association via `CompanionDeviceManager` so the
-  app can find the buds without location permission and stay connected.
-
-## Phases
-
-### Phase 0: Protocol discovery (research, no app code)
-
-Goal: a written protocol spec for every feature above.
-
-Head start: Gadgetbridge already supports ST1 (EQ preset, touch actions)
-over GAIA, and other projects document GAIA feature ids for newer Moondrop
-models. Phase 0 is now mainly **verifying** that on our hardware and finding
-the commands nobody has published (EQ, touch, game mode, lock).
-
-- [x] **Prior-art survey**: summarised in
-      [protocol/space-travel.md](protocol/space-travel.md).
-- [x] **Device info**: Classic only (SPP, HFP, A2DP, AVRCP), no BLE.
-- [x] **HCI snoop capture** of the Link app (EQ, volume, connect):
-      [captures/](protocol/captures/).
-- [x] **Analysis**: framing, connect sequence, EQ commands verified;
-      decoder and tests in `tools/`.
-- [ ] **Safe probing** with `tools/gaia_probe.py` from a PC: read-only
-      commands, plus notification monitor while pressing/tapping the buds.
-- [ ] **Touch actions**: find the command Gadgetbridge reportedly uses.
-- [ ] **APK static analysis (optional)**: `jadx` on MOONDROP Link to find
-      commands it never shows for ST1 (lock, game mode, prompts).
-- [ ] Update `space-travel.md` to "verified"; commit sanitized captures as
-      test fixtures under `docs/protocol/captures/`.
-
-Exit criteria: EQ preset verified (done); probe results recorded for
-every feature that ST1 might support; a clear yes/no on ANC, gestures
-and game mode.
-
-### Phase 1: Project scaffold
-
-- [x] Gradle project (`app`, `core:protocol`), CI on GitHub Actions
-      (protocol tests, Python tool tests, debug APK, lint).
-- [x] `core/protocol`: frame codec, Space Travel commands, session state
-      machine; unit tests replay the Phase 0 captures.
-- [x] RFCOMM connection to the paired earbuds (in `app` for now; split into
-      `core/transport-classic` when a second model needs it).
-- [x] Reconnect automatically (with backoff) when the earbuds drop the link.
-- [x] Remember the last device; connect on launch and when the earbuds connect to the phone. *Untested on hardware.*
-- [x] Connection lives outside the screens (`DeviceController`) and runs in a foreground
-      service while connected, with an ongoing notification and a Disconnect action.
-      Groundwork for tiles, widgets and notifications. *Untested on hardware.*
-- [ ] `core/transport-ble`: later models that use GAIA over GATT.
-- [x] Packet log on the device screen (read-only console).
-
-### Phase 2: MVP (v0.1)
-
-- [x] Device screen: connection state, firmware version, battery (from Android). *Untested on hardware.*
-- [ ] ~~ANC mode indicator~~ (not possible: buds don't report it).
-- [x] EQ preset selector (Reference / Basshead / Monitor), with the pop warning. *Untested on hardware.*
-- [ ] ~~Game mode indicator~~ (not possible: buds don't report it).
-- [x] Volume control (Android media volume).
-- [x] EQ stays in sync via the earbuds' change notification.
-
-### Phase 3: Controls and quality of life (v0.2)
-
-- [ ] Touch gesture remapping.
-- [ ] Touch lock (native or emulated).
-- [ ] Quick Settings tiles, battery widget, low-battery notification.
-- [ ] Device info: firmware version, name; rename, find-my-buds, prompts
-      (whatever Phase 0 confirms).
-
-### Phase 4: Audio (v0.3)
-
-- [ ] Phone-side parametric EQ with response graph, AutoEQ import, presets.
-- [ ] Codec switcher: Shizuku integration (optional), Developer Options fallback.
-
-### Phase 5: Polish and release (v1.0)
-
-- [ ] Automations and Tasker intents.
-- [ ] Onboarding, error handling, translations.
-- [ ] Release on GitHub Releases and F-Droid.
-
-### Later
-
-- Moondrop USB DACs (Dawn / Dawn Pro / Moonriver / FreeDSP) via Android USB host.
-- More Moondrop TWS models via community-contributed captures.
+Details: [protocol/space-travel.md](protocol/space-travel.md).
 
 ## Risks
 
 | Risk | Mitigation |
 |---|---|
-| OpenDrop overlaps with Gadgetbridge (which already supports ST1) | Focus on what it doesn't do: a dedicated headphone UI, touch lock, codec switching, phone-side PEQ, tiles/widgets. Credit and cross-link. |
+| OpenDrop overlaps with Gadgetbridge (which supports some Moondrop models) | Focus on what it doesn't do: a dedicated headphone UI, touch lock, codec switching, phone-side PEQ, tiles/widgets. Credit and cross-link. |
 | Protocol is encrypted or authenticated | APK analysis shows how; Frida hooks on the Link app as a fallback. |
 | Firmware updates change the protocol | Read firmware version; gate commands per version. |
 | A wrong write breaks a setting | Read-before-write, keep a backup of settings, never send unknown commands outside the dev console. |
 | Link app and OpenDrop fighting over the connection | Document "close the Link app"; handle disconnects cleanly. |
-| Only one test device | Capture-based unit tests; packet console for community testers. |
+| Only one test device | Capture-based unit tests; read-only mode and a report export for community testers. |
 
 ## References
 

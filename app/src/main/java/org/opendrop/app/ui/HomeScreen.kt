@@ -116,6 +116,7 @@ fun HomeScreen(
     val insets = WindowInsets.safeDrawing.asPaddingValues()
     val name = if (phase == Phase.Device) state.selected?.name ?: "Earbuds" else "OpenDrop"
     val battery = state.battery.takeIf { phase == Phase.Device }
+    var showOthers by rememberSaveable { mutableStateOf(false) }
 
     // The EQ choice shows right away, in the curve and the selector; it's
     // cleared when the earbuds report back, or after a timeout (springs back).
@@ -128,7 +129,8 @@ fun HomeScreen(
             pendingEq = null
         }
     }
-    val shownEq = pendingEq ?: confirmedEq?.let(EqPreset::of)
+    // Preset names (and the curve) are the Space Travel's; other models' ids mean other things.
+    val shownEq = pendingEq ?: state.device.namedEqPreset
 
     Box(
         Modifier
@@ -177,21 +179,26 @@ fun HomeScreen(
                             )
                         }
                     }
-                    if (state.devices.isEmpty()) {
+                    // Moondrop devices (and the remembered one) first; the rest behind a toggle.
+                    val (main, others) = state.devices.partition {
+                        it.likelyMoondrop || it.address == state.autoConnect?.address
+                    }
+                    if (main.isEmpty()) {
                         item(key = "noDevices") {
                             Message(
-                                "No paired devices. Pair your Space Travel in Android's Bluetooth settings first.",
-                                Modifier.animateItem(),
+                                "No Moondrop devices paired. Pair your earbuds in Android's Bluetooth settings first.",
+                                Modifier
+                                    .animateItem()
+                                    .padding(bottom = Dimens.SectionGap),
                             )
                         }
                     } else {
                         item(key = "pairedTitle") { SectionTitle("Paired devices", Modifier.animateItem()) }
-                        items(state.devices, key = { it.address }) { device ->
-                            NavRow(
-                                title = device.name,
-                                subtitle = if (device.likelyMoondrop) "Tap to connect" else "Not recognised as Moondrop",
-                                onClick = { onConnect(device) },
-                                modifier = Modifier.animateItem(
+                        items(main, key = { it.address }) { device ->
+                            DeviceRow(
+                                device,
+                                onConnect,
+                                Modifier.animateItem(
                                     fadeInSpec = motion.effectsDefault(),
                                     placementSpec = motion.spatialDefault(),
                                     fadeOutSpec = motion.effectsFast(),
@@ -199,11 +206,44 @@ fun HomeScreen(
                             )
                         }
                     }
+                    if (others.isNotEmpty()) {
+                        item(key = "othersToggle") {
+                            TextButton(
+                                onClick = { showOthers = !showOthers },
+                                modifier = Modifier
+                                    .animateItem()
+                                    .padding(horizontal = 8.dp),
+                            ) {
+                                Text(
+                                    if (showOthers) {
+                                        "Hide other Bluetooth devices"
+                                    } else {
+                                        "Show other Bluetooth devices (${others.size})"
+                                    },
+                                )
+                            }
+                        }
+                        if (showOthers) {
+                            items(others, key = { it.address }) { device ->
+                                DeviceRow(
+                                    device,
+                                    onConnect,
+                                    Modifier.animateItem(
+                                        fadeInSpec = motion.effectsDefault(),
+                                        placementSpec = motion.spatialDefault(),
+                                        fadeOutSpec = motion.effectsFast(),
+                                    ),
+                                )
+                            }
+                        }
+                    }
                 }
                 Phase.Device -> {
-                    if (state.connection == Connection.Connected && state.device.supportsEq) {
+                    val device = state.device
+                    if (state.connection == Connection.Connected && device.switchableEqPresets.isNotEmpty()) {
                         item(key = "eq") {
                             EqSection(
+                                options = device.switchableEqPresets,
                                 shown = shownEq,
                                 confirmedId = confirmedEq,
                                 onSelect = { preset ->
@@ -214,6 +254,17 @@ fun HomeScreen(
                             )
                         }
                         item(key = "eqGap") { Spacer(Modifier.height(Dimens.SectionGap)) }
+                    }
+                    supportNote(state)?.let { note ->
+                        item(key = "supportNote") {
+                            Message(
+                                note,
+                                Modifier
+                                    .animateItem()
+                                    .padding(bottom = Dimens.SectionGap),
+                                secondary = true,
+                            )
+                        }
                     }
                     item(key = "volume") {
                         VolumeSection(state.volume, state.maxVolume, onVolume, Modifier.animateItem())
@@ -257,6 +308,16 @@ private fun NotificationPermissionRequest(connection: Connection) {
             launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
+}
+
+@Composable
+private fun DeviceRow(device: PairedDevice, onConnect: (PairedDevice) -> Unit, modifier: Modifier = Modifier) {
+    NavRow(
+        title = device.name,
+        subtitle = if (device.likelyMoondrop) "Tap to connect" else "Not recognised as Moondrop",
+        onClick = { onConnect(device) },
+        modifier = modifier,
+    )
 }
 
 @Composable
@@ -400,8 +461,23 @@ private fun CollapsingTopBar(listState: LazyListState, name: String, battery: In
     }
 }
 
+/** Why controls are missing for a connected device, if they are. */
+private fun supportNote(state: UiState): String? {
+    val device = state.device
+    if (state.connection != Connection.Connected || device.variantName == null) return null
+    return when {
+        !device.canControl ->
+            "OpenDrop doesn't know \"${device.variantName}\" yet, so it only reads from it. " +
+                "Device info shows what it reports."
+        device.supportsEq && device.switchableEqPresets.isEmpty() ->
+            "EQ preset ${device.eqPresetId ?: "–"}. Switching presets isn't supported on this model yet."
+        else -> null
+    }
+}
+
 @Composable
 private fun EqSection(
+    options: List<EqPreset>,
     shown: EqPreset?,
     confirmedId: Int?,
     onSelect: (EqPreset) -> Unit,
@@ -411,7 +487,7 @@ private fun EqSection(
     Column(modifier.fillMaxWidth()) {
         SectionTitle("EQ")
         SegmentedSelector(
-            options = EqPreset.entries,
+            options = options,
             selected = shown,
             label = { it.label },
             onSelect = { preset ->

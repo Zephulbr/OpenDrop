@@ -1,0 +1,60 @@
+OpenDrop device report (first hardware test of the generic GAIA session; phone line removed)
+
+OpenDrop: 0.1.0
+Bluetooth name: Moondrop Space Travel
+Variant name: Moondrop Space Travel
+Known model: Moondrop Space Travel (bluetrum)
+Firmware: 1.0.0
+
+GAIA features (id: name, version):
+  0: Core, v2
+  1: Earbud, v1
+  3: Voice assistant, v1
+  5: EQ, v1
+  6: Firmware update, v2
+
+EQ presets available: 0, 1, 2, 63
+EQ preset selected: 1
+
+Packet log (41 lines):
+04:09:01.720 -- Connected
+04:09:01.722 TX v2 0x0300
+04:09:01.959 RX v2 0x8300 00 04 03 01
+04:09:01.960 TX f0 command 0x01
+04:09:02.146 RX f0 response 0x01 00 03 01 05 01 01 01 06 02 00 02
+04:09:02.147 TX f0 command 0x07 00
+04:09:02.147 TX f0 command 0x07 05
+04:09:02.147 TX f0 command 0x05
+04:09:02.148 TX f5 command 0x02
+04:09:02.148 TX f0 command 0x04
+04:09:02.148 TX f5 command 0x01
+04:09:02.292 RX f0 response 0x07
+04:09:02.293 RX f0 notification 0x00 00
+04:09:02.321 RX f0 response 0x07
+04:09:02.332 RX f5 notification 0x00 00
+04:09:02.333 RX f5 notification 0x01 00
+04:09:02.408 RX f0 response 0x05 31 2e 30 2e 30
+04:09:02.443 RX f5 response 0x02 01
+04:09:02.528 RX f0 response 0x04 4d 6f 6f 6e 64 72 6f 70 20 53 70 61 63 65 20 54 72 61 76 65 6c
+04:09:02.540 RX f5 response 0x01 04 00 01 02 3f
+04:09:15.658 TX f5 command 0x03 02
+04:09:15.901 RX f5 response 0x03 01
+04:09:15.902 RX f5 notification 0x01 02
+04:09:16.689 TX f5 command 0x03 00
+04:09:16.783 RX f5 response 0x03 01
+04:09:16.784 RX f5 notification 0x01 00
+04:09:19.374 TX f5 command 0x03 01
+04:09:19.481 RX f5 response 0x03 01
+04:09:19.482 RX f5 notification 0x01 01
+04:09:43.191 TX f5 command 0x03 02
+04:09:43.716 TX f5 command 0x03 01
+04:09:43.737 RX f5 response 0x03 01
+04:09:43.738 RX f5 notification 0x01 02
+04:09:43.852 RX f5 response 0x03 01
+04:09:43.886 RX f5 notification 0x01 01
+04:09:45.001 TX f5 command 0x03 00
+04:09:45.131 RX f5 response 0x03 01
+04:09:45.132 RX f5 notification 0x01 00
+04:09:47.499 TX f5 command 0x03 01
+04:09:47.663 RX f5 response 0x03 01
+04:09:47.664 RX f5 notification 0x01 01

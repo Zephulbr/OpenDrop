@@ -33,9 +33,10 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.opendrop.protocol.EqPreset
+import org.opendrop.protocol.GaiaDeviceState
 import org.opendrop.protocol.GaiaFrame
-import org.opendrop.protocol.SpaceTravelSession
-import org.opendrop.protocol.SpaceTravelState
+import org.opendrop.protocol.GaiaSession
+import org.opendrop.protocol.MoondropModels
 
 data class PairedDevice(val name: String, val address: String, val likelyMoondrop: Boolean)
 
@@ -53,7 +54,7 @@ data class UiState(
     val devices: List<PairedDevice> = emptyList(),
     val selected: PairedDevice? = null,
     val connection: Connection = Connection.Disconnected,
-    val device: SpaceTravelState = SpaceTravelState(),
+    val device: GaiaDeviceState = GaiaDeviceState(),
     /** Percent, from the HFP battery report Android already keeps. */
     val battery: Int? = null,
     val volume: Int = 0,
@@ -87,7 +88,7 @@ class DeviceController(private val context: Context) {
     /** The session isn't thread-safe; every call into it runs on this thread. */
     private val sessionThread = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     private var link: RfcommLink? = null
-    private var session: SpaceTravelSession? = null
+    private var session: GaiaSession? = null
     private var readJob: Job? = null
 
     /** The last device the user connected to; auto-connect target. */
@@ -114,11 +115,6 @@ class DeviceController(private val context: Context) {
                     _state.update { it.copy(battery = level.takeIf { l -> l in 0..100 }) }
                 }
                 ACTION_VOLUME_CHANGED -> refreshVolume()
-                BluetoothDevice.ACTION_ACL_CONNECTED -> {
-                    // The earbuds just connected to the phone; give their services a moment.
-                    val device = intent.bluetoothDevice() ?: return
-                    if (device.address == lastAddress) autoConnect(delayMs = ACL_SETTLE_MS)
-                }
                 BluetoothAdapter.ACTION_STATE_CHANGED -> refresh()
             }
         }
@@ -128,7 +124,6 @@ class DeviceController(private val context: Context) {
         val filter = IntentFilter().apply {
             addAction(ACTION_BATTERY_LEVEL_CHANGED)
             addAction(ACTION_VOLUME_CHANGED)
-            addAction(BluetoothDevice.ACTION_ACL_CONNECTED)
             addAction(BluetoothAdapter.ACTION_STATE_CHANGED)
         }
         ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_EXPORTED)
@@ -160,7 +155,7 @@ class DeviceController(private val context: Context) {
      * Connects to the remembered device when nothing else is going on: not
      * after an explicit Disconnect, and not while connected or connecting.
      * Skips the attempt when Android says the earbuds aren't connected to the
-     * phone; [BluetoothDevice.ACTION_ACL_CONNECTED] triggers it later.
+     * phone; [onAclConnected] triggers it later.
      */
     private fun autoConnect(delayMs: Long = 0) {
         val s = _state.value
@@ -179,6 +174,16 @@ class DeviceController(private val context: Context) {
         }
     }
 
+    /**
+     * A device connected to the phone. Comes from [AclReceiver], which is in
+     * the manifest so it also starts the app when Android had closed it.
+     * Give the earbuds' services a moment before connecting.
+     */
+    fun onAclConnected(intent: Intent) {
+        val device = intent.bluetoothDevice() ?: return
+        if (device.address == lastAddress) autoConnect(delayMs = ACL_SETTLE_MS)
+    }
+
     /** Whether Android has the earbuds connected (hidden API; null if unknown). */
     private fun BluetoothDevice.isConnectedToPhone(): Boolean? =
         runCatching { javaClass.getMethod("isConnected").invoke(this) as Boolean }.getOrNull()
@@ -189,7 +194,8 @@ class DeviceController(private val context: Context) {
             .map { d ->
                 val name = d.name ?: d.address
                 val lower = name.lowercase(Locale.ROOT)
-                PairedDevice(name, d.address, "moondrop" in lower || "space travel" in lower)
+                val known = MoondropModels.find(name) != null || "moondrop" in lower || "pandaer" in lower
+                PairedDevice(name, d.address, known)
             }
             .sortedWith(compareByDescending<PairedDevice> { it.likelyMoondrop }.thenBy { it.name })
 
@@ -203,7 +209,7 @@ class DeviceController(private val context: Context) {
         val device = bluetooth?.getRemoteDevice(target.address) ?: return
         stop()
         _state.update {
-            it.copy(selected = target, connection = Connection.Connecting, device = SpaceTravelState(), log = emptyList())
+            it.copy(selected = target, connection = Connection.Connecting, device = GaiaDeviceState(), log = emptyList())
         }
         readBattery(device)
         readJob = scope.launch(Dispatchers.IO) { keepConnected(device, auto) }
@@ -235,7 +241,7 @@ class DeviceController(private val context: Context) {
             }
             val wait = RETRY_DELAYS_MS[(failures - 1).coerceAtLeast(0)]
             logEvent("${ended.reason}. Reconnecting in ${wait / 1000} s")
-            _state.update { it.copy(connection = Connection.Reconnecting, device = SpaceTravelState()) }
+            _state.update { it.copy(connection = Connection.Reconnecting, device = GaiaDeviceState()) }
             delay(wait)
         }
     }
@@ -253,7 +259,7 @@ class DeviceController(private val context: Context) {
         }
         val connectedAt = System.currentTimeMillis()
         link = newLink
-        val newSession = SpaceTravelSession(
+        val newSession = GaiaSession(
             send = { bytes -> newLink.write(bytes) },
             onState = { s -> _state.update { it.copy(device = s) } },
             onFrame = ::logFrame,

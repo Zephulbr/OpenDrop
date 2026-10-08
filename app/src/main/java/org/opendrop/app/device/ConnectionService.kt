@@ -25,7 +25,6 @@ import kotlinx.coroutines.launch
 import org.opendrop.app.MainActivity
 import org.opendrop.app.OpenDropApplication
 import org.opendrop.app.R
-import org.opendrop.protocol.EqPreset
 
 /**
  * Foreground service that keeps the app process, and with it the
@@ -142,7 +141,7 @@ class ConnectionService : Service() {
                 return Content(
                     name = state.selected?.name ?: "Earbuds",
                     connection = state.connection,
-                    preset = state.device.eqPresetId?.let(EqPreset::of)?.label,
+                    preset = state.device.namedEqPreset?.label,
                     battery = state.battery,
                 )
             }

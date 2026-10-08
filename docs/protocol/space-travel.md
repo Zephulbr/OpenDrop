@@ -9,6 +9,9 @@ Data (all in [captures/](captures/)):
   buds in and out of the case.
 - `2026-10-07-probe.txt`: read-only probe from a Windows PC.
 - `2026-10-07-device-info.md`.
+- `2026-10-08-opendrop-report.txt`: OpenDrop's own connect sequence and EQ
+  switching on the Space Travel, including the variant name and available
+  presets (verified in the app).
 
 Decode any capture with `python3 tools/gaia_decode.py <file.csv>`.
 Status tags: **Verified** = seen in our capture. **Inferred** = consistent with
