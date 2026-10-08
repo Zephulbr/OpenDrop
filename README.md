@@ -6,7 +6,9 @@ First target: the original **Moondrop Space Travel** earbuds.
 **Status:** early development (v0.1, first tested on a Galaxy Note 20 Ultra with Android 13). It connects to
 paired Space Travel earbuds and shows firmware version and battery, switches
 EQ presets (Reference / Basshead / Monitor), controls media volume, and shows
-a packet log.
+a packet log. Also: a Quick Settings tile for the EQ preset, a battery
+widget, a low-battery notification and opt-in automation intents for Tasker
+([docs/automation.md](docs/automation.md)).
 
 What the Space Travel firmware does and doesn't allow (for example, ANC and
 game mode can't be controlled by any app) is documented in
