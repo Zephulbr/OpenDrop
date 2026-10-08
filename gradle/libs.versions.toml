@@ -1,13 +1,14 @@
 [versions]
-agp = "8.7.3"
-kotlin = "2.0.21"
-coroutines = "1.9.0"
-coreKtx = "1.15.0"
-activityCompose = "1.9.3"
-lifecycle = "2.8.7"
-composeBom = "2024.12.01"
-datastore = "1.1.1"
+agp = "8.13.2"
+kotlin = "2.4.21"
+coroutines = "1.11.0"
+coreKtx = "1.17.0"
+activityCompose = "1.12.4"
+lifecycle = "2.10.0"
+composeBom = "2026.06.01"
+datastore = "1.2.1"
 junit = "4.13.2"
+materialIcons = "1.7.8"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -19,6 +20,9 @@ compose-ui = { module = "androidx.compose.ui:ui" }
 compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
 compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 compose-material3 = { module = "androidx.compose.material3:material3" }
+# Deprecated upstream (development froze at compose 1.7) but still published;
+# OpenDrop only needs the two core icons below.
+compose-material-icons = { module = "androidx.compose.material:material-icons-core", version.ref = "materialIcons" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 junit = { module = "junit:junit", version.ref = "junit" }

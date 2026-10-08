@@ -8,12 +8,12 @@ plugins {
 
 android {
     namespace = "org.opendrop.app"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "org.opendrop.app"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 6
         versionName = "0.5.1"
     }
@@ -90,5 +90,6 @@ dependencies {
     implementation(libs.compose.ui)
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)
+    implementation(libs.compose.material.icons)
     debugImplementation(libs.compose.ui.tooling)
 }

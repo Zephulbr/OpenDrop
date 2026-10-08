@@ -55,7 +55,7 @@ native speakers are welcome in `app/src/main/res/values-<language>/strings.xml`
 
 ## Building from source
 
-You need JDK 17 and the Android SDK (API 35).
+You need JDK 17 and the Android SDK (API 36).
 
 ```sh
 ./gradlew :core:protocol:test :core:dsp:test   # unit tests (no Android SDK needed)
