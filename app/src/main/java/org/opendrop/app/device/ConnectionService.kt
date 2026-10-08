@@ -5,6 +5,7 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.res.Resources
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
@@ -48,15 +49,15 @@ class ConnectionService : Service() {
         }
         // startForegroundService() requires startForeground() even if we're about
         // to stop (the connection may already have ended), or Android crashes the app.
-        val content = Content.of(controller.state.value)
-        if (!showInForeground(content ?: Content.PLACEHOLDER) || content == null) {
+        val content = Content.of(resources, controller.state.value)
+        if (!showInForeground(content ?: Content.placeholder(resources)) || content == null) {
             stop()
             return START_NOT_STICKY
         }
         if (watcher == null) {
             watcher = scope.launch {
                 // Only what the notification shows; packet log updates don't count.
-                controller.state.map { Content.of(it) }.distinctUntilChanged().collect { next ->
+                controller.state.map { Content.of(resources, it) }.distinctUntilChanged().collect { next ->
                     if (next == null) stop() else showInForeground(next)
                 }
             }
@@ -108,7 +109,7 @@ class ConnectionService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_opendrop)
             .setContentTitle(content.name)
-            .setContentText(content.text())
+            .setContentText(content.text(resources))
             .setContentIntent(open)
             .addAction(0, getString(R.string.action_disconnect), disconnect)
             .setOngoing(true)
@@ -127,19 +128,21 @@ class ConnectionService : Service() {
         val preset: String?,
         val battery: Int?,
     ) {
-        fun text(): String = when (connection) {
-            Connection.Connected -> listOfNotNull("Connected", preset, battery?.let { "$it %" }).joinToString(" · ")
-            Connection.Reconnecting -> "Reconnecting…"
-            else -> "Connecting…"
+        fun text(res: Resources): String = when (connection) {
+            Connection.Connected -> listOfNotNull(res.getString(R.string.status_connected), preset, battery?.let { "$it %" })
+                .joinToString(" · ")
+            Connection.Reconnecting -> res.getString(R.string.status_reconnecting)
+            else -> res.getString(R.string.status_connecting)
         }
 
         companion object {
-            val PLACEHOLDER = Content("Earbuds", Connection.Connecting, preset = null, battery = null)
+            fun placeholder(res: Resources) =
+                Content(res.getString(R.string.earbuds), Connection.Connecting, preset = null, battery = null)
 
-            fun of(state: UiState): Content? {
+            fun of(res: Resources, state: UiState): Content? {
                 if (!state.connection.isActive) return null
                 return Content(
-                    name = state.selected?.name ?: "Earbuds",
+                    name = state.selected?.name ?: res.getString(R.string.earbuds),
                     connection = state.connection,
                     preset = state.device.namedEqPreset?.label,
                     battery = state.battery,

@@ -18,7 +18,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import org.opendrop.app.R
 import org.opendrop.app.device.UsbEntry
 import org.opendrop.app.ui.components.InfoRow
 import org.opendrop.app.ui.components.NavRow
@@ -32,7 +34,7 @@ import org.opendrop.protocol.UsbReport
 fun UsbDeviceScreen(entry: UsbEntry?, onAllow: (String) -> Unit, onBack: () -> Unit) {
     val context = LocalContext.current
     Column(Modifier.fillMaxSize()) {
-        ScreenTopBar(entry?.title ?: "USB device", onBack)
+        ScreenTopBar(entry?.title ?: stringResource(R.string.usb_device), onBack)
         Column(
             Modifier
                 .fillMaxSize()
@@ -40,47 +42,41 @@ fun UsbDeviceScreen(entry: UsbEntry?, onAllow: (String) -> Unit, onBack: () -> U
                 .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 24.dp),
         ) {
             if (entry == null) {
-                Note("The device was unplugged.")
+                Note(stringResource(R.string.usb_unplugged))
                 return@Column
             }
             val info = entry.info
             InfoRow(
-                "Model",
+                stringResource(R.string.info_model),
                 info.model?.name ?: "–",
-                note = info.model?.let { "${it.family.label} chip family, ${it.eqBands}-band EQ in MOONDROP Link" }
-                    ?: "Not matched to a model in OpenDrop's list.",
+                note = info.model?.let { stringResource(R.string.usb_model_note, it.family.label, it.eqBands) }
+                    ?: stringResource(R.string.usb_model_unknown),
             )
-            InfoRow("USB id", info.id)
-            InfoRow("Manufacturer", info.manufacturer ?: "–")
-            InfoRow("Product", info.product ?: "–")
-            InfoRow("Version", info.version ?: "–")
+            InfoRow(stringResource(R.string.usb_id), info.id)
+            InfoRow(stringResource(R.string.usb_manufacturer), info.manufacturer ?: "–")
+            InfoRow(stringResource(R.string.usb_product), info.product ?: "–")
+            InfoRow(stringResource(R.string.usb_version), info.version ?: "–")
             InfoRow(
-                "Interfaces",
+                stringResource(R.string.usb_interfaces),
                 info.interfaces.size.toString(),
                 note = info.interfaces.joinToString(", ") { UsbReport.className(it.interfaceClass) }.ifEmpty { null },
             )
 
             Spacer(Modifier.height(Dimens.SectionGap))
-            SectionTitle("Support")
+            SectionTitle(stringResource(R.string.usb_support))
             Note(
-                "OpenDrop can't change settings on USB devices yet. Each chip family speaks its own protocol, " +
-                    "and OpenDrop only sends commands that were captured from a real device first. " +
-                    "A USB report helps decode it.",
+                stringResource(R.string.usb_support_note),
             )
             if (!entry.hasPermission) {
                 NavRow(
-                    title = "Allow access",
-                    subtitle = "Lets OpenDrop read the device's descriptors for the report. Nothing on it changes.",
+                    title = stringResource(R.string.usb_allow),
+                    subtitle = stringResource(R.string.usb_allow_subtitle),
                     onClick = { onAllow(entry.key) },
                 )
             }
             NavRow(
-                title = "Share USB report",
-                subtitle = if (entry.hasPermission) {
-                    "Ids, names, interfaces and descriptors"
-                } else {
-                    "Ids, names and interfaces (allow access to include descriptors)"
-                },
+                title = stringResource(R.string.usb_share_report),
+                subtitle = stringResource(if (entry.hasPermission) R.string.usb_share_full else R.string.usb_share_basic),
                 onClick = { shareUsbReport(context, entry) },
             )
         }
@@ -114,5 +110,5 @@ private fun shareUsbReport(context: Context, entry: UsbEntry) {
         .setType("text/plain")
         .putExtra(Intent.EXTRA_SUBJECT, "OpenDrop USB report: ${entry.title}")
         .putExtra(Intent.EXTRA_TEXT, text)
-    context.startActivity(Intent.createChooser(send, "Share USB report"))
+    context.startActivity(Intent.createChooser(send, context.getString(R.string.usb_share_report)))
 }

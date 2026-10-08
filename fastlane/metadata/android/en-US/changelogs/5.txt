@@ -1,0 +1,7 @@
+First public release.
+- Space Travel: connection, firmware, battery, EQ presets, auto-connect
+- Every Moondrop Bluetooth model detected; unknown ones read-only with a device report
+- Quick Settings tile, battery / EQ / Phone EQ widgets, low-battery notification
+- Automation intents for Tasker (opt-in)
+- Phone EQ for any headphones, with AutoEQ import
+- USB devices: read-only USB report

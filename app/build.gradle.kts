@@ -12,8 +12,8 @@ android {
         applicationId = "org.opendrop.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 5
+        versionName = "0.5.0"
     }
 
     signingConfigs {
@@ -25,12 +25,31 @@ android {
             keyAlias = "androiddebugkey"
             keyPassword = "android"
         }
+        // Release key from the environment (the release workflow decodes it from
+        // secrets). Without it, release builds are unsigned, which is what
+        // F-Droid wants: it builds and signs on its own.
+        val keystore = System.getenv("OPENDROP_KEYSTORE")
+        if (keystore != null) {
+            create("release") {
+                storeFile = file(keystore)
+                storePassword = System.getenv("OPENDROP_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("OPENDROP_KEY_ALIAS")
+                keyPassword = System.getenv("OPENDROP_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.findByName("release")
         }
+    }
+
+    dependenciesInfo {
+        // F-Droid can't read Google's encrypted dependency blob.
+        includeInApk = false
+        includeInBundle = false
     }
 
     compileOptions {
@@ -44,6 +63,11 @@ android {
 
     buildFeatures {
         compose = true
+    }
+
+    androidResources {
+        // Lists the translated languages for Android 13's per-app language setting.
+        generateLocaleConfig = true
     }
 }
 

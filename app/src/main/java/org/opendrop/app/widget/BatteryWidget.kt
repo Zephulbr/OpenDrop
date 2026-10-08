@@ -6,6 +6,7 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.res.Resources
 import android.widget.RemoteViews
 import org.opendrop.app.MainActivity
 import org.opendrop.app.OpenDropApplication
@@ -21,20 +22,21 @@ import org.opendrop.app.device.isActive
 class BatteryWidget : AppWidgetProvider() {
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
         val app = context.applicationContext as OpenDropApplication
-        manager.updateAppWidget(ids, views(context, WidgetContent.of(app.controller.state.value)))
+        manager.updateAppWidget(ids, views(context, WidgetContent.of(context.resources, app.controller.state.value)))
     }
 
     /** What the widget shows, so updates only go out when it changes. */
     data class WidgetContent(val name: String, val battery: Int?, val status: String) {
         companion object {
-            fun of(s: UiState): WidgetContent {
+            fun of(res: Resources, s: UiState): WidgetContent {
                 val name = (s.selected ?: s.autoConnect)?.name ?: "OpenDrop"
                 val status = when (s.connection) {
                     Connection.Connected ->
-                        s.device.namedEqPreset?.let { "EQ ${it.label}" } ?: "Connected"
-                    Connection.Connecting -> "Connecting…"
-                    Connection.Reconnecting -> "Reconnecting…"
-                    is Connection.Failed, Connection.Disconnected -> "Not connected"
+                        s.device.namedEqPreset?.let { res.getString(R.string.widget_eq_status, it.label) }
+                            ?: res.getString(R.string.status_connected)
+                    Connection.Connecting -> res.getString(R.string.status_connecting)
+                    Connection.Reconnecting -> res.getString(R.string.status_reconnecting)
+                    is Connection.Failed, Connection.Disconnected -> res.getString(R.string.status_not_connected)
                 }
                 // Android's level is stale once OpenDrop lets go of the earbuds.
                 val battery = s.battery.takeIf { s.connection.isActive }
@@ -65,7 +67,13 @@ class BatteryWidget : AppWidgetProvider() {
                 setTextViewText(R.id.widget_status, content.status)
                 setContentDescription(
                     R.id.widget_root,
-                    "${content.name}, battery ${content.battery?.let { "$it percent" } ?: "unknown"}, ${content.status}",
+                    context.getString(
+                        R.string.widget_battery_description,
+                        content.name,
+                        content.battery?.let { context.getString(R.string.widget_battery_percent, it) }
+                            ?: context.getString(R.string.widget_battery_unknown),
+                        content.status,
+                    ),
                 )
                 setOnClickPendingIntent(R.id.widget_root, open)
             }

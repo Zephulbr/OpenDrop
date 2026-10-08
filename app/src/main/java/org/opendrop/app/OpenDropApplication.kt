@@ -18,6 +18,8 @@ import org.opendrop.app.phoneeq.PhoneEq
 import org.opendrop.app.phoneeq.PhoneEqService
 import org.opendrop.app.settings.AppSettings
 import org.opendrop.app.widget.BatteryWidget
+import org.opendrop.app.widget.EqWidget
+import org.opendrop.app.widget.PhoneEqWidget
 
 class OpenDropApplication : Application() {
     /** The one connection to the earbuds, shared by every screen and the service. */
@@ -48,14 +50,26 @@ class OpenDropApplication : Application() {
         }
         scope.launch {
             controller.state
-                .map { BatteryWidget.WidgetContent.of(it) }
+                .map { BatteryWidget.WidgetContent.of(resources, it) }
                 .distinctUntilChanged()
                 .collect { BatteryWidget.update(this@OpenDropApplication, it) }
+        }
+        scope.launch {
+            controller.state
+                .map { EqWidget.Content.of(resources, it) }
+                .distinctUntilChanged()
+                .collect { EqWidget.update(this@OpenDropApplication, it) }
+        }
+        scope.launch {
+            phoneEq.state
+                .map { PhoneEqWidget.Content.of(resources, it) }
+                .distinctUntilChanged()
+                .collect { PhoneEqWidget.update(this@OpenDropApplication, it) }
         }
         val lowBattery = LowBatteryAlert(this, settings)
         scope.launch {
             controller.state
-                .map { s -> (s.selected?.name ?: "Earbuds") to s.battery.takeIf { s.connection == Connection.Connected } }
+                .map { s -> (s.selected?.name ?: getString(R.string.earbuds)) to s.battery.takeIf { s.connection == Connection.Connected } }
                 .distinctUntilChanged()
                 .collect { (name, level) -> lowBattery.onLevel(name, level) }
         }
