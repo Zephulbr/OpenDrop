@@ -78,41 +78,60 @@ class GaiaFrame(
 /** Streaming decoder: one RFCOMM read may hold several frames, or part of one. */
 class GaiaStreamDecoder {
     private var buf = ByteArray(0)
+    private var start = 0
 
     fun feed(data: ByteArray): List<GaiaFrame> {
         buf += data
         val frames = mutableListOf<GaiaFrame>()
         while (true) {
-            val start = buf.indexOfFirst { it.toInt() and 0xFF == Gaia.SOF }
-            if (start < 0) {
+            val headerStart = indexOfSof()
+            if (headerStart < 0) {
                 buf = ByteArray(0)
+                start = 0
                 break
             }
-            if (start > 0) buf = buf.copyOfRange(start, buf.size)
-            if (buf.size < 4) break
-            val flags = buf.u8(2)
+            start = headerStart
+            val available = buf.size - start
+            if (available < 4) break
+            val flags = u8(start + 2)
             val (length, header) = if (flags and Gaia.FLAG_LENGTH_16 != 0) {
-                if (buf.size < 5) break
-                ((buf.u8(3) shl 8) or buf.u8(4)) to 5
+                if (available < 5) break
+                ((u8(start + 3) shl 8) or u8(start + 4)) to 5
             } else {
-                buf.u8(3) to 4
+                u8(start + 3) to 4
             }
+            // A checksummed frame carries one more byte after the payload. It
+            // is consumed but not verified: no Moondrop capture uses one, so
+            // the algorithm is unknown (MAINTENANCE.md, deferred X1).
             val total = header + 4 + length + if (flags and Gaia.FLAG_CHECKSUM != 0) 1 else 0
-            if (buf.size < total) break
+            if (available < total) break
             frames += GaiaFrame(
-                version = buf.u8(1),
+                version = u8(start + 1),
                 flags = flags,
-                vendor = (buf.u8(header) shl 8) or buf.u8(header + 1),
-                command = (buf.u8(header + 2) shl 8) or buf.u8(header + 3),
-                payload = buf.copyOfRange(header + 4, header + 4 + length),
+                vendor = (u8(start + header) shl 8) or u8(start + header + 1),
+                command = (u8(start + header + 2) shl 8) or u8(start + header + 3),
+                payload = buf.copyOfRange(start + header + 4, start + header + 4 + length),
             )
-            buf = buf.copyOfRange(total, buf.size)
+            start += total
+            if (start > 8_192) { // don't let a long stream grow the buffer forever
+                buf = buf.copyOfRange(start, buf.size)
+                start = 0
+            }
         }
         return frames
     }
-}
 
-private fun ByteArray.u8(i: Int): Int = this[i].toInt() and 0xFF
+    private fun indexOfSof(): Int {
+        var i = start
+        while (i < buf.size) {
+            if (buf[i].toInt() and 0xFF == Gaia.SOF) return i
+            i++
+        }
+        return -1
+    }
+
+    private fun u8(i: Int): Int = buf[i].toInt() and 0xFF
+}
 
 fun ByteArray.toHex(): String = joinToString(" ") { "%02x".format(it) }
 

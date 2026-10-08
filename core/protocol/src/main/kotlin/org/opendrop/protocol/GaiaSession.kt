@@ -67,6 +67,8 @@ class GaiaSession(
     var state = GaiaDeviceState()
         private set
 
+    private var featurePages = 0
+
     /** Start the same connect sequence MOONDROP Link uses. */
     fun start() = transmit(GaiaCommands.handshake())
 
@@ -96,11 +98,13 @@ class GaiaSession(
             }
             is GaiaEvent.Features -> {
                 if (state.featuresKnown) return
+                featurePages++
                 val features = state.features + event.features
-                if (event.more) {
+                if (event.more && featurePages < MAX_FEATURE_PAGES) {
                     update(state.copy(features = features))
                     transmit(GaiaCommands.getSupportedFeaturesNext())
                 } else {
+                    // End of the list — or a misbehaving device that never ends it.
                     update(state.copy(features = features, featuresKnown = true))
                     queryDevice()
                 }
@@ -134,5 +138,10 @@ class GaiaSession(
             state = new
             onState(new)
         }
+    }
+
+    private companion object {
+        /** Link sends at most a few pages; 16 is generous and bounds a stuck device. */
+        const val MAX_FEATURE_PAGES = 16
     }
 }

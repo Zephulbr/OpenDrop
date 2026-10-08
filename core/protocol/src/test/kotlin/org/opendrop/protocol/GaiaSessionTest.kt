@@ -158,4 +158,17 @@ class GaiaSessionTest {
         assertNull(EqPreset.parse("loud"))
         assertNull(EqPreset.parse(null))
     }
+
+    @Test
+    fun stopsAskingAfterTooManyFeaturePages() {
+        session.start()
+        buds("ff040004000a830000040301")
+        sent.clear()
+        repeat(20) {
+            buds("ff040005001d01010100020101") // more=1: core v2, earbud v1
+        }
+        assertTrue(session.state.featuresKnown)
+        // 16 pages consumed, so 15 continuation requests before the session stops asking.
+        assertEquals(15, sent.count { it == "ff 04 00 00 00 1d 00 02" })
+    }
 }
