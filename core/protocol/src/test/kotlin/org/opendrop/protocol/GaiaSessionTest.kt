@@ -171,4 +171,14 @@ class GaiaSessionTest {
         // 16 pages consumed, so 15 continuation requests before the session stops asking.
         assertEquals(15, sent.count { it == "ff 04 00 00 00 1d 00 02" })
     }
+
+    @Test
+    fun reportsErrorFrames() {
+        val errors = mutableListOf<GaiaEvent.Error>()
+        val s = GaiaSession(send = {}, onError = { errors += it })
+        s.onBytes("ff040001001d0b8302".hexToBytes()) // ERROR, feature 5, cmd 3 (set EQ)
+        assertEquals(1, errors.size)
+        assertEquals(GaiaFeature.MUSIC_PROCESSING, errors[0].feature)
+        assertEquals(GaiaCommands.MUSIC_SET_EQ, errors[0].cmd)
+    }
 }

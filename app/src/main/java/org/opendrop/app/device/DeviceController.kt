@@ -38,6 +38,7 @@ import org.opendrop.protocol.GaiaFrame
 import org.opendrop.protocol.GaiaLink
 import org.opendrop.protocol.GaiaSession
 import org.opendrop.protocol.MoondropModels
+import org.opendrop.protocol.toHex
 import org.opendrop.transport.classic.RfcommLink
 
 data class PairedDevice(val name: String, val address: String, val likelyMoondrop: Boolean)
@@ -276,6 +277,9 @@ class DeviceController(private val context: Context) {
             send = { bytes -> newLink.write(bytes) },
             onState = { s -> _state.update { it.copy(device = s) } },
             onFrame = ::logFrame,
+            onError = { e ->
+                logEvent("Device rejected f${e.feature} 0x${"%02x".format(e.cmd)}: ${e.payload.toHex()}")
+            },
         )
         session = newSession
         _state.update { it.copy(connection = Connection.Connected) }

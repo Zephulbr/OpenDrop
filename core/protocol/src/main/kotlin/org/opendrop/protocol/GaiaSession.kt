@@ -61,6 +61,8 @@ class GaiaSession(
     private val send: (ByteArray) -> Unit,
     private val onState: (GaiaDeviceState) -> Unit = {},
     private val onFrame: (incoming: Boolean, frame: GaiaFrame) -> Unit = { _, _ -> },
+    /** The device answered an OpenDrop command with a GAIA ERROR frame. */
+    private val onError: (GaiaEvent.Error) -> Unit = {},
 ) {
     private val decoder = GaiaStreamDecoder()
 
@@ -77,10 +79,6 @@ class GaiaSession(
         if (preset !in state.switchableEqPresets) return false
         transmit(GaiaCommands.setEq(preset))
         return true
-    }
-
-    fun refreshEq() {
-        if (state.supportsEq) transmit(GaiaCommands.getSelectedEq())
     }
 
     fun onBytes(data: ByteArray) {
@@ -113,7 +111,8 @@ class GaiaSession(
             is GaiaEvent.FirmwareVersion -> update(state.copy(firmwareVersion = event.version))
             is GaiaEvent.AvailableEqPresets -> update(state.copy(availableEqPresets = event.ids))
             is GaiaEvent.EqPresetChanged -> update(state.copy(eqPresetId = event.presetId))
-            is GaiaEvent.Error, GaiaEvent.Other -> Unit
+            is GaiaEvent.Error -> onError(event)
+    GaiaEvent.Other -> Unit
         }
     }
 
