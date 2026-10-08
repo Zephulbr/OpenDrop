@@ -85,12 +85,19 @@ class AppearanceViewModel(app: Application) : AndroidViewModel(app) {
 
     private var saveJob: Job? = null
 
+    /** A tap that landed before the store loaded; applied once it has (last wins). */
+    private var pending: ((Appearance) -> Appearance)? = null
+
     init {
         viewModelScope.launch {
             _state.value = store.data
                 .catch { e -> if (e is IOException) emit(emptyPreferences()) else throw e }
                 .first()
                 .toAppearance()
+            pending?.let { p ->
+                pending = null
+                update(transform = p)
+            }
         }
     }
 
@@ -99,7 +106,11 @@ class AppearanceViewModel(app: Application) : AndroidViewModel(app) {
      * value to settle (used while dragging the custom color sliders).
      */
     fun update(debounce: Boolean = false, transform: (Appearance) -> Appearance) {
-        val next = transform(_state.value ?: return)
+        val current = _state.value ?: run {
+            pending = transform
+            return
+        }
+        val next = transform(current)
         _state.value = next
         saveJob?.cancel()
         saveJob = viewModelScope.launch {

@@ -14,8 +14,9 @@ import android.media.AudioManager
 import android.os.Build
 import androidx.core.content.ContextCompat
 import java.io.IOException
-import java.text.SimpleDateFormat
-import java.util.Date
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 import java.util.concurrent.Executors
 import kotlinx.coroutines.CoroutineScope
@@ -75,8 +76,8 @@ val Connection.isActive: Boolean
 
 /**
  * Owns the connection to the earbuds for the whole app process, so it keeps
- * running when no screen is open. Screens, the foreground service and (later)
- * tiles and widgets all read [state] and call into this one instance, which
+ * running when no screen is open. Screens, the foreground service, the tile
+ * and the widgets all read [state] and call into this one instance, which
  * [org.opendrop.app.OpenDropApplication] creates.
  */
 class DeviceController(private val context: Context) {
@@ -96,6 +97,10 @@ class DeviceController(private val context: Context) {
 
     /** Bumped by every [stop]; an attempt whose token is stale exits quietly. */
     private var generation = 0
+
+    /** Immutable and thread-safe; `log` runs on main and IO coroutines alike. */
+    private val logClock: DateTimeFormatter =
+        DateTimeFormatter.ofPattern("HH:mm:ss.SSS").withZone(ZoneId.systemDefault())
 
     /** The last device the user connected to; auto-connect target. */
     private val prefs = context.getSharedPreferences("device", Context.MODE_PRIVATE)
@@ -383,8 +388,7 @@ class DeviceController(private val context: Context) {
     private fun logEvent(message: String) = log("-- $message")
 
     private fun log(text: String) {
-        val time = SimpleDateFormat("HH:mm:ss.SSS", Locale.ROOT).format(Date())
-        _state.update { it.copy(log = (it.log + "$time $text").takeLast(LOG_LINES)) }
+        _state.update { it.copy(log = (it.log + "${logClock.format(Instant.now())} $text").takeLast(LOG_LINES)) }
     }
 
     private fun Intent.bluetoothDevice(): BluetoothDevice? =

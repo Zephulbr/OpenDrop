@@ -34,6 +34,7 @@ class AppSettings(context: Context) {
     )
     val state: StateFlow<Behavior> = _state.asStateFlow()
 
+    /** Main-thread only; the read-modify-write isn't atomic across threads. */
     fun update(transform: (Behavior) -> Behavior) {
         val next = transform(_state.value)
         _state.value = next

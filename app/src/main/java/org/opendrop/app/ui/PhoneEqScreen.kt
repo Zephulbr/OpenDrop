@@ -45,6 +45,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -54,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import java.util.Locale
 import kotlin.math.ln
 import kotlin.math.pow
+import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -290,9 +292,38 @@ private fun ResponseGraph(curve: EqCurve) {
                 style = Stroke(2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
             )
         }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            listOf("20 Hz", "100", "1 kHz", "10 kHz", "±${GRAPH_RANGE_DB.toInt()} dB").forEach {
-                Text(it, style = MaterialTheme.typography.labelSmall, color = colors.onSurfaceVariant)
+        AxisLabels()
+    }
+}
+
+/** Labels centered under their gridlines; the end labels sit at the edges. */
+@Composable
+private fun AxisLabels() {
+    val colors = MaterialTheme.colorScheme
+    val span = ln(MAX_HZ) - ln(MIN_HZ)
+    fun position(hz: Double) = ((ln(hz) - ln(MIN_HZ)) / span).toFloat()
+    val labels = listOf(
+        "20 Hz" to 0f,
+        "100" to position(100.0),
+        "1 kHz" to position(1_000.0),
+        "10 kHz" to position(10_000.0),
+        "±${GRAPH_RANGE_DB.toInt()} dB" to 1f,
+    )
+    Layout(
+        content = {
+            labels.forEach { (text, _) ->
+                Text(text, style = MaterialTheme.typography.labelSmall, color = colors.onSurfaceVariant)
+            }
+        },
+    ) { measurables, constraints ->
+        val placeables = measurables.map { it.measure(constraints.copy(minWidth = 0)) }
+        val width = constraints.maxWidth
+        layout(width, placeables.maxOf { it.height }) {
+            placeables.forEachIndexed { i, placeable ->
+                val x = (labels[i].second * width - placeable.width / 2)
+                    .roundToInt()
+                    .coerceIn(0, width - placeable.width)
+                placeable.placeRelative(x, 0)
             }
         }
     }
@@ -307,7 +338,7 @@ private fun PreampRow(curve: EqCurve, onPreamp: (Double) -> Unit) {
         }
         Slider(
             value = curve.preamp.toFloat(),
-            onValueChange = { onPreamp(Math.round(it * 2) / 2.0) },
+            onValueChange = { onPreamp((it * 2).roundToInt() / 2.0) },
             valueRange = -20f..0f,
         )
         if (curve.preamp + curve.peakDb() > 0.5) {
@@ -352,15 +383,15 @@ private fun FilterList(eq: ParametricEq, onCustom: (EqCurve) -> Unit) {
                     onSelect = { type -> replace(i, filter.copy(type = type, gain = if (type.hasGain) filter.gain else 0.0)) },
                 )
                 LabeledSlider(stringResource(R.string.peq_frequency), hzLabel(filter.frequency), logPosition(filter.frequency, MIN_HZ, MAX_HZ)) {
-                    replace(i, filter.copy(frequency = Math.round(fromLogPosition(it, MIN_HZ, MAX_HZ)).toDouble()))
+                    replace(i, filter.copy(frequency = fromLogPosition(it, MIN_HZ, MAX_HZ).roundToInt().toDouble()))
                 }
                 if (filter.type.hasGain) {
                     LabeledSlider(stringResource(R.string.peq_gain), "${fmt(filter.gain)} dB", ((filter.gain + 12) / 24).toFloat()) {
-                        replace(i, filter.copy(gain = Math.round((it * 24 - 12) * 2) / 2.0))
+                        replace(i, filter.copy(gain = ((it * 24 - 12) * 2).roundToInt() / 2.0))
                     }
                 }
                 LabeledSlider("Q", String.format(Locale.ROOT, "%.2f", filter.q), logPosition(filter.q, 0.1, 10.0)) {
-                    replace(i, filter.copy(q = Math.round(fromLogPosition(it, 0.1, 10.0) * 100) / 100.0))
+                    replace(i, filter.copy(q = (fromLogPosition(it, 0.1, 10.0) * 100).roundToInt() / 100.0))
                 }
                 TextButton(onClick = {
                     expanded = -1

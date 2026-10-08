@@ -31,6 +31,7 @@ data class PhoneEqState(
  */
 class PhoneEq(private val context: Context) {
     private val prefs = context.getSharedPreferences("phone_eq", Context.MODE_PRIVATE)
+    private val lock = Any()
 
     private val _state = MutableStateFlow(load())
     val state: StateFlow<PhoneEqState> = _state.asStateFlow()
@@ -38,7 +39,8 @@ class PhoneEq(private val context: Context) {
     /** True when the phone refused the effect (set by [PhoneEqService]). */
     val failed = MutableStateFlow(false)
 
-    fun update(transform: (PhoneEqState) -> PhoneEqState) {
+    /** Thread-safe: called from the UI and from the IO import path. */
+    fun update(transform: (PhoneEqState) -> PhoneEqState) = synchronized(lock) {
         val previous = _state.value
         val next = transform(previous)
         if (next == previous) return
