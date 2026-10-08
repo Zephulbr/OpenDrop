@@ -89,9 +89,12 @@ class DeviceController(private val context: Context) {
 
     /** The session isn't thread-safe; every call into it runs on this thread. */
     private val sessionThread = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
-    private var link: GaiaLink? = null
-    private var session: GaiaSession? = null
+    @Volatile private var link: GaiaLink? = null
+    @Volatile private var session: GaiaSession? = null
     private var readJob: Job? = null
+
+    /** Bumped by every [stop]; an attempt whose token is stale exits quietly. */
+    private var generation = 0
 
     /** The last device the user connected to; auto-connect target. */
     private val prefs = context.getSharedPreferences("device", Context.MODE_PRIVATE)
@@ -214,18 +217,20 @@ class DeviceController(private val context: Context) {
             it.copy(selected = target, connection = Connection.Connecting, device = GaiaDeviceState(), log = emptyList())
         }
         readBattery(device)
-        readJob = scope.launch(Dispatchers.IO) { keepConnected(device, auto) }
+        val gen = generation
+        readJob = scope.launch(Dispatchers.IO) { keepConnected(device, auto, gen) }
     }
 
     /**
      * Connects, and reconnects with backoff when the earbuds drop the link.
      * A failed automatic first attempt is quiet: back to the picker, no error.
      */
-    private suspend fun keepConnected(device: BluetoothDevice, auto: Boolean) {
+    private suspend fun keepConnected(device: BluetoothDevice, auto: Boolean, gen: Int) {
         var failures = 0
         var everConnected = false
         while (true) {
-            val ended = connectOnce(device)
+            val ended = connectOnce(device, gen)
+            if (gen != generation) return // superseded by a newer connect/disconnect
             if (!currentCoroutineContext().isActive) return // user disconnected
             everConnected = everConnected || ended.connected
             if (!everConnected) {
@@ -251,13 +256,19 @@ class DeviceController(private val context: Context) {
     private class Ended(val reason: String, val connected: Boolean, val lastedMs: Long)
 
     /** One connection, from connect to close. Returns why it ended. */
-    private suspend fun connectOnce(device: BluetoothDevice): Ended {
+    private suspend fun connectOnce(device: BluetoothDevice, gen: Int): Ended {
         val newLink: GaiaLink = RfcommLink(device)
         try {
             newLink.connect()
         } catch (e: Exception) {
             newLink.close()
             return Ended(e.message ?: e.javaClass.simpleName, connected = false, lastedMs = 0)
+        }
+        if (gen != generation) {
+            // A newer connect() or disconnect() won while the native socket
+            // call blocked; drop this attempt without touching link/session/state.
+            newLink.close()
+            return Ended("Superseded", connected = false, lastedMs = 0)
         }
         val connectedAt = System.currentTimeMillis()
         link = newLink
@@ -303,6 +314,7 @@ class DeviceController(private val context: Context) {
     }
 
     private fun stop() {
+        generation++ // supersedes whatever attempt is still in flight
         readJob?.cancel()
         readJob = null
         link?.close()
