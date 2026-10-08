@@ -244,6 +244,9 @@ Done (`core/protocol`: `GaiaSession`, `MoondropModels`, `GaiaFeature`):
   the model, chip and the features the device reports.
 - **Unknown devices are read-only**: OpenDrop shows what they report and the
   packet log, and sends nothing that changes them.
+- **Share device report** (Device info) puts the model, firmware, feature list
+  and packet log in a text the owner can send us, so a new model can be added
+  without a PC.
 - EQ switching is offered only for models whose preset names we know (the
   Space Travel for now), and only for presets the device says it has.
   Other known models show the current preset id.
