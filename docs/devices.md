@@ -264,5 +264,7 @@ Next:
 - Preset names for other models (Link downloads them per model).
 - Airoha's own SDK protocol only if an Airoha model turns out to need it for
   something GAIA doesn't offer (firmware updates stay out of scope).
-- USB devices get their own transport and drivers, later (roadmap "Later"),
-  starting with the family that covers the most models people own.
+- USB devices: the transport, permission flow and a read-only USB report are
+  in (`core/transport-usb`, `UsbModels.kt`); each family's driver waits on a
+  USB report and a capture (roadmap M5), starting with the family that covers
+  the most models people own.

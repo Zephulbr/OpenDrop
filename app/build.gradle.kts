@@ -50,6 +50,8 @@ android {
 dependencies {
     implementation(project(":core:protocol"))
     implementation(project(":core:transport-classic"))
+    implementation(project(":core:transport-usb"))
+    implementation(project(":core:dsp"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

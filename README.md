@@ -7,8 +7,10 @@ First target: the original **Moondrop Space Travel** earbuds.
 paired Space Travel earbuds and shows firmware version and battery, switches
 EQ presets (Reference / Basshead / Monitor), controls media volume, and shows
 a packet log. Also: a Quick Settings tile for the EQ preset, a battery
-widget, a low-battery notification and opt-in automation intents for Tasker
-([docs/automation.md](docs/automation.md)).
+widget, a low-battery notification, opt-in automation intents for Tasker
+([docs/automation.md](docs/automation.md)), a phone-side parametric EQ with
+AutoEQ import (any headphones), and a read-only USB report for Moondrop USB
+DACs and DSP cables.
 
 What the Space Travel firmware does and doesn't allow (for example, ANC and
 game mode can't be controlled by any app) is documented in
@@ -34,7 +36,7 @@ out of the case, and close the MOONDROP Link app.
 Requires JDK 17 and the Android SDK (API 35).
 
 ```sh
-./gradlew :core:protocol:test   # protocol unit tests (no Android SDK needed)
+./gradlew :core:protocol:test :core:dsp:test   # unit tests (no Android SDK needed)
 ./gradlew :app:assembleDebug    # app/build/outputs/apk/debug/
 ```
 
@@ -42,7 +44,10 @@ Modules:
 
 - `core/protocol`: GAIA session, model table and capability model, pure
   Kotlin and unit tested against captured traces.
+- `core/dsp`: phone-side EQ math (biquads, AutoEQ import/export, presets),
+  pure Kotlin and unit tested.
 - `core/transport-classic`: the Bluetooth Classic (RFCOMM) link.
+- `core/transport-usb`: USB host access (read-only for now).
 - `app`: the Android app.
 
 Protocol research tools (Python 3.10+, no dependencies) are in `tools/`.
