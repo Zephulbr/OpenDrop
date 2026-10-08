@@ -18,6 +18,8 @@ import org.opendrop.app.phoneeq.PhoneEq
 import org.opendrop.app.phoneeq.PhoneEqService
 import org.opendrop.app.settings.AppSettings
 import org.opendrop.app.widget.BatteryWidget
+import org.opendrop.app.widget.EqWidget
+import org.opendrop.app.widget.PhoneEqWidget
 
 class OpenDropApplication : Application() {
     /** The one connection to the earbuds, shared by every screen and the service. */
@@ -51,6 +53,18 @@ class OpenDropApplication : Application() {
                 .map { BatteryWidget.WidgetContent.of(it) }
                 .distinctUntilChanged()
                 .collect { BatteryWidget.update(this@OpenDropApplication, it) }
+        }
+        scope.launch {
+            controller.state
+                .map { EqWidget.Content.of(it) }
+                .distinctUntilChanged()
+                .collect { EqWidget.update(this@OpenDropApplication, it) }
+        }
+        scope.launch {
+            phoneEq.state
+                .map { PhoneEqWidget.Content.of(it) }
+                .distinctUntilChanged()
+                .collect { PhoneEqWidget.update(this@OpenDropApplication, it) }
         }
         val lowBattery = LowBatteryAlert(this, settings)
         scope.launch {

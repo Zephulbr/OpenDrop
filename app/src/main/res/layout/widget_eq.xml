@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Earbuds EQ widget: name, then one button per preset (or a status line to tap). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/eq_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:gravity="center_vertical"
+    android:orientation="vertical"
+    android:paddingStart="12dp"
+    android:paddingTop="8dp"
+    android:paddingEnd="12dp"
+    android:paddingBottom="8dp">
+
+    <TextView
+        android:id="@+id/eq_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp"
+        android:text="@string/widget_eq_title"
+        android:textColor="@color/widget_secondary"
+        android:textSize="13sp" />
+
+    <LinearLayout
+        android:id="@+id/eq_buttons"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/eq_reference"
+            style="@style/WidgetChip"
+            android:layout_marginEnd="6dp"
+            android:text="@string/preset_reference" />
+
+        <TextView
+            android:id="@+id/eq_basshead"
+            style="@style/WidgetChip"
+            android:layout_marginEnd="6dp"
+            android:text="@string/preset_basshead" />
+
+        <TextView
+            android:id="@+id/eq_monitor"
+            style="@style/WidgetChip"
+            android:text="@string/preset_monitor" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/eq_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:ellipsize="end"
+        android:maxLines="2"
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp"
+        android:text="@string/widget_not_connected"
+        android:textColor="@color/widget_primary"
+        android:textSize="15sp"
+        android:visibility="gone" />
+</LinearLayout>
