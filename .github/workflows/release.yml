@@ -29,7 +29,12 @@ jobs:
             echo "Tag $GITHUB_REF_NAME doesn't match versionName $version" >&2
             exit 1
           fi
-          echo "VERSION_CODE=$(sed -n 's/.*versionCode = \(.*\)/\1/p' app/build.gradle.kts)" >> "$GITHUB_ENV"
+          version_code=$(sed -n 's/.*versionCode = \(.*\)/\1/p' app/build.gradle.kts)
+          if [ -z "$version_code" ] || [ "$(printf '%s\n' "$version_code" | wc -l)" -gt 1 ]; then
+            echo "Expected exactly one versionCode in app/build.gradle.kts" >&2
+            exit 1
+          fi
+          echo "VERSION_CODE=$version_code" >> "$GITHUB_ENV"
 
       - name: Tests
         run: ./gradlew :core:protocol:test :core:dsp:test
