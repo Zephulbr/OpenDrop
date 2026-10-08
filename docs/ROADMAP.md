@@ -19,7 +19,7 @@ deleting it.
 | Milestone | Goal | Status |
 |---|---|---|
 | [M0](#m0-research) Research | Know how Moondrop devices talk | ✅ Done (USB protocols still open) |
-| [M1](#m1-space-travel-mvp-v01) Space Travel MVP (v0.1) | Everything the Space Travel can do | ✅ v0.1.0 tagged (`dcbfe23`) |
+| [M1](#m1-space-travel-mvp-v01) Space Travel MVP (v0.1) | Everything the Space Travel can do | ✅ Done; v0.1.0 is `dcbfe23` |
 | [M2](#m2-every-moondrop-bluetooth-model-v02) Every Bluetooth model (v0.2) | One GAIA driver for every Bluetooth model | 🟡 Driver done, features need captures |
 | [M3](#m3-everyday-convenience-v03) Everyday convenience (v0.3) | Tiles, widget, notifications | 🟡 Built, untested on hardware; touch lock waits on M2 |
 | [M4](#m4-phone-side-audio-v04) Phone-side audio (v0.4) | PEQ, AutoEQ, codec switching | 🟡 PEQ and AutoEQ built, untested on hardware; Shizuku codec switch open |
