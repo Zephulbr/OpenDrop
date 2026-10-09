@@ -9,3 +9,7 @@ local.properties
 *.iml
 .kotlin/
 /captures/
+
+# Local superpowers worktrees and SDD plan workspaces
+.worktrees/
+.superpowers/
