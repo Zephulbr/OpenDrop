@@ -78,6 +78,7 @@ dependencies).
 ## Documentation
 
 - [Roadmap](docs/ROADMAP.md) — where the project is headed
+- [Research](docs/RESEARCH.md) — methodology, results and what's still unknown
 - [Supported devices](docs/devices.md) — what works on which hardware
 - [Design direction](docs/DESIGN.md) — how the UI is meant to look and feel
 - [Automation](docs/automation.md) — Tasker intents and friends
