@@ -4,7 +4,7 @@ import csv
 import pathlib
 import unittest
 
-from gaia import Decoder, encode, encode_v2
+from gaia import FEATURES, VENDOR_V3, Decoder, Frame, encode, encode_v2
 
 CAPTURE = pathlib.Path(__file__).parent.parent / "docs/protocol/captures/2026-10-07-link-eq.csv"
 
@@ -48,6 +48,34 @@ class DecodeTest(unittest.TestCase):
     def test_firmware_version(self):
         (frame,) = Decoder().feed(captured("750"))
         self.assertEqual(frame.payload, b"1.0.0")
+
+
+def _eq_reply(payload: bytes) -> Frame:
+    return Frame(4, 0, VENDOR_V3, (5 << 9) | (2 << 7) | 0x05, payload)
+
+
+class UserEqDecodeTest(unittest.TestCase):
+    def test_five_bands(self):
+        band = bytes([0x03, 0xE8, 0x0B, 0x50, 13, 0xFF, 0x2E])  # 1000 Hz, Q 0.707, PEQ, -3.5 dB
+        text = _eq_reply(bytes([0, 4]) + band + bytes(7 * 4)).describe()
+        self.assertIn("start 0, end 4, 5 bands", text)
+        self.assertIn("1000 Hz, Q 0.707, type 13 (PEQ), -3.5 dB", text)
+
+    def test_captured_short_reply(self):
+        # 2026-10-07 probe: start 0, end 1, one zeroed band.
+        text = _eq_reply(bytes([0, 1]) + bytes(7)).describe()
+        self.assertIn("start 0, end 1, 1 bands", text)
+
+    def test_malformed_reply_does_not_raise(self):
+        self.assertIn("malformed user EQ (8 bytes)", _eq_reply(bytes([0, 4]) + bytes(6)).describe())
+        self.assertIn("malformed user EQ (1 bytes)", _eq_reply(bytes([0])).describe())
+
+
+class FeatureNamesTest(unittest.TestCase):
+    def test_full_map_without_28(self):
+        self.assertEqual(sorted(FEATURES), [i for i in range(36) if i != 28])
+        self.assertEqual(FEATURES[20], "multipoint")
+        self.assertIn("feature_28", Frame(4, 0, VENDOR_V3, 28 << 9, b"").describe())
 
 
 if __name__ == "__main__":

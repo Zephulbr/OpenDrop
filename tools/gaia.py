@@ -15,20 +15,45 @@ VENDOR_V3 = 0x001D  # GAIA v3 (QTIL)
 
 TYPES = {0: "command", 1: "notification", 2: "response", 3: "error"}
 
-# Feature ids from Qualcomm GAIA v3. Only the ones the Space Travel advertises
-# (or that other Moondrop models use) are named.
+# Feature ids under vendor 0x001D, as MOONDROP Link 2.26.2c knows them (0-12 are
+# Qualcomm's, 13 and up Moondrop's; there is no 28). Same keys as the app's
+# GaiaFeature. See docs/protocol/moondrop-gaia-features.md.
 FEATURES = {
     0: "core",
     1: "earbud",
     2: "anc",
     3: "voice_ui",
+    4: "debug",
     5: "music_processing",
     6: "upgrade",
+    7: "handset_service",
     8: "audio_curation",
+    9: "earbud_fit",
+    10: "voice_processing",
+    11: "gesture_configuration",
+    12: "statistics",
     13: "battery",
     14: "voice_prompts",
-    20: "dual_device",
+    15: "dac_gain",
+    16: "codec",
+    17: "wear_sensor",
+    18: "spatial_audio",
+    19: "led",
+    20: "multipoint",
+    21: "bt_address",
+    22: "touch_v2",
+    23: "audio_resource",
+    24: "power_control",
+    25: "power_timeout",
+    26: "touch_v3",
+    27: "dynamic_bass",
+    29: "audio_file_storage",
+    30: "lr_channel",
+    31: "touch_v4",
     32: "anc_v2",
+    33: "anc_v3",
+    34: "find_earbuds",
+    35: "dual_mic_enc",
 }
 
 # (feature, type, command) -> name, for what we have seen or are probing.
@@ -42,6 +67,11 @@ NAMES = {
     (0, 0, 0x07): "register_notification",
     (0, 0, 0x0C): "get_transport_info",
     (0, 0, 0x0D): "set_transport_parameter",
+    (0, 0, 0x12): "get_earbud_color",
+    (0, 0, 0x13): "get_earbud_language",
+    (0, 0, 0x14): "get_left_serial",
+    (0, 0, 0x15): "get_right_serial",
+    (0, 0, 0x16): "get_tws_status",
     (0, 1, 0x00): "charger_status?",
     (5, 0, 0x00): "get_eq_state",
     (5, 0, 0x01): "get_available_eq_presets",
@@ -54,6 +84,31 @@ NAMES = {
 }
 
 EQ_PRESETS = {0: "Reference", 1: "Basshead", 2: "Monitor", 63: "User"}
+
+# User EQ filter types (Link 2.26.2c).
+FILTER_NAMES = {
+    0: "bypass", 1: "LP1", 2: "HP1", 3: "AP1", 4: "LS1", 5: "HS1", 6: "tilt1",
+    7: "LP2", 8: "HP2", 9: "AP2", 10: "LS2", 11: "HS2", 12: "tilt2", 13: "PEQ",
+}
+
+
+def user_eq(p: bytes) -> str:
+    """Music processing cmd 5 reply: [start][end] + 7 bytes per band.
+
+    A band is freq u16 BE (Hz), Q x 4096 u16 BE, filter type u8, gain x 60 i16 BE.
+    Whether `end` is inclusive is unsettled, so both bytes are shown as sent.
+    """
+    if len(p) < 2 or (len(p) - 2) % 7:
+        return f"malformed user EQ ({len(p)} bytes)"
+    bands = []
+    for o in range(2, len(p), 7):
+        hz = int.from_bytes(p[o:o + 2], "big")
+        q = int.from_bytes(p[o + 2:o + 4], "big") / 4096
+        ft = p[o + 4]
+        gain = int.from_bytes(p[o + 5:o + 7], "big", signed=True) / 60
+        bands.append(f"{hz} Hz, Q {q:.3f}, type {ft} ({FILTER_NAMES.get(ft, '?')}), {gain:+.1f} dB")
+    detail = "; ".join(bands) if bands else "none"
+    return f"start {p[0]}, end {p[1]}, {len(bands)} bands: {detail}"
 
 
 @dataclass
@@ -113,6 +168,8 @@ def annotate(f: Frame) -> str:
         return f"{p[0]} presets: {names}"
     if (f.feature, f.cmd) == (5, 0x02) and f.type == 2 and p:
         return EQ_PRESETS.get(p[0], f"preset {p[0]}")
+    if (f.feature, f.cmd) == (5, 0x05) and f.type == 2:
+        return user_eq(p)
     if (f.feature, f.type, f.cmd) == (5, 1, 0x01) and p:
         return EQ_PRESETS.get(p[0], f"preset {p[0]}")
     return ""

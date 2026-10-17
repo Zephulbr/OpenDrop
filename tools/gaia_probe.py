@@ -33,11 +33,11 @@ PROBES = [
     ("core: serial number", 0, 0x03),
     ("core: variant name", 0, 0x04),
     ("core: application version", 0, 0x05),
-    # Core: commands Link sends on the device screen (meaning unknown).
-    ("core: link init 0x13", 0, 0x13),
-    ("core: link init 0x14", 0, 0x14),
-    ("core: link init 0x15", 0, 0x15),
-    ("core: link init 0x16", 0, 0x16),
+    # Core: Basic 19-22, which Link sends on the device screen (the ST1 doesn't reply).
+    ("core: earbud language", 0, 0x13),
+    ("core: left serial", 0, 0x14),
+    ("core: right serial", 0, 0x15),
+    ("core: TWS status", 0, 0x16),
     # Advertised features.
     ("earbud: cmd 0", 1, 0x00),
     ("voice_ui: cmd 0", 3, 0x00),
