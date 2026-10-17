@@ -129,6 +129,32 @@ fun SettingsScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = Dimens.Gutter),
             )
+
+            Spacer(Modifier.height(Dimens.SectionGap))
+            SectionTitle(stringResource(R.string.devtools_section))
+            SwitchRow(
+                title = stringResource(R.string.devtools_console),
+                subtitle = stringResource(R.string.devtools_console_subtitle),
+                checked = behavior.developerOptions,
+                // Off also hides serials again, so the next opt-in starts safe.
+                onCheckedChange = { on -> onChange { it.copy(developerOptions = on, showSerials = it.showSerials && on) } },
+            )
+            AnimatedVisibility(behavior.developerOptions) {
+                Column {
+                    Text(
+                        stringResource(R.string.devtools_warning),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = Dimens.Gutter, vertical = 8.dp),
+                    )
+                    SwitchRow(
+                        title = stringResource(R.string.devtools_show_serials),
+                        subtitle = stringResource(R.string.devtools_show_serials_subtitle),
+                        checked = behavior.showSerials,
+                        onCheckedChange = { on -> onChange { it.copy(showSerials = on) } },
+                    )
+                }
+            }
         }
     }
 }

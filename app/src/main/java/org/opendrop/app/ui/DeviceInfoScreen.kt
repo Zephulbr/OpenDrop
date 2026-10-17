@@ -40,7 +40,7 @@ import org.opendrop.protocol.capabilities
 private const val LOG_LINES_SHOWN = 100
 
 @Composable
-fun DeviceInfoScreen(state: UiState, onBack: () -> Unit) {
+fun DeviceInfoScreen(state: UiState, onOpenConsole: (() -> Unit)?, onBack: () -> Unit) {
     val lines = state.log.takeLast(LOG_LINES_SHOWN)
     val waiting = waitingOnCapture(state.device)
     Column(Modifier.fillMaxSize()) {
@@ -116,6 +116,16 @@ fun DeviceInfoScreen(state: UiState, onBack: () -> Unit) {
                         title = stringResource(R.string.info_share_report),
                         subtitle = stringResource(R.string.info_share_report_subtitle),
                         onClick = { shareReport(context, state) },
+                    )
+                }
+            }
+            // Only with Settings → Developer → Protocol console on.
+            onOpenConsole?.let { open ->
+                item(key = "console") {
+                    NavRow(
+                        title = stringResource(R.string.devtools_console),
+                        subtitle = stringResource(R.string.console_open_subtitle),
+                        onClick = open,
                     )
                 }
             }

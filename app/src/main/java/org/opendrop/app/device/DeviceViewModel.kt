@@ -7,6 +7,7 @@ import org.opendrop.app.OpenDropApplication
 import org.opendrop.app.phoneeq.PhoneEqState
 import org.opendrop.app.settings.Behavior
 import org.opendrop.dsp.EqCurve
+import org.opendrop.protocol.DevRead
 import org.opendrop.protocol.EqPreset
 
 /**
@@ -49,4 +50,9 @@ class DeviceViewModel(app: Application) : AndroidViewModel(app) {
     fun setEq(preset: EqPreset) = controller.setEq(preset)
 
     fun setVolume(value: Int) = controller.setVolume(value)
+
+    /** Developer console; sends nothing unless developer options are on. */
+    fun probe(read: DevRead) {
+        if (settings.state.value.developerOptions) controller.probe(read)
+    }
 }
