@@ -8,6 +8,7 @@ import org.opendrop.app.phoneeq.PhoneEqState
 import org.opendrop.app.settings.Behavior
 import org.opendrop.dsp.EqCurve
 import org.opendrop.protocol.DevRead
+import org.opendrop.protocol.ComtrueState
 import org.opendrop.protocol.EqPreset
 import org.opendrop.protocol.UsbRead
 import org.opendrop.protocol.UsbWrite
@@ -46,6 +47,13 @@ class DeviceViewModel(app: Application) : AndroidViewModel(app) {
     fun requestUsbPermission(key: String) = usb.requestPermission(key)
 
     val usbProbe: StateFlow<UsbProbeResult?> = usb.consoleResult
+
+    val usbDac: StateFlow<Map<String, ComtrueState>> = usb.dac
+
+    /** Reads a DAC's settings; only with developer options on (vendor commands). */
+    fun refreshUsbDac(key: String) {
+        if (settings.state.value.developerOptions) usb.refreshDac(key)
+    }
 
     /** Developer console; sends nothing unless developer options are on. */
     fun probeUsb(key: String, read: UsbRead) {

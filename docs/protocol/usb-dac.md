@@ -41,6 +41,15 @@ reversible writes are planned behind developer options (Tier 2 of
 flash, NVM and OTA commands are out of scope. To help, record a capture:
 [usb-capture-guide.md](usb-capture-guide.md).
 
+**Output format (any USB audio device):** the USB device screen lists the
+playback formats from the standard UAC1/UAC2 descriptors (bit depth,
+channels, raw/DSD; UAC2 keeps sample rates in the clock, so none there) and
+what Android reports for the output: sample rates, bit depths and, on
+Android 14+, whether bit-perfect playback is offered. Nothing is sent to the
+device. Android has no public API for the format it is sending right now, and
+an app can't change it for other apps. Original Dawn Pro: 16-, 24- and 32-bit
+PCM and 32-bit raw (DSD), 2 channels.
+
 ## Common USB mechanics
 
 - Android USB host; the app requests USB permission with the standard

@@ -7,7 +7,12 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
+import android.media.AudioDeviceCallback
+import android.media.AudioDeviceInfo
+import android.media.AudioManager
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CoroutineScope
@@ -18,9 +23,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import org.opendrop.protocol.ComtrueState
 import org.opendrop.protocol.MoondropUsbModels
+import org.opendrop.protocol.UsbAudioFormats
 import org.opendrop.protocol.UsbDeviceInfo
+import org.opendrop.protocol.UsbFamily
+import org.opendrop.protocol.UsbStreamFormat
 import org.opendrop.protocol.UsbIdentify
 import org.opendrop.protocol.UsbProbes
 import org.opendrop.protocol.UsbRead
@@ -33,8 +44,15 @@ data class UsbEntry(
     val key: String,
     val info: UsbDeviceInfo,
     val hasPermission: Boolean,
+    /** What Android reports for it as an audio output, if it is one. */
+    val output: UsbAudioOutput? = null,
 ) {
     val likelyMoondrop: Boolean get() = MoondropUsbModels.looksLikeMoondrop(info.manufacturer, info.product)
+
+    /** Playback formats from its descriptors; empty without USB permission. */
+    val formats: List<UsbStreamFormat> get() = UsbAudioFormats.parse(info.rawDescriptors)
+
+    val family: UsbFamily? get() = UsbIdentify.of(info).family
 
     /** USB audio (DACs, DSP cables) or a recognised Moondrop device. */
     val relevant: Boolean get() = likelyMoondrop || info.interfaces.any { it.interfaceClass == USB_CLASS_AUDIO }
@@ -74,6 +92,10 @@ class UsbController(private val context: Context) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     private val console = manager?.let(::UsbConsole)
+    private val audio = context.getSystemService(AudioManager::class.java)
+
+    /** One vendor transfer sequence at a time, whoever asks. */
+    private val io = Mutex()
 
     private val _devices = MutableStateFlow<List<UsbEntry>>(emptyList())
     val devices: StateFlow<List<UsbEntry>> = _devices.asStateFlow()
@@ -83,8 +105,19 @@ class UsbController(private val context: Context) {
     /** The developer console's last USB read, if any. */
     val consoleResult: StateFlow<UsbProbeResult?> = _consoleResult.asStateFlow()
 
+    private val _dac = MutableStateFlow<Map<String, ComtrueState>>(emptyMap())
+
+    /** Last read settings of Comtrue DACs, by device key. */
+    val dac: StateFlow<Map<String, ComtrueState>> = _dac.asStateFlow()
+
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(c: Context, intent: Intent) = refresh()
+    }
+
+    /** Android registers the audio output a moment after the USB attach; list it when it does. */
+    private val audioCallback = object : AudioDeviceCallback() {
+        override fun onAudioDevicesAdded(added: Array<out AudioDeviceInfo>) = refresh()
+        override fun onAudioDevicesRemoved(removed: Array<out AudioDeviceInfo>) = refresh()
     }
 
     init {
@@ -96,6 +129,7 @@ class UsbController(private val context: Context) {
         // NOT_EXPORTED: system attach/detach broadcasts still arrive, and the
         // permission-grant broadcast is explicit to this package.
         ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
+        audio?.registerAudioDeviceCallback(audioCallback, Handler(Looper.getMainLooper()))
         refresh()
     }
 
@@ -106,15 +140,42 @@ class UsbController(private val context: Context) {
         scope.launch(Dispatchers.IO) {
             val entries = try {
                 m.deviceList.values.map { device ->
-                    UsbEntry(device.deviceName, p.read(device), m.hasPermission(device))
+                    val output = runCatching { UsbAudioOutputs.find(audio, device.productName) }.getOrNull()
+                    UsbEntry(device.deviceName, p.read(device), m.hasPermission(device), output)
                 }
             } catch (e: RuntimeException) {
                 Log.w(TAG, "Couldn't list USB devices", e)
                 emptyList()
             }
             _devices.update { entries.sortedWith(compareByDescending<UsbEntry> { it.likelyMoondrop }.thenBy { it.title ?: "" }) }
+            val keys = entries.map { it.key }.toSet()
+            _dac.update { it.filterKeys(keys::contains) }
         }
     }
+
+    /**
+     * Developer options: reads a Comtrue DAC's settings (filter, gain, LED,
+     * volume) into [dac]. Does nothing for other families.
+     */
+    fun refreshDac(key: String) {
+        val m = manager ?: return
+        val c = console ?: return
+        val device = m.deviceList[key] ?: return
+        val reads = UsbProbes.readsFor(familyOf(key)).takeIf { familyOf(key) == UsbFamily.COMTRUE } ?: return
+        scope.launch {
+            withContext(Dispatchers.IO) {
+                io.withLock {
+                    reads.forEach { read ->
+                        val result = runCatching { c.query(device, read) }.getOrNull()
+                        if (result is UsbConsole.Result.Reply) remember(key, result.bytes)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun remember(key: String, reply: ByteArray) =
+        _dac.update { it + (key to (it[key] ?: ComtrueState()).with(reply)) }
 
     /**
      * Developer console: sends one [UsbProbes] read to the device [key] names,
@@ -137,8 +198,7 @@ class UsbController(private val context: Context) {
         return run(pending) { c, device -> c.write(device, write, value) }
     }
 
-    private fun familyOf(key: String) =
-        _devices.value.firstOrNull { it.key == key }?.let { UsbIdentify.of(it.info).family }
+    private fun familyOf(key: String) = _devices.value.firstOrNull { it.key == key }?.family
 
     /** Publishes [pending], runs [block] off the main thread, then publishes its result. */
     private fun run(pending: UsbProbeResult, block: (UsbConsole, UsbDevice) -> UsbConsole.Result): Boolean {
@@ -149,7 +209,12 @@ class UsbController(private val context: Context) {
         _consoleResult.value = pending
         scope.launch {
             val result = withContext(Dispatchers.IO) {
-                runCatching { block(c, device) }.getOrElse { UsbConsole.Result.Failed(it.message ?: it.javaClass.simpleName) }
+                io.withLock {
+                    runCatching { block(c, device) }.getOrElse { UsbConsole.Result.Failed(it.message ?: it.javaClass.simpleName) }
+                }
+            }
+            if (result is UsbConsole.Result.Reply && familyOf(pending.key) == UsbFamily.COMTRUE) {
+                remember(pending.key, result.bytes)
             }
             _consoleResult.value = when (result) {
                 is UsbConsole.Result.Reply -> pending.copy(status = ProbeStatus.REPLY, reply = result.bytes.toList())

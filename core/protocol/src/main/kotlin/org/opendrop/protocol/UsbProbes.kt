@@ -62,6 +62,32 @@ data class UsbWrite(
         }
 }
 
+/** A Comtrue DAC's settings as last read; null where not read yet. */
+data class ComtrueState(
+    val filter: Int? = null,
+    val gain: Int? = null,
+    val led: Int? = null,
+    val volumeRaw: Int? = null,
+) {
+    /** Volume in percent (0x00 loudest, 0x70 quietest), or null. */
+    val volumePercent: Int?
+        get() = volumeRaw?.let {
+            val q = UsbProbes.Comtrue.VOLUME_QUIETEST
+            (q - it.coerceAtMost(q)) * 100 / q
+        }
+
+    /** This state updated from a get reply (`A0 A5 <cmd> ...`); other replies change nothing. */
+    fun with(reply: ByteArray): ComtrueState {
+        if (reply.size < 7) return this
+        fun u(i: Int) = reply[i].toInt() and 0xFF
+        return when (u(2)) {
+            UsbProbes.Comtrue.GET_STATE -> copy(filter = u(3), gain = u(4), led = u(5))
+            UsbProbes.Comtrue.GET_VOLUME -> copy(volumeRaw = u(4))
+            else -> this
+        }
+    }
+}
+
 object UsbProbes {
     /**
      * Comtrue (Dawn 3.5 / 4.4 / Pro, Moonriver2 Ti, Discdream): 7-byte
