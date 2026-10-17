@@ -18,12 +18,12 @@ deleting it.
 
 | Milestone | Goal | Status |
 |---|---|---|
-| [M0](#m0-research) Research | Know how Moondrop devices talk | ✅ Done (USB protocols still open) |
+| [M0](#m0-research) Research | Know how Moondrop devices talk | ✅ Done (protocol maps; captures pending) |
 | [M1](#m1-space-travel-mvp-v01) Space Travel MVP (v0.1) | Everything the Space Travel can do | ✅ Done; v0.1.0 is `dcbfe23` |
 | [M2](#m2-every-moondrop-bluetooth-model-v02) Every Bluetooth model (v0.2) | One GAIA driver for every Bluetooth model | 🟡 Driver done, features need captures |
 | [M3](#m3-everyday-convenience-v03) Everyday convenience (v0.3) | Tiles, widget, notifications | 🟡 Built, untested on hardware; touch lock waits on M2 |
 | [M4](#m4-phone-side-audio-v04) Phone-side audio (v0.4) | PEQ, AutoEQ, codec switching | 🟡 PEQ and AutoEQ built, untested on hardware; Shizuku codec switch open |
-| [M5](#m5-usb-devices-v05) USB devices (v0.5) | Dawn, Moonriver, FreeDSP, DSP IEMs | 🟡 Read-only transport and USB report; protocols need captures |
+| [M5](#m5-usb-devices-v05) USB devices (v0.5) | Dawn, Moonriver, FreeDSP, DSP IEMs | 🟡 Read-only transport and USB report; protocol maps done, captures pending |
 | [M6](#m6-release-v10) Release (v1.0) | F-Droid and GitHub Releases | 🟡 Onboarding, errors, translations and release pipeline done; first release open |
 
 **Next up:** try the M3 and M4 features on a phone (tile, widget, low-battery
@@ -54,18 +54,24 @@ USB families.
 - [x] Space Travel: read-only probe from a PC (`tools/gaia_probe.py`); clear
       no on ANC, game mode, gestures and per-bud battery over GAIA.
 - [x] MOONDROP Link static analysis: GAIA is the control protocol for every
-      Bluetooth chip family; Moondrop features 13 to 35 identified.
+      Bluetooth chip family; the 2.26.2c app's feature map 0–35 and command
+      ids are now extracted.
 - [x] Model catalogue: chip and connection type for all 107 products
       ([devices.md](devices.md)).
-- [x] Commands for Moondrop features from the app (unverified):
+- [x] Command map for Moondrop features (App; wire verification pending):
       [moondrop-gaia-features.md](protocol/moondrop-gaia-features.md).
-- [ ] Space Travel hidden "User" EQ (preset 63): run the one opt-in test
+- [ ] Space Travel hidden "User" EQ (preset 63): re-probe the 5-band config
+      with `0a05 00 04`, then run the one opt-in test
       (`gaia_probe.py --try-user-eq`) to settle whether it works.
 - [ ] Preset names per model: Link downloads them
       (`/api/v1/ota-config-equalizers/all`); fetch once and record them.
-- [ ] Touch controls: map the 10 gesture slots and the action codes.
-- [ ] Older ANC (2) and ANC v2 (32), touch controls v3 (26): analyse.
-- [ ] USB protocols (SPV, Comtrue, Synaptics, Jiu, Jieli USB): analyse.
+- [ ] Touch controls: payload layouts are known (5 bytes for v2/v4, 7 for v3);
+      map the gesture slots and action codes to the UI names.
+- [x] Older ANC (2) / ANC v2 (32) and touch controls v3 (26): decoded from
+      2.26.2c; wire capture still needed before use.
+- [x] USB protocols (SPV, Comture, Synopsys/Conexant, Jiu, Jieli/Bluetrum
+      OTA): decoded from 2.26.2c ([protocol/usb-dac.md](protocol/usb-dac.md));
+      USB captures still needed.
 
 ## M1: Space Travel MVP (v0.1)
 
@@ -194,8 +200,10 @@ tests and a screen):
       report descriptors, read with standard requests only). It never claims
       an interface, so audio keeps playing. USB model table from Link's
       catalogue, matched loosely by product string. *Untested on hardware.*
-- Each family below needs a USB report plus a capture of MOONDROP Link
-  changing a setting (principle 2) before OpenDrop sends anything.
+- Protocol maps for all five families are now in
+  [protocol/usb-dac.md](protocol/usb-dac.md) (App only). Each family below
+  still needs a USB report plus a capture of MOONDROP Link changing a setting
+  (principle 2) before OpenDrop sends anything.
 - [ ] SPV family first (14 models: Dawn Pro 2, Moonriver 3, FreeDSP, Rays, ...).
 - [ ] Comtrue (Dawn 3.5 / 4.4 / Pro, Moonriver 2 Ti).
 - [ ] Synaptics (Echo-B, May, Starlight, Click, ...).

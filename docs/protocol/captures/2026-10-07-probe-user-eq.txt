@@ -114,3 +114,4 @@
 == monitoring notifications for 180 s. Note the time of each thing you do.
 
 Done.
+Note (2026-10-17): Link 2.26.2c shows the 0a05 payload is [start band][end band] and each band is 7 bytes (freq u16 BE, Q x 4096 u16 BE, filter u8, gain x 60 i16 BE). This probe asked for end band 5, out of range for a 5-band EQ, so the reply only covers the first zeroed band. Re-probe with 0a05 00 04.

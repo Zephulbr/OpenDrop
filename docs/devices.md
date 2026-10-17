@@ -2,8 +2,11 @@
 
 Which Moondrop devices OpenDrop could support, and what each one needs.
 
-Sources: MOONDROP Link 2.26.1c for Android (static analysis, facts only) and
-its product catalogue, downloaded from Moondrop's API on 2026-10-08.
+Sources: MOONDROP Link 2.26.1c and **2.26.2c-261008ai** for Android (static
+analysis, facts only) and its product catalogue, downloaded from Moondrop's
+API on 2026-10-08. The 2.26.2c analysis added the exact GAIA feature enum
+(0–35, no 28) and the USB protocol families in
+[protocol/usb-dac.md](protocol/usb-dac.md).
 
 Chip types in the catalogue:
 
@@ -27,10 +30,12 @@ Each catalogue entry has a `model` string. For the Space Travel it is
 ([protocol notes](protocol/space-travel.md)). So OpenDrop can identify a
 connected model by its variant name and look it up in the table below.
 
-## What MOONDROP Link 2.26.1c contains
+## What MOONDROP Link 2.26.2c contains
 
 Static analysis of the Android app's Java/Kotlin layer (Link is a Flutter
-app; the native side does the device I/O). Facts only, no code copied.
+app; the native side does the device I/O). Facts only, no code copied. The
+2.26.2c GAIA client is an R8-obfuscated Qualcomm v3 library with one plugin
+class per feature, so the ids below are exact.
 
 **Bluetooth: one main protocol, GAIA v3, vendor `0x001D`.** Link's GAIA client
 knows these feature ids. 0 to 12 are Qualcomm's standard ones; **13 to 35 are
@@ -62,6 +67,11 @@ measured: it has no battery, ANC or touch feature. Newer models advertise more
 of these, and because the device lists its own features, **one GAIA driver
 covers every model that speaks it**; we add features one at a time.
 
+2.26.2c adds the exact command tables for feature 29 (audio file storage,
+commands 1–67) and feature 35 (dual-mic ENC, get 1 / set 2). The complete
+per-feature commands and payloads are in
+[protocol/moondrop-gaia-features.md](protocol/moondrop-gaia-features.md).
+
 The Space Travel runs on a Bluetrum chip yet speaks GAIA, and Link sends
 EQ gains for Bluetrum devices through its GAIA music-processing plugin. So
 GAIA is Moondrop's common protocol across chip vendors, not a Qualcomm-only one.
@@ -89,7 +99,27 @@ updates:
 | `jiu` | EQ registers | CDSP, CHU2 DSP, JIU, Old Fashioned |
 | `jieliusb`, `jieli` | Firmware update seen; EQ path not identified yet | Echo-BP, GM01 Pro, Gaming Maestro, Nicebuds DSP |
 
-A factory SPP tool (serial numbers) is also in the app.
+2.26.2c's Java layer now decodes four of the five families:
+
+- **Comture**: 7-byte vendor control transfers (`C0 A5 <cmd> <value> ...`) for
+  filter, gain, LED and volume.
+- **Jiu**: 11-byte bulk packets (`4B <sub> ... <cmd> ...`) for 5-band PEQ,
+  plus a save command.
+- **SPV**: 64-byte HID report `0x4B`, with a full command map for PEQ,
+  DAC/ADC gain, CS43131 filters, LED, sensor, ANC, battery, prompt tones,
+  spatial audio, timeouts and buttons.
+- **Synopsys/Conexant**: HID report 1 / feature report 5, a 10-byte header
+  plus 32-bit words, command ids for version, parameters and EQ, and biquad
+  coefficient tables.
+
+Jieli/Bluetrum USB are firmware-update transports only. All packet layouts,
+command ids and payload formats are in
+[protocol/usb-dac.md](protocol/usb-dac.md). They are **App only** (no USB
+capture yet), so OpenDrop should stay read-only until a capture confirms
+them.
+
+A factory SPP tool (serial numbers, microphone test) is also in the app; its
+framing is documented in [protocol/space-travel.md](protocol/space-travel.md#factory-spp-app).
 
 **The model list comes from Moondrop's server**
 (`https://cdn-service.moondroplab.tech/api/v1/products/all`), not from the app.
@@ -226,11 +256,23 @@ Passive IEMs. Link lists them for EQ targets and frequency-response data, applie
 
 ## Still unknown
 
-- **Each model's GAIA feature list.** It is reported by the device, so one read-only
-  command per model (from a capture or the packet log) tells us what it supports.
-- **Command bytes for Moondrop features 13 to 35.** To be read from the
-  decompiled app and confirmed with captures before OpenDrop sends them.
-- **USB protocols.** Five families, none decoded yet.
+- **Each model's GAIA feature list.** It is reported by the device, so one
+  read-only command per model (from a capture or the packet log) tells us what
+  it supports.
+- **Wire confirmation for features 2 and 7–35.** The command ids and payloads
+  are now extracted from 2.26.2c (see
+  [protocol/moondrop-gaia-features.md](protocol/moondrop-gaia-features.md)),
+  but only the ST1's 0/1/3/5/6 commands have been seen on the wire. Every new
+  model still needs a capture before OpenDrop writes.
+- **USB protocols.** The Comture, Jiu, SPV and Synopsys/Conexant transports
+  and command tables are decoded from 2.26.2c
+  ([protocol/usb-dac.md](protocol/usb-dac.md)), but none has a USB capture
+  yet. Unknowns include the Comture PEQ path (the Java layer only exposes
+  filter/gain/LED/volume), the Jiu reply header, and Synopsys coefficient
+  rounding.
+- **User EQ on ST1.** The 7-byte band layout is known, but the old probe used
+  an out-of-range end band; re-probe with `0a05 00 04` before deciding the
+  firmware is a stub.
 
 ## How the app uses this
 
@@ -258,13 +300,17 @@ Done (`core/protocol`: `GaiaSession`, `MoondropModels`, `GaiaFeature`,
 
 Next:
 
-- Moondrop features 13 to 35, one at a time, as we confirm their commands
-  with captures (battery, ANC v3 and touch controls first). What the app
-  analysis found so far: [protocol/moondrop-gaia-features.md](protocol/moondrop-gaia-features.md).
+- Wire-verify the Moondrop features 0–35, one at a time, starting with the
+  ones the app exposes for common models (battery, ANC v2/v3, touch v2/v3/v4,
+  codec, power timeouts, dual-mic). The exact commands are in
+  [protocol/moondrop-gaia-features.md](protocol/moondrop-gaia-features.md);
+  a capture is still required before a write.
+- Re-probe the ST1 user EQ with the corrected `0a05 00 04` request.
 - Preset names for other models (Link downloads them per model).
 - Airoha's own SDK protocol only if an Airoha model turns out to need it for
   something GAIA doesn't offer (firmware updates stay out of scope).
 - USB devices: the transport, permission flow and a read-only USB report are
-  in (`core/transport-usb`, `UsbModels.kt`); each family's driver waits on a
-  USB report and a capture (roadmap M5), starting with the family that covers
-  the most models people own.
+  in (`core/transport-usb`, `UsbModels.kt`); the protocol maps are in
+  [protocol/usb-dac.md](protocol/usb-dac.md). Add a read-only probe per family
+  (roadmap M5), starting with the family that covers the most models people
+  own, and do not implement writes until a USB capture confirms the payloads.

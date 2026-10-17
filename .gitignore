@@ -10,6 +10,12 @@ local.properties
 .kotlin/
 /captures/
 
+# Proprietary vendor apps used for research; never commit them
+/Moondrop App/
+*.apk
+*.apks
+*.xapk
+
 # Local superpowers worktrees and SDD plan workspaces
 .worktrees/
 .superpowers/

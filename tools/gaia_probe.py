@@ -46,8 +46,9 @@ PROBES = [
     ("music: selected eq set", 5, 0x02),
     ("music: user eq band count", 5, 0x04),
     # Read the hidden "User" EQ (preset 63, 5 bands). Payload = first, last band.
-    ("music: user eq config, bands 0-5", 5, 0x05, bytes([0, 5])),
-    ("music: user eq config, bands 1-5", 5, 0x05, bytes([1, 5])),
+    # 2.26.2c parses the reply as [start][end] + 7 bytes per band.
+    ("music: user eq config, bands 0-4", 5, 0x05, bytes([0, 4])),
+    ("music: user eq config, bands 1-4", 5, 0x05, bytes([1, 4])),
     # Not advertised, but used by other Moondrop models. Expect errors.
     ("anc v1: get", 2, 0x00),
     ("audio curation: get mode", 8, 0x03),
