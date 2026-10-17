@@ -84,8 +84,10 @@ from mdrop (Reported, not yet checked here):
 with the 7-byte packet, a 100 ms pause, then IN `0xC3/0xA1`,
 answers both gets. Replies are 7 bytes, `A0 A5 <cmd>` then data:
 `A0 A5 A3 03 01 02 00` (filter 3, gain 1, LED 2) and `A0 A5 A2 00 58 00 00`
-(volume raw `0x58`). The byte positions match Link and mdrop; what each value
-means is still per mdrop until changed on the device and read back.
+(volume raw `0x58`). The byte positions match Link and mdrop. Changing
+volume with the DAC's buttons, and the LED and gain, showed up in the next
+read (owner check, same day), so the volume, gain and LED fields are
+**Verified**. Filter names are still per mdrop.
 
 - Volume raw: `0x00` loudest to `0x70` quietest (not `100 - volume`).
 - Filter: 0 fast roll-off low latency, 1 fast roll-off phase-compensated,
