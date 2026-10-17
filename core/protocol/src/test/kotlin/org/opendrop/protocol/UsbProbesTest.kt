@@ -25,6 +25,36 @@ class UsbProbesTest {
     }
 
     @Test
+    fun writesAreOnlyFilterAndLed() {
+        // Never gain (02) or volume (04): they can be suddenly loud.
+        assertEquals(setOf(0x01, 0x06), UsbProbes.writes.map { it.cmd }.toSet())
+        val filter = UsbProbes.writes.single { it.id == "comtrue.filter" }
+        val led = UsbProbes.writes.single { it.id == "comtrue.led" }
+        assertEquals("c0 a5 01 02 00 00 00", filter.packet(2).toHex())
+        assertEquals("c0 a5 06 01 00 00 00", led.packet(1).toHex())
+        assertEquals(5, filter.values.size)
+        assertEquals(3, led.values.size)
+        assertEquals(2, UsbProbes.writesFor(UsbFamily.COMTRUE).size)
+        assertTrue(UsbProbes.writesFor(UsbFamily.SPV).isEmpty())
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun refusesValuesOutOfRange() {
+        UsbProbes.writes.single { it.id == "comtrue.led" }.packet(3)
+    }
+
+    @Test
+    fun readsBackTheValue() {
+        val filter = UsbProbes.writes.single { it.id == "comtrue.filter" }
+        val led = UsbProbes.writes.single { it.id == "comtrue.led" }
+        val reply = "a0a5a303010200".hexToBytes() // the Dawn Pro's reply, 2026-10-18
+        assertEquals(3, filter.readBackValue(reply))
+        assertEquals(2, led.readBackValue(reply))
+        assertEquals(null, filter.readBackValue("a0a5a200580000".hexToBytes())) // a volume reply
+        assertEquals(null, filter.readBackValue("a0a5a3".hexToBytes()))
+    }
+
+    @Test
     fun readsFollowTheFamily() {
         assertEquals(2, UsbProbes.readsFor(UsbFamily.COMTRUE).size)
         assertTrue(UsbProbes.readsFor(UsbFamily.SPV).isEmpty())

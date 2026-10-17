@@ -3,7 +3,9 @@ package org.opendrop.app.ui
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -13,6 +15,7 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import java.util.Locale
 import org.opendrop.app.R
 import org.opendrop.app.device.ProbeStatus
 import org.opendrop.app.device.UsbEntry
@@ -33,6 +37,7 @@ import org.opendrop.protocol.UsbIdentify
 import org.opendrop.protocol.UsbProbes
 import org.opendrop.protocol.UsbRead
 import org.opendrop.protocol.UsbReport
+import org.opendrop.protocol.UsbWrite
 
 /**
  * One USB device (roadmap M5): what it reports, and a report to share. With
@@ -45,6 +50,7 @@ fun UsbDeviceScreen(
     probe: UsbProbeResult?,
     onAllow: (String) -> Unit,
     onProbe: (String, UsbRead) -> Unit,
+    onWrite: (String, UsbWrite, Int) -> Unit,
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -105,13 +111,21 @@ fun UsbDeviceScreen(
                     reads.isEmpty() -> Note(stringResource(R.string.console_none))
                     !entry.hasPermission -> Note(stringResource(R.string.usb_allow_subtitle))
                     else -> {
-                        probe?.takeIf { it.key == entry.key }?.let { UsbProbeCard(it) }
+                        val result = probe?.takeIf { it.key == entry.key }
+                        result?.let { UsbProbeCard(it) }
                         reads.forEach { read ->
                             NavRow(
                                 title = "${family?.label}: ${read.label}",
                                 subtitle = read.wire(),
                                 onClick = { onProbe(entry.key, read) },
                             )
+                        }
+                        val busy = result?.status == ProbeStatus.WAITING
+                        UsbProbes.writesFor(family).forEach { write ->
+                            // The current value, if the last reply holds it.
+                            val current = result?.takeIf { it.status == ProbeStatus.REPLY && it.read == write.readBack }
+                                ?.let { write.readBackValue(it.reply.toByteArray()) }
+                            WriteRow(write, current, enabled = !busy) { value -> onWrite(entry.key, write, value) }
                         }
                     }
                 }
@@ -122,12 +136,52 @@ fun UsbDeviceScreen(
 
 @Composable
 private fun UsbProbeCard(result: UsbProbeResult) {
+    val write = result.write
+    val value = result.value
     val text = when (result.status) {
         ProbeStatus.WAITING -> stringResource(R.string.console_waiting)
-        ProbeStatus.REPLY -> UsbProbes.describe(result.read, result.reply.toByteArray())
+        ProbeStatus.REPLY -> {
+            val reply = result.reply.toByteArray()
+            val described = UsbProbes.describe(result.read, reply)
+            if (write == null || value == null) {
+                described
+            } else {
+                val back = write.readBackValue(reply)
+                (if (back == value) "Took: reads back $value" else "Didn't take: reads back ${back ?: "nothing"}") +
+                    "\n$described"
+            }
+        }
         else -> result.message ?: stringResource(R.string.console_not_sent)
     }
-    ConsoleResultCard(result.read.label, result.read.wire(), text)
+    if (write != null && value != null) {
+        val packet = write.packet(value).joinToString(" ") { String.format(Locale.ROOT, "%02x", it.toInt() and 0xFF) }
+        ConsoleResultCard("Set ${write.label} to $value (${write.values[value]})", "$packet, then ${result.read.wire()}", text)
+    } else {
+        ConsoleResultCard(result.read.label, result.read.wire(), text)
+    }
+}
+
+/** A reversible setting: one chip per value, the current one selected when known. */
+@Composable
+private fun WriteRow(write: UsbWrite, current: Int?, enabled: Boolean, onSet: (Int) -> Unit) {
+    Column(Modifier.padding(horizontal = Dimens.Gutter, vertical = 8.dp)) {
+        Text("${write.family.label}: set ${write.label}", style = MaterialTheme.typography.bodyLarge)
+        Text(
+            if (current == null) "Read \"${write.readBack.label}\" to see the current value" else "Now: $current (${write.values.getOrNull(current) ?: "unknown"})",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            write.values.forEachIndexed { i, name ->
+                FilterChip(
+                    selected = i == current,
+                    enabled = enabled,
+                    onClick = { onSet(i) },
+                    label = { Text("$i · $name") },
+                )
+            }
+        }
+    }
 }
 
 @Composable

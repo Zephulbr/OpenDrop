@@ -10,6 +10,7 @@ import org.opendrop.dsp.EqCurve
 import org.opendrop.protocol.DevRead
 import org.opendrop.protocol.EqPreset
 import org.opendrop.protocol.UsbRead
+import org.opendrop.protocol.UsbWrite
 
 /**
  * Screen-side handle on the app-wide [DeviceController]. Leaving the screen
@@ -49,6 +50,11 @@ class DeviceViewModel(app: Application) : AndroidViewModel(app) {
     /** Developer console; sends nothing unless developer options are on. */
     fun probeUsb(key: String, read: UsbRead) {
         if (settings.state.value.developerOptions) usb.probe(key, read)
+    }
+
+    /** Developer console: a reversible USB setting, read back; only with developer options on. */
+    fun writeUsb(key: String, write: UsbWrite, value: Int) {
+        if (settings.state.value.developerOptions) usb.write(key, write, value)
     }
 
     fun connect(target: PairedDevice) = controller.connect(target)

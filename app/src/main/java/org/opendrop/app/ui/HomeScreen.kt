@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -253,19 +254,7 @@ fun HomeScreen(
                             }
                         }
                     }
-                    val usb = usbDevices.filter { it.relevant }
-                    if (usb.isNotEmpty()) {
-                        item(key = "usbGap") { Spacer(Modifier.height(Dimens.SectionGap)) }
-                        item(key = "usbTitle") { SectionTitle(stringResource(R.string.home_usb_devices), Modifier.animateItem()) }
-                        items(usb, key = { "usb:" + it.key }) { entry ->
-                            NavRow(
-                                title = entry.title ?: stringResource(R.string.usb_device_id, entry.info.id),
-                                subtitle = stringResource(if (entry.likelyMoondrop) R.string.usb_read_only else R.string.usb_audio),
-                                onClick = { onOpenUsb(entry.key) },
-                                modifier = Modifier.animateItem(),
-                            )
-                        }
-                    }
+                    usbSection(usbDevices, onOpenUsb)
                     item(key = "pickerPhoneEqGap") { Spacer(Modifier.height(Dimens.SectionGap)) }
                     item(key = "pickerPhoneEq") {
                         NavRow(
@@ -330,9 +319,27 @@ fun HomeScreen(
                     }
                 }
             }
+            // USB devices don't need Bluetooth: listed whatever the Bluetooth state.
+            if (phase != Phase.Picker) usbSection(usbDevices, onOpenUsb)
         }
 
         CollapsingTopBar(listState, name, battery, onOpenSettings)
+    }
+}
+
+/** Attached USB audio and Moondrop devices, if any. */
+private fun LazyListScope.usbSection(usbDevices: List<UsbEntry>, onOpenUsb: (String) -> Unit) {
+    val usb = usbDevices.filter { it.relevant }
+    if (usb.isEmpty()) return
+    item(key = "usbGap") { Spacer(Modifier.height(Dimens.SectionGap)) }
+    item(key = "usbTitle") { SectionTitle(stringResource(R.string.home_usb_devices), Modifier.animateItem()) }
+    items(usb, key = { "usb:" + it.key }) { entry ->
+        NavRow(
+            title = entry.title ?: stringResource(R.string.usb_device_id, entry.info.id),
+            subtitle = stringResource(if (entry.likelyMoondrop) R.string.usb_read_only else R.string.usb_audio),
+            onClick = { onOpenUsb(entry.key) },
+            modifier = Modifier.animateItem(),
+        )
     }
 }
 

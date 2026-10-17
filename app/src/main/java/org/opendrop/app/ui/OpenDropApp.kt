@@ -145,6 +145,7 @@ fun OpenDropApp(
                         probe = usbProbe,
                         onAllow = viewModel::requestUsbPermission,
                         onProbe = viewModel::probeUsb,
+                        onWrite = viewModel::writeUsb,
                         onBack = back,
                     )
                     Destination.PhoneEq -> PhoneEqScreen(

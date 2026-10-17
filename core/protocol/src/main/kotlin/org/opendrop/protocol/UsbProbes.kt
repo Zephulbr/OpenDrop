@@ -29,12 +29,45 @@ data class UsbRead(
         String.format(Locale.ROOT, " · 0x%02x/0x%02x, 0x%02x/0x%02x idx 0x%04x", requestTypeOut, request, requestTypeIn, requestIn, index)
 }
 
+/**
+ * A reversible developer-console setting: [cmd] with one of [values] (index =
+ * wire value), sent like [UsbRead]'s OUT and then checked by running
+ * [readBack] and comparing byte [readBackIndex]. Nothing is saved to flash.
+ */
+data class UsbWrite(
+    val id: String,
+    val label: String,
+    val cmd: Int,
+    val values: List<String>,
+    val readBack: UsbRead,
+    val readBackIndex: Int,
+) {
+    val family: UsbFamily get() = readBack.family
+
+    /** The OUT packet for [value]; same framing as [readBack]'s. */
+    fun packet(value: Int): ByteArray {
+        require(value in values.indices) { "value $value out of range for $id" }
+        return readBack.packet.toMutableList().also {
+            it[2] = cmd
+            it[3] = value
+        }.let { p -> ByteArray(p.size) { p[it].toByte() } }
+    }
+
+    /** The value the read-back reply holds, or null if it's too short or isn't [readBack]'s reply. */
+    fun readBackValue(reply: ByteArray): Int? =
+        if (reply.size > readBackIndex && (reply[2].toInt() and 0xFF) == readBack.packet[2]) {
+            reply[readBackIndex].toInt() and 0xFF
+        } else {
+            null
+        }
+}
+
 object UsbProbes {
     /**
      * Comtrue (Dawn 3.5 / 4.4 / Pro, Moonriver2 Ti, Discdream): 7-byte
      * `C0 A5 <cmd> <value> 00 00 00` packets over vendor control transfers.
-     * Only the two get commands; the set commands (filter, gain, volume, LED)
-     * are not here on purpose.
+     * The two get commands, and of the set commands only filter and LED (see
+     * [writes]); gain and volume are left out on purpose.
      */
     object Comtrue {
         const val REQUEST_TYPE_OUT = 0x43
@@ -46,6 +79,8 @@ object UsbProbes {
         const val INDEX = 0x09A0
         const val GET_VOLUME = 0xA2
         const val GET_STATE = 0xA3
+        const val SET_FILTER = 0x01
+        const val SET_LED = 0x06
         const val REPLY_DELAY_MS = 100L
 
         /** Raw volume runs from 0x00 (loudest) to 0x70 (quietest), per mdrop. */
@@ -67,12 +102,26 @@ object UsbProbes {
         )
     }
 
+    private val comtrueState = Comtrue.read("comtrue.state", "Filter, gain and LED", Comtrue.GET_STATE)
+
     val reads: List<UsbRead> = listOf(
-        Comtrue.read("comtrue.state", "Filter, gain and LED", Comtrue.GET_STATE),
+        comtrueState,
         Comtrue.read("comtrue.volume", "Device volume", Comtrue.GET_VOLUME),
     )
 
+    /**
+     * The only USB writes: reversible, harmless if wrong, and checked by a
+     * read-back. Gain (0x02) and volume (0x04) can be suddenly loud, so they
+     * stay out until someone measures them.
+     */
+    val writes: List<UsbWrite> = listOf(
+        UsbWrite("comtrue.filter", "Filter", Comtrue.SET_FILTER, Comtrue.FILTERS, comtrueState, readBackIndex = 3),
+        UsbWrite("comtrue.led", "LED", Comtrue.SET_LED, Comtrue.LEDS, comtrueState, readBackIndex = 5),
+    )
+
     fun readsFor(family: UsbFamily?): List<UsbRead> = reads.filter { it.family == family }
+
+    fun writesFor(family: UsbFamily?): List<UsbWrite> = writes.filter { it.family == family }
 
     /** The console's text for a reply: decoded per Link's reading of it, then the raw bytes. */
     fun describe(read: UsbRead, reply: ByteArray): String {

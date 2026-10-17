@@ -46,7 +46,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Pick up permission or pairing changes made in system settings.
+        // Pick up permission or pairing changes made in system settings, and
+        // USB access granted by the plug-in dialog (which re-delivers the
+        // intent to this instance, singleTop, then resumes it).
         viewModel.refresh()
         // Android 12+ may have refused the service start while the process was
         // in the background; bring the phone EQ back now that we're in the foreground.

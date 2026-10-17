@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  USB devices that offer to open OpenDrop when plugged in (decimal ids).
+  0x2fc6: MOONDROP Comtrue DACs (Dawn Pro reports 2fc6:f06a; device report 2026-10-18).
+  0x35d8:0x1496-0x149c: Synaptics ids Link checks for its Synaptics family.
+-->
+<resources>
+    <usb-device vendor-id="12230" />
+    <usb-device vendor-id="13784" product-id="5270" />
+    <usb-device vendor-id="13784" product-id="5271" />
+    <usb-device vendor-id="13784" product-id="5272" />
+    <usb-device vendor-id="13784" product-id="5273" />
+    <usb-device vendor-id="13784" product-id="5274" />
+    <usb-device vendor-id="13784" product-id="5275" />
+    <usb-device vendor-id="13784" product-id="5276" />
+</resources>

@@ -24,6 +24,7 @@ import org.opendrop.protocol.UsbDeviceInfo
 import org.opendrop.protocol.UsbIdentify
 import org.opendrop.protocol.UsbProbes
 import org.opendrop.protocol.UsbRead
+import org.opendrop.protocol.UsbWrite
 import org.opendrop.transport.usb.UsbConsole
 import org.opendrop.transport.usb.UsbProbe
 
@@ -46,20 +47,26 @@ data class UsbEntry(
     }
 }
 
-/** A developer-console USB read on device [key] and what came back. [message] says why it failed. */
+/**
+ * A developer-console USB read on device [key] and what came back. [message]
+ * says why it failed. For a write, [write] and [value] say what was set and
+ * [reply] is its read-back.
+ */
 data class UsbProbeResult(
     val key: String,
     val read: UsbRead,
     val status: ProbeStatus,
     val reply: List<Byte> = emptyList(),
     val message: String? = null,
+    val write: UsbWrite? = null,
+    val value: Int? = null,
 )
 
 /**
  * Attached USB devices (roadmap M5): lists them, asks for permission and
  * reads their descriptors with [UsbProbe]. The only vendor commands are the
- * developer console's get commands ([UsbConsole]); nothing that changes a
- * setting is sent until its protocol is confirmed by a capture.
+ * developer console's ([UsbConsole]): get commands and a few reversible,
+ * read-back-checked settings.
  */
 class UsbController(private val context: Context) {
     private val manager = context.getSystemService(UsbManager::class.java)
@@ -114,20 +121,39 @@ class UsbController(private val context: Context) {
      * if the family it was identified as offers it. One at a time.
      */
     fun probe(key: String, read: UsbRead): Boolean {
+        val family = familyOf(key) ?: return false
+        if (read !in UsbProbes.readsFor(family)) return false
+        return run(UsbProbeResult(key, read, ProbeStatus.WAITING)) { c, device -> c.query(device, read) }
+    }
+
+    /**
+     * Developer console: sets one of [UsbProbes.writes] (filter, LED) and
+     * reads it back, if the device's family offers it. One at a time.
+     */
+    fun write(key: String, write: UsbWrite, value: Int): Boolean {
+        val family = familyOf(key) ?: return false
+        if (write !in UsbProbes.writesFor(family) || value !in write.values.indices) return false
+        val pending = UsbProbeResult(key, write.readBack, ProbeStatus.WAITING, write = write, value = value)
+        return run(pending) { c, device -> c.write(device, write, value) }
+    }
+
+    private fun familyOf(key: String) =
+        _devices.value.firstOrNull { it.key == key }?.let { UsbIdentify.of(it.info).family }
+
+    /** Publishes [pending], runs [block] off the main thread, then publishes its result. */
+    private fun run(pending: UsbProbeResult, block: (UsbConsole, UsbDevice) -> UsbConsole.Result): Boolean {
         val m = manager ?: return false
         val c = console ?: return false
-        val device = m.deviceList[key] ?: return false
-        val entry = _devices.value.firstOrNull { it.key == key } ?: return false
-        if (read !in UsbProbes.readsFor(UsbIdentify.of(entry.info).family)) return false
+        val device = m.deviceList[pending.key] ?: return false
         if (_consoleResult.value?.status == ProbeStatus.WAITING) return false
-        _consoleResult.value = UsbProbeResult(key, read, ProbeStatus.WAITING)
+        _consoleResult.value = pending
         scope.launch {
             val result = withContext(Dispatchers.IO) {
-                runCatching { c.query(device, read) }.getOrElse { UsbConsole.Result.Failed(it.message ?: it.javaClass.simpleName) }
+                runCatching { block(c, device) }.getOrElse { UsbConsole.Result.Failed(it.message ?: it.javaClass.simpleName) }
             }
             _consoleResult.value = when (result) {
-                is UsbConsole.Result.Reply -> UsbProbeResult(key, read, ProbeStatus.REPLY, result.bytes.toList())
-                is UsbConsole.Result.Failed -> UsbProbeResult(key, read, ProbeStatus.ERROR, message = result.message)
+                is UsbConsole.Result.Reply -> pending.copy(status = ProbeStatus.REPLY, reply = result.bytes.toList())
+                is UsbConsole.Result.Failed -> pending.copy(status = ProbeStatus.ERROR, message = result.message)
             }
         }
         return true

@@ -89,6 +89,11 @@ volume with the DAC's buttons, and the LED and gain, showed up in the next
 read (owner check, same day), so the volume, gain and LED fields are
 **Verified**. Filter names are still per mdrop.
 
+OpenDrop console writes (developer options): set filter `01` (0–4) and set
+LED `06` (0–2) only, same framing, each followed by the `A3` read and a check
+of byte 3 or 5. Gain `02` and volume `04` are not offered (loudness risk).
+None is saved by OpenDrop beyond what the DAC itself keeps.
+
 - Volume raw: `0x00` loudest to `0x70` quietest (not `100 - volume`).
 - Filter: 0 fast roll-off low latency, 1 fast roll-off phase-compensated,
   2 slow roll-off low latency, 3 slow roll-off phase-compensated,
