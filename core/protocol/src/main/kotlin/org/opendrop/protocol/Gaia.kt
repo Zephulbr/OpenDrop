@@ -70,12 +70,29 @@ class GaiaFrame(
     val type: GaiaType get() = GaiaType.of((command shr 7) and 0x03)
     val cmd: Int get() = command and 0x7F
 
-    override fun toString(): String =
+    /**
+     * One packet-log line, e.g. "f5 music_processing response 0x02 00". Serial
+     * number replies are device-unique, so their payload is masked unless
+     * [redactSerials] is false; the shared packet log always masks them.
+     */
+    fun describe(redactSerials: Boolean = true): String =
         if (vendor == Gaia.VENDOR_V2) {
             "v2 0x%04x %s".format(command, payload.toHex()).trimEnd()
         } else {
-            "f%d %s 0x%02x %s".format(feature, type.name.lowercase(), cmd, payload.toHex()).trimEnd()
+            val body = if (redactSerials && payload.isNotEmpty() && feature == GaiaFeature.CORE && cmd in SERIAL_COMMANDS) {
+                "[redacted]"
+            } else {
+                payload.toHex()
+            }
+            "f%d %s %s 0x%02x %s".format(feature, GaiaFeature.key(feature), type.name.lowercase(), cmd, body).trimEnd()
         }
+
+    override fun toString(): String = describe()
+
+    private companion object {
+        /** Core serial number, left serial, right serial. */
+        val SERIAL_COMMANDS = setOf(0x03, 0x14, 0x15)
+    }
 }
 
 /** Streaming decoder: one RFCOMM read may hold several frames, or part of one. */

@@ -1,8 +1,9 @@
 package org.opendrop.protocol
 
 /**
- * GAIA v3 feature ids under vendor 0x001D, as MOONDROP Link 2.26.1c knows them.
- * 0 to 12 are Qualcomm's; 13 and up are Moondrop additions. See docs/devices.md.
+ * GAIA v3 feature ids under vendor 0x001D, as MOONDROP Link 2.26.2c knows them.
+ * 0 to 12 are Qualcomm's; 13 and up are Moondrop additions; there is no 28.
+ * See docs/protocol/moondrop-gaia-features.md.
  * A device lists the ones it has in its "supported features" reply.
  */
 object GaiaFeature {
@@ -80,5 +81,46 @@ object GaiaFeature {
         DUAL_MIC_ENC to "Dual-mic noise reduction",
     )
 
+    /** Packet-log keys, the same as tools/gaia.py's FEATURES. */
+    private val keys = mapOf(
+        CORE to "core",
+        EARBUD to "earbud",
+        ANC to "anc",
+        VOICE_UI to "voice_ui",
+        DEBUG to "debug",
+        MUSIC_PROCESSING to "music_processing",
+        UPGRADE to "upgrade",
+        HANDSET_SERVICE to "handset_service",
+        AUDIO_CURATION to "audio_curation",
+        EARBUD_FIT to "earbud_fit",
+        VOICE_PROCESSING to "voice_processing",
+        GESTURE_CONFIGURATION to "gesture_configuration",
+        STATISTICS to "statistics",
+        BATTERY to "battery",
+        VOICE_PROMPTS to "voice_prompts",
+        DAC_GAIN to "dac_gain",
+        CODEC to "codec",
+        WEAR_SENSOR to "wear_sensor",
+        SPATIAL_AUDIO to "spatial_audio",
+        LED to "led",
+        MULTIPOINT to "multipoint",
+        BT_ADDRESS to "bt_address",
+        TOUCH_V2 to "touch_v2",
+        AUDIO_RESOURCE to "audio_resource",
+        POWER_CONTROL to "power_control",
+        POWER_TIMEOUT to "power_timeout",
+        TOUCH_V3 to "touch_v3",
+        DYNAMIC_BASS to "dynamic_bass",
+        AUDIO_FILE_STORAGE to "audio_file_storage",
+        LR_CHANNEL to "lr_channel",
+        TOUCH_V4 to "touch_v4",
+        ANC_V2 to "anc_v2",
+        ANC_V3 to "anc_v3",
+        FIND_EARBUDS to "find_earbuds",
+        DUAL_MIC_ENC to "dual_mic_enc",
+    )
+
     fun name(id: Int): String = names[id] ?: "Feature $id"
+
+    fun key(id: Int): String = keys[id] ?: "feature_$id"
 }
