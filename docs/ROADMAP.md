@@ -221,7 +221,9 @@ tests and a screen):
       Comtrue (a tester owns a Dawn Pro); writes only after a capture. Plan:
       [2.26.2c feature tiers](superpowers/plans/2026-10-17-moondrop-2.26.2c-feature-tiers.md).
   - [x] Comtrue get commands (`A3`, `A2`) on the USB device screen.
-  - [ ] Hardware check on the original Dawn Pro.
+  - [x] Hardware check on the original Dawn Pro (reads; filter and LED
+        writes with read-back).
+  - [ ] Dawn Pro screen outside developer options, with a proper UI.
 - [ ] SPV family first (14 models: Dawn Pro 2, Moonriver 3, FreeDSP, Rays, ...).
 - [ ] Comtrue (Dawn 3.5 / 4.4 / Pro, Moonriver 2 Ti).
 - [ ] Synaptics (Echo-B, May, Starlight, Click, ...).
