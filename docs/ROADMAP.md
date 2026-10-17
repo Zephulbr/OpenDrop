@@ -60,9 +60,10 @@ USB families.
       ([devices.md](devices.md)).
 - [x] Command map for Moondrop features (App; wire verification pending):
       [moondrop-gaia-features.md](protocol/moondrop-gaia-features.md).
-- [ ] Space Travel hidden "User" EQ (preset 63): the `0a05 00 04` re-probe
-      returns one zeroed band (stub). Last check: the opt-in
-      `gaia_probe.py --try-user-eq` (does 63 select, does sound change?).
+- [x] Space Travel hidden "User" EQ (preset 63): band reads are a stub
+      (one zeroed band), but 63 selects and sounds between Basshead and
+      Reference. Offered as "Default" on trial; remove if daily use shows
+      it does nothing.
 - [ ] Preset names per model: Link downloads them
       (`/api/v1/ota-config-equalizers/all`); fetch once and record them.
 - [ ] Touch controls: payload layouts are known (5 bytes for v2/v4, 7 for v3);
