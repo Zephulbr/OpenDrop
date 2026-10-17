@@ -311,6 +311,9 @@ Next:
   something GAIA doesn't offer (firmware updates stay out of scope).
 - USB devices: the transport, permission flow and a read-only USB report are
   in (`core/transport-usb`, `UsbModels.kt`); the protocol maps are in
-  [protocol/usb-dac.md](protocol/usb-dac.md). Add a read-only probe per family
-  (roadmap M5), starting with the family that covers the most models people
-  own, and do not implement writes until a USB capture confirms the payloads.
+  [protocol/usb-dac.md](protocol/usb-dac.md). The USB report now names the
+  family (catalogue, Synaptics ids, `CAPE` string, HID descriptor). Add a
+  read-only probe per family behind developer options (roadmap M5), starting
+  with SPV, and do not implement writes until a USB capture
+  ([protocol/usb-capture-guide.md](protocol/usb-capture-guide.md)) confirms
+  the payloads.

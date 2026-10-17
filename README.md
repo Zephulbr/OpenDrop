@@ -83,6 +83,11 @@ dependencies).
 - [Design direction](docs/DESIGN.md) — how the UI is meant to look and feel
 - [Automation](docs/automation.md) — Tasker intents and friends
 - [Releasing](docs/RELEASING.md) — how a release gets made
+- [Maintenance notes](docs/MAINTENANCE.md) — known issues and the hardware checklist
+- Protocol notes: [Space Travel / GAIA](docs/protocol/space-travel.md),
+  [Moondrop GAIA features](docs/protocol/moondrop-gaia-features.md),
+  [USB DACs](docs/protocol/usb-dac.md); capture guides for
+  [Bluetooth](docs/protocol/capture-guide.md) and [USB](docs/protocol/usb-capture-guide.md)
 
 ## License
 

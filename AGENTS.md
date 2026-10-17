@@ -41,6 +41,13 @@ Dependency versions go in `gradle/libs.versions.toml`. minSdk 26, JVM target
   **Inferred** / **Reported**; don't upgrade a tag without a capture to back it.
 - `python tools/gaia_decode.py <capture.csv>` decodes a capture.
   `tools/gaia_probe.py` probes a live device (queries only, never writes).
+- `docs/protocol/moondrop-gaia-features.md` and `usb-dac.md` come from static
+  analysis of MOONDROP Link 2.26.2c (**App** evidence, no capture). Nothing
+  App-only is sent on the default path; the plan in
+  `docs/superpowers/plans/2026-10-17-moondrop-2.26.2c-feature-tiers.md` tiers
+  what may ship, what goes behind developer options, and what never ships.
+- Never commit vendor APKs (`Moondrop App/`, `*.apk(s)` are gitignored) or
+  decompiled vendor code.
 - Legal: borrow protocol *facts* from other (GPL/AGPL) projects, never code.
 - Privacy: never commit raw `btsnoop_hci.log` files or full bugreports — only
   extracted earbud traffic, and redact Bluetooth MAC addresses first.

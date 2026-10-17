@@ -155,6 +155,11 @@ tests and a screen):
 - [ ] Spatial audio and head tracking (18), dynamic bass (27), left/right
       swap (30), dual-mic noise reduction (35), voice prompts (14).
 - [ ] On-device user EQ (music processing 5 to 8) where the firmware supports it.
+      The band parser (`UserEq`) is in; re-probe the ST1 with `0a05 00 04` first.
+- [x] Packet log names every feature 0–35 and masks serial-number replies.
+- [ ] Developer-options console: read-only GAIA probes for advertised
+      features; writes only after a capture. Plan:
+      [2.26.2c feature tiers](superpowers/plans/2026-10-17-moondrop-2.26.2c-feature-tiers.md).
 
 ## M3: Everyday convenience (v0.3)
 
@@ -203,7 +208,14 @@ tests and a screen):
 - Protocol maps for all five families are now in
   [protocol/usb-dac.md](protocol/usb-dac.md) (App only). Each family below
   still needs a USB report plus a capture of MOONDROP Link changing a setting
-  (principle 2) before OpenDrop sends anything.
+  (principle 2) before OpenDrop sends anything; see
+  [protocol/usb-capture-guide.md](protocol/usb-capture-guide.md).
+- [x] Family identification in the USB report from standard reads only:
+      catalogue name, Synaptics ids, `CAPE` string, HID report ids and usage
+      pages.
+- [ ] Developer-options console: read-only probes for SPV first, then
+      Comtrue / Jiu / Synaptics; writes only after a capture. Plan:
+      [2.26.2c feature tiers](superpowers/plans/2026-10-17-moondrop-2.26.2c-feature-tiers.md).
 - [ ] SPV family first (14 models: Dawn Pro 2, Moonriver 3, FreeDSP, Rays, ...).
 - [ ] Comtrue (Dawn 3.5 / 4.4 / Pro, Moonriver 2 Ti).
 - [ ] Synaptics (Echo-B, May, Starlight, Click, ...).

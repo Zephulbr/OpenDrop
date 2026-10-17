@@ -29,6 +29,16 @@ The same app also has a `com.moondroplab.communication.usb.media.UsbMediaBridgeS
 that plays local audio through a USB device. That is Android USB audio, not a
 vendor control protocol.
 
+**OpenDrop status (2026-10-17):** the app identifies the family from the
+catalogue name, the Synaptics vendor/product ids, the `CAPE` string and the
+HID report descriptor (report id `0x4B` for SPV, usage page `0xFF02` for
+Jieli), all with standard read-only requests, and shows it in the USB report.
+It sends no vendor command. Read-only probes and reversible writes are
+planned behind developer options (Tier 2 of
+[the 2.26.2c plan](../superpowers/plans/2026-10-17-moondrop-2.26.2c-feature-tiers.md));
+flash, NVM and OTA commands are out of scope. To help, record a capture:
+[usb-capture-guide.md](usb-capture-guide.md).
+
 ## Common USB mechanics
 
 - Android USB host; the app requests USB permission with the standard
