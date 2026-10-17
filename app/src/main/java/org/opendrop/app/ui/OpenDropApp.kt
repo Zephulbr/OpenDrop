@@ -55,6 +55,7 @@ fun OpenDropApp(
     val phoneEqFailed by viewModel.phoneEqFailed.collectAsStateWithLifecycle()
     val phoneEqRunning by PhoneEqService.running.collectAsStateWithLifecycle()
     val usbDevices by viewModel.usbDevices.collectAsStateWithLifecycle()
+    val usbProbe by viewModel.usbProbe.collectAsStateWithLifecycle()
     var usbKey by rememberSaveable { mutableStateOf<String?>(null) }
     val motion = LocalMotion.current
     var destination by rememberSaveable { mutableStateOf(Destination.Home) }
@@ -140,7 +141,10 @@ fun OpenDropApp(
                     }
                     Destination.UsbDevice -> UsbDeviceScreen(
                         entry = usbDevices.firstOrNull { it.key == usbKey },
+                        developerOptions = behavior.developerOptions,
+                        probe = usbProbe,
                         onAllow = viewModel::requestUsbPermission,
+                        onProbe = viewModel::probeUsb,
                         onBack = back,
                     )
                     Destination.PhoneEq -> PhoneEqScreen(

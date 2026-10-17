@@ -33,8 +33,10 @@ vendor control protocol.
 catalogue name, the Synaptics vendor/product ids, the `CAPE` string and the
 HID report descriptor (report id `0x4B` for SPV, usage page `0xFF02` for
 Jieli), all with standard read-only requests, and shows it in the USB report.
-It sends no vendor command. Read-only probes and reversible writes are
-planned behind developer options (Tier 2 of
+It sends no vendor command on the default path. With developer options on,
+the USB device screen offers the Comtrue get commands (`A3` filter/gain/LED,
+`A2` volume) as console reads; no set command is sent. Other families and
+reversible writes are planned behind developer options (Tier 2 of
 [the 2.26.2c plan](../superpowers/plans/2026-10-17-moondrop-2.26.2c-feature-tiers.md));
 flash, NVM and OTA commands are out of scope. To help, record a capture:
 [usb-capture-guide.md](usb-capture-guide.md).

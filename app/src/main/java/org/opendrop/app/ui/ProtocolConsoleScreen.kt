@@ -131,7 +131,7 @@ private fun ProbeCard(result: ProbeResult, showSerials: Boolean) {
         ProbeStatus.TIMEOUT -> stringResource(R.string.console_timeout)
         ProbeStatus.NOT_SENT -> stringResource(R.string.console_not_sent)
     }
-    ResultCard(result.read.label, result.read.wire(), text)
+    ConsoleResultCard(result.read.label, result.read.wire(), text)
 }
 
 @Composable
@@ -152,12 +152,12 @@ private fun TrialCard(trial: UserEqTrial) {
         "preset notifications: " +
             trial.notified.joinToString(", ") { String.format(Locale.ROOT, "%02x", it) }.ifEmpty { "none" },
     ).joinToString("\n")
-    ResultCard("EQ preset ${EqPreset.USER_ID} trial", trialWire(trial.previous), text)
+    ConsoleResultCard("EQ preset ${EqPreset.USER_ID} trial", trialWire(trial.previous), text)
 }
 
-/** The last result, selectable and with a button that copies it as plain text. */
+/** The last result, selectable and with a button that copies it as plain text. Also used for USB. */
 @Composable
-private fun ResultCard(label: String, wire: String, text: String) {
+internal fun ConsoleResultCard(label: String, wire: String, text: String) {
     val clipboard = LocalClipboardManager.current
     Surface(
         color = MaterialTheme.colorScheme.surfaceVariant,

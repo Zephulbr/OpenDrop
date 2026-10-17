@@ -9,6 +9,7 @@ import org.opendrop.app.settings.Behavior
 import org.opendrop.dsp.EqCurve
 import org.opendrop.protocol.DevRead
 import org.opendrop.protocol.EqPreset
+import org.opendrop.protocol.UsbRead
 
 /**
  * Screen-side handle on the app-wide [DeviceController]. Leaving the screen
@@ -42,6 +43,13 @@ class DeviceViewModel(app: Application) : AndroidViewModel(app) {
     val usbDevices: StateFlow<List<UsbEntry>> = usb.devices
 
     fun requestUsbPermission(key: String) = usb.requestPermission(key)
+
+    val usbProbe: StateFlow<UsbProbeResult?> = usb.consoleResult
+
+    /** Developer console; sends nothing unless developer options are on. */
+    fun probeUsb(key: String, read: UsbRead) {
+        if (settings.state.value.developerOptions) usb.probe(key, read)
+    }
 
     fun connect(target: PairedDevice) = controller.connect(target)
 

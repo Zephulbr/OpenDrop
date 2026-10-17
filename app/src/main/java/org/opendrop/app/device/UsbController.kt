@@ -18,8 +18,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.opendrop.protocol.MoondropUsbModels
 import org.opendrop.protocol.UsbDeviceInfo
+import org.opendrop.protocol.UsbIdentify
+import org.opendrop.protocol.UsbProbes
+import org.opendrop.protocol.UsbRead
+import org.opendrop.transport.usb.UsbConsole
 import org.opendrop.transport.usb.UsbProbe
 
 /** One attached USB device, by Android's device name (its bus path). */
@@ -41,18 +46,35 @@ data class UsbEntry(
     }
 }
 
+/** A developer-console USB read on device [key] and what came back. [message] says why it failed. */
+data class UsbProbeResult(
+    val key: String,
+    val read: UsbRead,
+    val status: ProbeStatus,
+    val reply: List<Byte> = emptyList(),
+    val message: String? = null,
+)
+
 /**
  * Attached USB devices (roadmap M5): lists them, asks for permission and
- * reads their descriptors with [UsbProbe]. Read-only; nothing is sent to a
- * USB device until its protocol is decoded from captures.
+ * reads their descriptors with [UsbProbe]. The only vendor commands are the
+ * developer console's get commands ([UsbConsole]); nothing that changes a
+ * setting is sent until its protocol is confirmed by a capture.
  */
 class UsbController(private val context: Context) {
     private val manager = context.getSystemService(UsbManager::class.java)
     private val probe = manager?.let(::UsbProbe)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
+    private val console = manager?.let(::UsbConsole)
+
     private val _devices = MutableStateFlow<List<UsbEntry>>(emptyList())
     val devices: StateFlow<List<UsbEntry>> = _devices.asStateFlow()
+
+    private val _consoleResult = MutableStateFlow<UsbProbeResult?>(null)
+
+    /** The developer console's last USB read, if any. */
+    val consoleResult: StateFlow<UsbProbeResult?> = _consoleResult.asStateFlow()
 
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(c: Context, intent: Intent) = refresh()
@@ -85,6 +107,30 @@ class UsbController(private val context: Context) {
             }
             _devices.update { entries.sortedWith(compareByDescending<UsbEntry> { it.likelyMoondrop }.thenBy { it.title ?: "" }) }
         }
+    }
+
+    /**
+     * Developer console: sends one [UsbProbes] read to the device [key] names,
+     * if the family it was identified as offers it. One at a time.
+     */
+    fun probe(key: String, read: UsbRead): Boolean {
+        val m = manager ?: return false
+        val c = console ?: return false
+        val device = m.deviceList[key] ?: return false
+        val entry = _devices.value.firstOrNull { it.key == key } ?: return false
+        if (read !in UsbProbes.readsFor(UsbIdentify.of(entry.info).family)) return false
+        if (_consoleResult.value?.status == ProbeStatus.WAITING) return false
+        _consoleResult.value = UsbProbeResult(key, read, ProbeStatus.WAITING)
+        scope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching { c.query(device, read) }.getOrElse { UsbConsole.Result.Failed(it.message ?: it.javaClass.simpleName) }
+            }
+            _consoleResult.value = when (result) {
+                is UsbConsole.Result.Reply -> UsbProbeResult(key, read, ProbeStatus.REPLY, result.bytes.toList())
+                is UsbConsole.Result.Failed -> UsbProbeResult(key, read, ProbeStatus.ERROR, message = result.message)
+            }
+        }
+        return true
     }
 
     /** Shows Android's "Allow OpenDrop to access …?" dialog; [refresh]es on the answer. */

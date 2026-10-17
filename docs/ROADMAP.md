@@ -217,9 +217,11 @@ tests and a screen):
 - [x] Family identification in the USB report from standard reads only:
       catalogue name, Synaptics ids, `CAPE` string, HID report ids and usage
       pages.
-- [ ] Developer-options console: read-only probes for SPV first, then
-      Comtrue / Jiu / Synaptics; writes only after a capture. Plan:
+- [ ] Developer-options console: read-only probes per family, starting with
+      Comtrue (a tester owns a Dawn Pro); writes only after a capture. Plan:
       [2.26.2c feature tiers](superpowers/plans/2026-10-17-moondrop-2.26.2c-feature-tiers.md).
+  - [x] Comtrue get commands (`A3`, `A2`) on the USB device screen.
+  - [ ] Hardware check on the original Dawn Pro.
 - [ ] SPV family first (14 models: Dawn Pro 2, Moonriver 3, FreeDSP, Rays, ...).
 - [ ] Comtrue (Dawn 3.5 / 4.4 / Pro, Moonriver 2 Ti).
 - [ ] Synaptics (Echo-B, May, Starlight, Click, ...).

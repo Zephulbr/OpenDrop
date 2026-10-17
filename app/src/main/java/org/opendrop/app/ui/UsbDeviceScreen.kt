@@ -21,17 +21,32 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.opendrop.app.R
+import org.opendrop.app.device.ProbeStatus
 import org.opendrop.app.device.UsbEntry
+import org.opendrop.app.device.UsbProbeResult
 import org.opendrop.app.ui.components.InfoRow
 import org.opendrop.app.ui.components.NavRow
 import org.opendrop.app.ui.components.ScreenTopBar
 import org.opendrop.app.ui.components.SectionTitle
 import org.opendrop.app.ui.theme.Dimens
+import org.opendrop.protocol.UsbIdentify
+import org.opendrop.protocol.UsbProbes
+import org.opendrop.protocol.UsbRead
 import org.opendrop.protocol.UsbReport
 
-/** One USB device, read-only (roadmap M5): what it reports, and a report to share. */
+/**
+ * One USB device (roadmap M5): what it reports, and a report to share. With
+ * developer options on, also the console's get commands for its family.
+ */
 @Composable
-fun UsbDeviceScreen(entry: UsbEntry?, onAllow: (String) -> Unit, onBack: () -> Unit) {
+fun UsbDeviceScreen(
+    entry: UsbEntry?,
+    developerOptions: Boolean,
+    probe: UsbProbeResult?,
+    onAllow: (String) -> Unit,
+    onProbe: (String, UsbRead) -> Unit,
+    onBack: () -> Unit,
+) {
     val context = LocalContext.current
     Column(Modifier.fillMaxSize()) {
         ScreenTopBar(entry?.let { it.title ?: stringResource(R.string.usb_device_id, it.info.id) } ?: stringResource(R.string.usb_device), onBack)
@@ -79,8 +94,40 @@ fun UsbDeviceScreen(entry: UsbEntry?, onAllow: (String) -> Unit, onBack: () -> U
                 subtitle = stringResource(if (entry.hasPermission) R.string.usb_share_full else R.string.usb_share_basic),
                 onClick = { shareUsbReport(context, entry) },
             )
+
+            if (developerOptions) {
+                val family = UsbIdentify.of(info).family
+                val reads = UsbProbes.readsFor(family)
+                Spacer(Modifier.height(Dimens.SectionGap))
+                SectionTitle(stringResource(R.string.devtools_console))
+                Note(stringResource(R.string.devtools_warning))
+                when {
+                    reads.isEmpty() -> Note(stringResource(R.string.console_none))
+                    !entry.hasPermission -> Note(stringResource(R.string.usb_allow_subtitle))
+                    else -> {
+                        probe?.takeIf { it.key == entry.key }?.let { UsbProbeCard(it) }
+                        reads.forEach { read ->
+                            NavRow(
+                                title = "${family?.label}: ${read.label}",
+                                subtitle = read.wire(),
+                                onClick = { onProbe(entry.key, read) },
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
+}
+
+@Composable
+private fun UsbProbeCard(result: UsbProbeResult) {
+    val text = when (result.status) {
+        ProbeStatus.WAITING -> stringResource(R.string.console_waiting)
+        ProbeStatus.REPLY -> UsbProbes.describe(result.read, result.reply.toByteArray())
+        else -> result.message ?: stringResource(R.string.console_not_sent)
+    }
+    ConsoleResultCard(result.read.label, result.read.wire(), text)
 }
 
 @Composable
