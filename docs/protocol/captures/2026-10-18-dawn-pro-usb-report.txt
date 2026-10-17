@@ -1,0 +1,67 @@
+OpenDrop USB device report (original Dawn Pro, not Dawn Pro 2; phone line removed)
+
+App: 0.5.1
+Android: 17 (API 37)
+USB id: 2fc6:f06a
+Manufacturer: MOONDROP
+Product: MOONDROP Dawn Pro
+Version: 100.107
+Known model: MOONDROP DAWN PRO (Comtrue)
+Family: Comtrue (catalogue name)
+CAPE string: not read
+HID report ids: none
+HID usage pages: none
+Control protocol: App only, no USB capture yet (docs/protocol/usb-dac.md)
+
+Interfaces (id/alt: class subclass protocol):
+  0/0: audio 1 32
+  1/0: audio 2 32
+  1/1: audio 2 32
+    OUT 0x01 isochronous 776
+    IN 0x81 isochronous 4
+  1/2: audio 2 32
+    OUT 0x01 isochronous 776
+    IN 0x81 isochronous 4
+  1/3: audio 2 32
+    OUT 0x01 isochronous 776
+    IN 0x81 isochronous 4
+  1/4: audio 2 32
+    OUT 0x01 isochronous 776
+    IN 0x81 isochronous 4
+  2/0: HID 0 0
+    OUT 0x05 interrupt 8
+    IN 0x86 interrupt 8
+
+Raw descriptors:
+  12 01 00 02 ef 02 01 40 c6 2f 6a f0 a7 a0 01 02
+  03 01 09 02 57 01 03 01 00 80 32 08 0b 00 02 01
+  00 20 00 09 04 00 00 00 01 01 20 02 09 24 01 00
+  02 04 40 00 00 08 24 0a 05 03 07 00 00 11 24 02
+  01 01 01 00 05 02 03 00 00 00 00 00 00 00 12 24
+  06 03 01 03 00 00 00 0c 00 00 00 0c 00 00 00 00
+  0c 24 03 04 01 03 00 03 05 00 00 00 09 04 01 00
+  00 01 02 20 04 09 04 01 01 02 01 02 20 00 10 24
+  01 01 05 01 01 00 00 00 02 03 00 00 00 00 06 24
+  02 01 02 10 07 05 01 05 08 03 01 08 25 01 00 00
+  00 00 00 07 05 81 11 04 00 04 09 04 01 02 02 01
+  02 20 00 10 24 01 01 05 01 01 00 00 00 02 03 00
+  00 00 00 06 24 02 01 03 18 07 05 01 05 08 03 01
+  08 25 01 00 00 00 00 00 07 05 81 11 04 00 04 09
+  04 01 03 02 01 02 20 00 10 24 01 01 05 01 01 00
+  00 00 02 03 00 00 00 00 06 24 02 01 04 20 07 05
+  01 05 08 03 01 08 25 01 00 00 00 00 00 07 05 81
+  11 04 00 04 09 04 01 04 02 01 02 20 00 10 24 01
+  01 05 01 00 00 00 80 02 03 00 00 00 00 06 24 02
+  01 04 20 07 05 01 05 08 03 01 08 25 01 00 00 00
+  00 00 07 05 81 11 04 00 04 09 04 02 00 02 03 00
+  00 07 09 21 11 01 00 01 22 2b 00 07 05 05 03 08
+  00 00 07 05 86 03 08 00 0a
+
+Notes:
+- USB Audio Class 2 (interface 0 audio control, 1 streaming with four
+  alternate settings), plus HID interface 2 with interrupt OUT 0x05 / IN 0x86,
+  8 bytes each. The HID class descriptor (09 21 11 01 00 01 22 2b 00) declares
+  a 43-byte report descriptor, but the report has none: OpenDrop's
+  GET_DESCRIPTOR(0x22) on interface 2 returned nothing on this phone.
+- The product string matches Link's catalogue name ("MOONDROP DAWN PRO")
+  after case folding, so the family comes from the catalogue.

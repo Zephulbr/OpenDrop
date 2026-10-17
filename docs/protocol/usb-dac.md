@@ -61,6 +61,12 @@ flash, NVM and OTA commands are out of scope. To help, record a capture:
 
 Transport: **vendor control transfers** on the HID interface.
 
+Original Dawn Pro (device report, 2026-10-18,
+`captures/2026-10-18-dawn-pro-usb-report.txt`): USB id `2fc6:f06a`,
+manufacturer `MOONDROP`, product `MOONDROP Dawn Pro`, bcdDevice 100.107.
+UAC2 audio plus one HID interface (2) with 8-byte interrupt endpoints OUT
+`0x05` / IN `0x86`.
+
 | Direction | `bmRequestType` | `bRequest` | `wValue` | `wIndex` | Length |
 |---|---|---|---|---|---|
 | OUT | `0x43` | `0xA0` | `0` | `0x09A0` | 7 |
