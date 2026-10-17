@@ -1,0 +1,14 @@
+# Store text with LF; checkouts follow the local setting.
+* text=auto
+# The Unix wrapper must stay LF for CI; the Windows one stays as committed.
+gradlew text eol=lf
+*.bat -text
+*.jar binary
+*.keystore binary
+*.png binary
+*.webp binary
+# Captures stored with CRLF; keep their bytes exactly as recorded.
+/docs/protocol/captures/2026-10-07-device-info.md -text
+/docs/protocol/captures/2026-10-07-probe-user-eq.txt -text
+/docs/protocol/captures/2026-10-07-probe.txt -text
+/docs/protocol/captures/2026-10-07b-physical.csv -text
