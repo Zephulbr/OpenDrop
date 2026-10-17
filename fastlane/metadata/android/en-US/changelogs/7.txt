@@ -1,0 +1,5 @@
+USB devices: Moondrop DACs such as the Dawn Pro now show up in the app.
+- Plugging in a Moondrop DAC offers to open OpenDrop, which gets USB access on the spot
+- USB devices are listed even when Bluetooth is off or the earbuds aren't connected
+- Each DAC screen shows the formats it accepts, and the sample rates and bit depths Android can send it
+- Developer options: set the Dawn Pro's filter and LED, with every change read back from the DAC
