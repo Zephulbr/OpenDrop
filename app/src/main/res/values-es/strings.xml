@@ -47,6 +47,7 @@
     <string name="channel_connection_description">Se muestra mientras OpenDrop está conectado a tus auriculares</string>
     <string name="channel_phone_eq">EQ del teléfono</string>
     <string name="channel_phone_eq_description">Se muestra mientras el EQ del teléfono está activado</string>
+    <string name="console_copy">Copiar</string>
     <string name="console_error">El dispositivo respondió con un error: %1$s</string>
     <string name="console_last_reply">Última consulta</string>
     <string name="console_none">Este dispositivo no informa ninguna función para la que la consola tenga consultas.</string>
@@ -56,6 +57,8 @@
     <string name="console_timeout">Sin respuesta en 1 s.</string>
     <string name="console_waiting">Esperando respuesta…</string>
     <string name="console_waiting_features">Esperando la lista de funciones del dispositivo…</string>
+    <string name="console_write_test">Prueba de escritura</string>
+    <string name="console_write_test_note">Cambia los auriculares al preajuste de EQ oculto 63 durante 15 s y luego vuelve al preajuste actual. Reproduce música y escucha si hay cambios. El cambio puede producir un breve chasquido, así que baja el volumen antes.</string>
     <string name="curve_bass">Refuerzo de graves</string>
     <string name="curve_flat">Plano</string>
     <string name="curve_treble">Refuerzo de agudos</string>

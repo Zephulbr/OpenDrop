@@ -7,7 +7,7 @@ enum class EqPreset(val id: Int, val label: String) {
     MONITOR(2, "Monitor");
 
     companion object {
-        /** The hidden on-device user EQ (5 bands on the Space Travel); never selected by OpenDrop. */
+        /** The hidden on-device user EQ (5 bands on the Space Travel); selected only by the console's trial. */
         const val USER_ID = 63
 
         fun of(id: Int): EqPreset? = entries.firstOrNull { it.id == id }

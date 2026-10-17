@@ -47,6 +47,7 @@
     <string name="channel_connection_description">يظهر أثناء اتصال OpenDrop بسماعاتك</string>
     <string name="channel_phone_eq">معادل الهاتف</string>
     <string name="channel_phone_eq_description">يظهر أثناء تشغيل معادل الهاتف</string>
+    <string name="console_copy">نسخ</string>
     <string name="console_error">ردّ الجهاز بخطأ: %1$s</string>
     <string name="console_last_reply">آخر استعلام</string>
     <string name="console_none">لا يبلّغ هذا الجهاز عن أي ميزة لدى وحدة التحكم استعلامات لها.</string>
@@ -56,6 +57,8 @@
     <string name="console_timeout">لا رد خلال ثانية واحدة.</string>
     <string name="console_waiting">في انتظار الرد…</string>
     <string name="console_waiting_features">في انتظار قائمة ميزات الجهاز…</string>
+    <string name="console_write_test">اختبار كتابة</string>
+    <string name="console_write_test_note">يحوّل السماعات إلى إعداد المعادل المخفي 63 لمدة 15 ثانية، ثم يعيدها إلى الإعداد الحالي. شغّل موسيقى واستمع إلى أي تغيير. قد يصدر صوت فرقعة قصير عند التبديل، لذا اخفض مستوى الصوت أولًا.</string>
     <string name="curve_bass">تعزيز الجهير</string>
     <string name="curve_flat">مستوٍ</string>
     <string name="curve_treble">تعزيز الحدة</string>

@@ -50,6 +50,14 @@ data class GaiaDeviceState(
 
     /** [eqPreset], but only for models whose preset ids mean the Space Travel's names. */
     val namedEqPreset: EqPreset? get() = eqPreset?.takeIf { model?.spaceTravelPresets == true }
+
+    /**
+     * Developer console: whether the hidden user preset ([EqPreset.USER_ID])
+     * may be tried. The device must list it and sit on a switchable preset,
+     * so there is one to go back to.
+     */
+    val canTryUserEq: Boolean
+        get() = availableEqPresets?.contains(EqPreset.USER_ID) == true && namedEqPreset in switchableEqPresets
 }
 
 /**
@@ -78,6 +86,17 @@ class GaiaSession(
     fun setEq(preset: EqPreset): Boolean {
         if (preset !in state.switchableEqPresets) return false
         transmit(GaiaCommands.setEq(preset))
+        return true
+    }
+
+    /**
+     * Developer console: selects the hidden user preset. Returns false (and
+     * sends nothing) unless [GaiaDeviceState.canTryUserEq]. The caller goes
+     * back with [setEq].
+     */
+    fun selectUserEq(): Boolean {
+        if (!state.canTryUserEq) return false
+        transmit(GaiaCommands.setEq(EqPreset.USER_ID))
         return true
     }
 

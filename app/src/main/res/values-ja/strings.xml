@@ -47,6 +47,7 @@
     <string name="channel_connection_description">OpenDrop がイヤホンに接続している間に表示</string>
     <string name="channel_phone_eq">スマホ EQ</string>
     <string name="channel_phone_eq_description">スマホ EQ がオンの間に表示</string>
+    <string name="console_copy">コピー</string>
     <string name="console_error">デバイスがエラーを返しました: %1$s</string>
     <string name="console_last_reply">最後のクエリ</string>
     <string name="console_none">このデバイスは、コンソールにクエリがある機能を報告していません。</string>
@@ -56,6 +57,8 @@
     <string name="console_timeout">1 秒以内に応答がありません。</string>
     <string name="console_waiting">応答を待っています…</string>
     <string name="console_waiting_features">デバイスの機能リストを待っています…</string>
+    <string name="console_write_test">書き込みテスト</string>
+    <string name="console_write_test_note">イヤホンを隠しEQプリセット63に15秒間切り替え、その後現在のプリセットに戻します。音楽を再生して変化を聴いてください。切り替え時に短いポップ音が出ることがあるため、先に音量を下げてください。</string>
     <string name="curve_bass">低音強調</string>
     <string name="curve_flat">フラット</string>
     <string name="curve_treble">高音強調</string>

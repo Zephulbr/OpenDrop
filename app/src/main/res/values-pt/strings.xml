@@ -47,6 +47,7 @@
     <string name="channel_connection_description">Exibida enquanto o OpenDrop está conectado aos seus fones</string>
     <string name="channel_phone_eq">EQ do celular</string>
     <string name="channel_phone_eq_description">Exibida enquanto o EQ do celular está ativado</string>
+    <string name="console_copy">Copiar</string>
     <string name="console_error">O dispositivo respondeu com um erro: %1$s</string>
     <string name="console_last_reply">Última consulta</string>
     <string name="console_none">Este dispositivo não informa nenhum recurso para o qual o console tenha consultas.</string>
@@ -56,6 +57,8 @@
     <string name="console_timeout">Sem resposta em 1 s.</string>
     <string name="console_waiting">Aguardando resposta…</string>
     <string name="console_waiting_features">Aguardando a lista de recursos do dispositivo…</string>
+    <string name="console_write_test">Teste de escrita</string>
+    <string name="console_write_test_note">Muda os fones para o predefinido de EQ oculto 63 por 15 s e depois volta ao predefinido atual. Toque música e ouça se há alguma mudança. A troca pode causar um estalo breve, então abaixe o volume antes.</string>
     <string name="curve_bass">Reforço de graves</string>
     <string name="curve_flat">Plano</string>
     <string name="curve_treble">Reforço de agudos</string>

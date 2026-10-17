@@ -55,4 +55,9 @@ class DeviceViewModel(app: Application) : AndroidViewModel(app) {
     fun probe(read: DevRead) {
         if (settings.state.value.developerOptions) controller.probe(read)
     }
+
+    /** Developer console: preset 63 for 15 s, then back. */
+    fun tryUserEq() {
+        if (settings.state.value.developerOptions) controller.tryUserEq()
+    }
 }

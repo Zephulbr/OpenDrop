@@ -47,6 +47,7 @@
     <string name="channel_connection_description">Показывается, пока OpenDrop подключён к наушникам</string>
     <string name="channel_phone_eq">Эквалайзер телефона</string>
     <string name="channel_phone_eq_description">Показывается, пока эквалайзер телефона включён</string>
+    <string name="console_copy">Копировать</string>
     <string name="console_error">Устройство ответило ошибкой: %1$s</string>
     <string name="console_last_reply">Последний запрос</string>
     <string name="console_none">Устройство не сообщает ни об одной функции, для которой в консоли есть запросы.</string>
@@ -56,6 +57,8 @@
     <string name="console_timeout">Нет ответа в течение 1 с.</string>
     <string name="console_waiting">Ожидание ответа…</string>
     <string name="console_waiting_features">Ожидание списка функций устройства…</string>
+    <string name="console_write_test">Тест записи</string>
+    <string name="console_write_test_note">Переключает наушники на скрытый пресет эквалайзера 63 на 15 с, затем возвращает текущий пресет. Включите музыку и прислушайтесь к изменениям. При переключении возможен короткий щелчок, поэтому сначала уменьшите громкость.</string>
     <string name="curve_bass">Усиление баса</string>
     <string name="curve_flat">Ровный</string>
     <string name="curve_treble">Усиление высоких</string>

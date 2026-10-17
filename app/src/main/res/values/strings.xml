@@ -47,6 +47,7 @@
     <string name="channel_connection_description">Shown while OpenDrop is connected to your earbuds</string>
     <string name="channel_phone_eq">Phone EQ</string>
     <string name="channel_phone_eq_description">Shown while the phone EQ is on</string>
+    <string name="console_copy">Copy</string>
     <string name="console_error">The device answered with an error: %1$s</string>
     <string name="console_last_reply">Last query</string>
     <string name="console_none">This device reports no feature the console has queries for.</string>
@@ -56,6 +57,8 @@
     <string name="console_timeout">No reply within 1 s.</string>
     <string name="console_waiting">Waiting for a reply…</string>
     <string name="console_waiting_features">Waiting for the device\'s feature list…</string>
+    <string name="console_write_test">Write test</string>
+    <string name="console_write_test_note">Switches the earbuds to the hidden EQ preset 63 for 15 s, then back to the current preset. Play music and listen for a change. Switching may pop briefly, so lower the volume first.</string>
     <string name="curve_bass">Bass boost</string>
     <string name="curve_flat">Flat</string>
     <string name="curve_treble">Treble boost</string>

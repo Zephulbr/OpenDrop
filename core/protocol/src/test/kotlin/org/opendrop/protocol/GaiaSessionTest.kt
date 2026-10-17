@@ -80,6 +80,34 @@ class GaiaSessionTest {
     }
 
     @Test
+    fun triesTheUserPresetAndGoesBack() {
+        connectSpaceTravel() // on Reference
+        assertTrue(session.state.canTryUserEq)
+        sent.clear()
+        assertTrue(session.selectUserEq())
+        assertEquals("ff 04 00 01 00 1d 0a 03 3f", sent.single())
+        buds("ff040001001d0a813f")
+        assertFalse(session.state.canTryUserEq) // already on it
+        assertFalse(session.selectUserEq())
+        assertTrue(session.setEq(EqPreset.REFERENCE))
+        assertEquals("ff 04 00 01 00 1d 0a 03 00", sent.last())
+    }
+
+    @Test
+    fun userPresetOnlyWhenListed() {
+        session.start()
+        buds("ff040004000a830000040301")
+        buds("ff04000b001d01010003010501010106020002")
+        buds("ff040001001d0b0200")
+        buds("ff040015001d0104" + "Moondrop Space Travel".hex())
+        buds("ff040004001d0b0103000102") // no 63
+        sent.clear()
+        assertFalse(session.state.canTryUserEq)
+        assertFalse(session.selectUserEq())
+        assertTrue(sent.isEmpty())
+    }
+
+    @Test
     fun unknownDeviceIsReadOnly() {
         session.start()
         buds("ff040004000a830000040301")
@@ -90,6 +118,7 @@ class GaiaSessionTest {
         assertFalse(session.state.canControl)
         assertTrue(session.state.switchableEqPresets.isEmpty())
         assertFalse(session.setEq(EqPreset.BASSHEAD))
+        assertFalse(session.selectUserEq())
         assertTrue(sent.isEmpty())
         assertEquals(EqPreset.REFERENCE, session.state.eqPreset) // still shown
     }

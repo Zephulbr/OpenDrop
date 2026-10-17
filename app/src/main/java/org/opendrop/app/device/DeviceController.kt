@@ -29,13 +29,18 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import org.opendrop.protocol.DevRead
 import org.opendrop.protocol.EqPreset
+import org.opendrop.protocol.Gaia
+import org.opendrop.protocol.GaiaCommands
 import org.opendrop.protocol.GaiaDeviceState
+import org.opendrop.protocol.GaiaFeature
 import org.opendrop.protocol.GaiaFrame
 import org.opendrop.protocol.GaiaLink
 import org.opendrop.protocol.GaiaSession
@@ -72,12 +77,28 @@ data class UiState(
     val autoConnectPaused: Boolean = false,
     /** The developer console's last query, if any. */
     val probe: ProbeResult? = null,
+    /** The developer console's last preset-63 trial, if any. */
+    val userEqTrial: UserEqTrial? = null,
 )
 
 enum class ProbeStatus { WAITING, REPLY, ERROR, TIMEOUT, NOT_SENT }
 
 /** A developer-console read and what came back. [payload] is the reply (or error) payload. */
 data class ProbeResult(val read: DevRead, val status: ProbeStatus, val payload: List<Byte> = emptyList())
+
+enum class TrialStatus { RUNNING, RESTORED, NOT_SENT, NOT_RESTORED }
+
+/**
+ * The console's preset-63 trial and what the device said while it ran: set-EQ
+ * [responses] and [errors] (payloads) and the preset ids it [notified].
+ */
+data class UserEqTrial(
+    val previous: EqPreset,
+    val status: TrialStatus,
+    val responses: List<List<Byte>> = emptyList(),
+    val errors: List<List<Byte>> = emptyList(),
+    val notified: List<Int> = emptyList(),
+)
 
 /** True while OpenDrop holds, or is trying to hold, a link to the earbuds. */
 val Connection.isActive: Boolean
@@ -126,6 +147,8 @@ class DeviceController(private val context: Context) {
     private var autoConnectJob: Job? = null
     /** Sends the pending console read, then times it out. Main thread. */
     private var probeJob: Job? = null
+    /** Runs the console's preset-63 trial. Main thread. */
+    private var trialJob: Job? = null
 
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(c: Context, intent: Intent) {
@@ -312,7 +335,12 @@ class DeviceController(private val context: Context) {
             onState = { s -> _state.update { it.copy(device = s) } },
             onFrame = { incoming, frame ->
                 logFrame(incoming, frame)
-                if (incoming) scope.launch { onProbeReply(frame) }
+                if (incoming) {
+                    scope.launch {
+                        onProbeReply(frame)
+                        onTrialFrame(frame)
+                    }
+                }
             },
             onError = { e ->
                 logEvent("Device rejected f${e.feature} 0x${"%02x".format(e.cmd)}: ${e.payload.toHex()}")
@@ -366,6 +394,9 @@ class DeviceController(private val context: Context) {
         session = null
         probeJob?.cancel()
         _state.update { it.copy(probe = null) }
+        // The earbuds may still be on preset 63; the console says so.
+        trialJob?.cancel()
+        finishTrial(TrialStatus.NOT_RESTORED)
     }
 
     /**
@@ -431,6 +462,59 @@ class DeviceController(private val context: Context) {
         _state.update { it.copy(probe = ProbeResult(read, status, payload)) }
     }
 
+    /**
+     * Developer console: selects the hidden user preset (63) for
+     * [USER_EQ_TRIAL_MS], or until the device rejects it, then goes back to
+     * the preset it was on. Main thread. False if a trial is running, there is
+     * no link, or the device doesn't allow it ([GaiaDeviceState.canTryUserEq]).
+     */
+    fun tryUserEq(): Boolean {
+        val s = session ?: return false
+        val device = _state.value.device
+        val previous = device.namedEqPreset ?: return false
+        if (!device.canTryUserEq || _state.value.userEqTrial?.status == TrialStatus.RUNNING) return false
+        _state.update { it.copy(userEqTrial = UserEqTrial(previous, TrialStatus.RUNNING)) }
+        logEvent("Console: EQ preset ${EqPreset.USER_ID} for ${USER_EQ_TRIAL_MS / 1000} s, then back to ${previous.id}")
+        trialJob = scope.launch {
+            val sent = withContext(sessionThread) {
+                runCatching { s.selectUserEq() }.onFailure(::reportSendError).getOrDefault(false)
+            }
+            if (!sent) {
+                finishTrial(TrialStatus.NOT_SENT)
+                return@launch
+            }
+            withTimeoutOrNull(USER_EQ_TRIAL_MS) { state.first { it.userEqTrial?.errors?.isNotEmpty() == true } }
+            val restored = withContext(sessionThread) {
+                runCatching { s.setEq(previous) }.onFailure(::reportSendError).getOrDefault(false)
+            }
+            // Keep listening a moment so the restore's response and notification are recorded.
+            if (restored) delay(PROBE_TIMEOUT_MS)
+            finishTrial(if (restored) TrialStatus.RESTORED else TrialStatus.NOT_RESTORED)
+        }
+        return true
+    }
+
+    /** Records the set-EQ responses, errors and preset notifications of a running trial. */
+    private fun onTrialFrame(frame: GaiaFrame) {
+        val trial = _state.value.userEqTrial?.takeIf { it.status == TrialStatus.RUNNING } ?: return
+        if (frame.vendor != Gaia.VENDOR_V3 || frame.feature != GaiaFeature.MUSIC_PROCESSING) return
+        val payload = frame.payload.toList()
+        val updated = when {
+            frame.cmd == GaiaCommands.MUSIC_SET_EQ && frame.type == GaiaType.RESPONSE ->
+                trial.copy(responses = trial.responses + listOf(payload))
+            frame.cmd == GaiaCommands.MUSIC_SET_EQ && frame.type == GaiaType.ERROR ->
+                trial.copy(errors = trial.errors + listOf(payload))
+            frame.cmd == GaiaCommands.MUSIC_NOTIF_EQ_SET_CHANGED && frame.type == GaiaType.NOTIFICATION && payload.isNotEmpty() ->
+                trial.copy(notified = trial.notified + (payload[0].toInt() and 0xFF))
+            else -> return
+        }
+        _state.update { it.copy(userEqTrial = updated) }
+    }
+
+    private fun finishTrial(status: TrialStatus) {
+        _state.update { s -> s.copy(userEqTrial = s.userEqTrial?.takeIf { it.status == TrialStatus.RUNNING }?.copy(status = status) ?: s.userEqTrial) }
+    }
+
     fun setVolume(value: Int) {
         audio?.setStreamVolume(AudioManager.STREAM_MUSIC, value, 0)
         refreshVolume()
@@ -479,6 +563,7 @@ class DeviceController(private val context: Context) {
         private const val ACTION_VOLUME_CHANGED = "android.media.VOLUME_CHANGED_ACTION"
         private const val LOG_LINES = 200
         private const val PROBE_TIMEOUT_MS = 1_000L
+        private const val USER_EQ_TRIAL_MS = 15_000L
         private val RETRY_DELAYS_MS = longArrayOf(1_000, 3_000, 10_000)
         /** A connection that lasted this long resets the retry count. */
         private const val STABLE_CONNECTION_MS = 30_000L

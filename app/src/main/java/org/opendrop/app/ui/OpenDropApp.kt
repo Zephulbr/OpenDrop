@@ -128,7 +128,13 @@ fun OpenDropApp(
                     )
                     // Turning developer options off while here drops back to Device info.
                     Destination.ProtocolConsole -> if (behavior.developerOptions) {
-                        ProtocolConsoleScreen(state, behavior.showSerials, onProbe = viewModel::probe, onBack = back)
+                        ProtocolConsoleScreen(
+                            state,
+                            behavior.showSerials,
+                            onProbe = viewModel::probe,
+                            onTryUserEq = viewModel::tryUserEq,
+                            onBack = back,
+                        )
                     } else {
                         LaunchedEffect(Unit) { back() }
                     }
