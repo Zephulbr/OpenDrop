@@ -81,7 +81,7 @@ with no wait between OUT and IN. Facts only; no code borrowed. Value meanings
 from mdrop (Reported, not yet checked here):
 
 **Verified (2026-10-18, original Dawn Pro, OpenDrop console):** OUT `0x43/0xA0`
-with the 7-byte packet, no-wait-sensitive 100 ms pause, then IN `0xC3/0xA1`,
+with the 7-byte packet, a 100 ms pause, then IN `0xC3/0xA1`,
 answers both gets. Replies are 7 bytes, `A0 A5 <cmd>` then data:
 `A0 A5 A3 03 01 02 00` (filter 3, gain 1, LED 2) and `A0 A5 A2 00 58 00 00`
 (volume raw `0x58`). The byte positions match Link and mdrop; what each value
