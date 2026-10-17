@@ -203,6 +203,20 @@ and preset notifications, and its result can be copied. If the earbuds reject 63
 sound doesn't change, we drop on-device custom EQ and rely on the phone-side
 EQ. We won't try writing band values to a stub.
 
+Result (Verified, console trial 2026-10-17, FW 1.0.0, from Basshead):
+
+| Step | TX | RX |
+|---|---|---|
+| select 63 | `0a03 3f` | response `01`, notification `0a81 3f` |
+| back after 15 s | `0a03 01` | response `01` |
+
+The firmware accepts 63 like any other preset. Sound (Reported, by ear):
+Basshead and Reference differ clearly in the sub-bass, and 63 sounds
+somewhere in between. A no-op would keep the starting preset's sound, so this
+points to 63 being a real, separate curve (Inferred). With empty user bands it
+may be the base tuning with no preset EQ applied (Inferred). That band writes
+would work is not shown; it needs a capture first.
+
 ## Battery (Verified)
 
 Over HFP. The buds enable Apple's battery extension (`AT+XAPL=000D-0001-0101,2`)
