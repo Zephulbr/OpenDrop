@@ -65,3 +65,19 @@ Notes:
   GET_DESCRIPTOR(0x22) on interface 2 returned nothing on this phone.
 - The product string matches Link's catalogue name ("MOONDROP DAWN PRO")
   after case folding, so the family comes from the catalogue.
+
+Developer-console reads, same DAC (2026-10-18), copied from the result cards:
+
+1. IN with bRequest 0xA0 (first build): OUT accepted, IN failed for both
+   reads ("No reply (IN -1)").
+2. IN with bRequest 0xA1:
+
+   Filter, gain and LED
+   c0 a5 a3 00 00 00 00 · 0x43/0xa0, 0xc3/0xa1 idx 0x09a0
+   filter 3 (slow roll-off, phase-compensated), gain 1 (high), LED 2 (off)  (a0 a5 a3 03 01 02 00)
+
+   Device volume
+   c0 a5 a2 00 00 00 00 · 0x43/0xa0, 0xc3/0xa1 idx 0x09a0
+   volume 21% (raw 0x58; 0x00 loudest, 0x70 quietest)  (a0 a5 a2 00 58 00 00)
+
+   Replies start with a0 a5 (not c0 a5), then echo the command byte.
