@@ -54,6 +54,12 @@
     <string name="curve_vocal">보컬</string>
     <string name="curve_warm">따뜻하게</string>
     <string name="device_info">기기 정보</string>
+    <string name="devtools_console">프로토콜 콘솔</string>
+    <string name="devtools_console_subtitle">실험적 기능. 캡처가 아니라 MOONDROP Link 코드에서 가져온 읽기 전용 쿼리입니다. 기기 정보에서 엽니다.</string>
+    <string name="devtools_section">개발자</string>
+    <string name="devtools_show_serials">일련번호 표시</string>
+    <string name="devtools_show_serials_subtitle">일련번호와 기기 주소 쿼리를 콘솔에 추가합니다. 공유 보고서와 패킷 로그에서는 항상 숨겨집니다.</string>
+    <string name="devtools_warning">일부 쿼리는 아무 동작도 하지 않거나 오류를 반환할 수 있습니다. 설정 변경, 펌웨어 업데이트, 초기화, 기기 식별 정보 변경은 하지 않습니다.</string>
     <string name="earbuds">이어폰</string>
     <string name="eq">EQ</string>
     <string name="eq_switch_hint">전환할 때 잠깐 팝 노이즈가 날 수 있습니다. 먼저 볼륨을 낮추세요.</string>

@@ -54,6 +54,12 @@
     <string name="curve_vocal">ボーカル</string>
     <string name="curve_warm">ウォーム</string>
     <string name="device_info">デバイス情報</string>
+    <string name="devtools_console">プロトコルコンソール</string>
+    <string name="devtools_console_subtitle">試験的機能。キャプチャではなく MOONDROP Link のコードから得た読み取り専用クエリです。デバイス情報から開きます。</string>
+    <string name="devtools_section">開発者</string>
+    <string name="devtools_show_serials">シリアル番号を表示</string>
+    <string name="devtools_show_serials_subtitle">シリアル番号とデバイスアドレスのクエリをコンソールに追加します。共有レポートとパケットログでは常に非表示です。</string>
+    <string name="devtools_warning">何も起きない、またはエラーが返るクエリもあります。設定の変更、ファームウェア更新、リセット、識別情報の変更を行うものはありません。</string>
     <string name="earbuds">イヤホン</string>
     <string name="eq">EQ</string>
     <string name="eq_switch_hint">切り替え時に一瞬ポップ音が出ることがあります。先に音量を下げてください。</string>

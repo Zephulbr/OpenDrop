@@ -54,6 +54,12 @@
     <string name="curve_vocal">الصوت البشري</string>
     <string name="curve_warm">دافئ</string>
     <string name="device_info">معلومات الجهاز</string>
+    <string name="devtools_console">وحدة تحكم البروتوكول</string>
+    <string name="devtools_console_subtitle">تجريبي. استعلامات للقراءة فقط مأخوذة من شيفرة MOONDROP Link، لا من التقاط. تُفتح من معلومات الجهاز.</string>
+    <string name="devtools_section">المطوّر</string>
+    <string name="devtools_show_serials">إظهار الأرقام التسلسلية</string>
+    <string name="devtools_show_serials_subtitle">يضيف استعلامات الرقم التسلسلي وعنوان الجهاز إلى وحدة التحكم. تخفيها التقارير المشتركة وسجل الحزم دائمًا.</string>
+    <string name="devtools_warning">قد لا تفعل بعض الاستعلامات شيئًا أو تُرجع خطأ. لا يغيّر أيّ منها إعدادًا ولا يحدّث البرنامج الثابت ولا يعيد ضبط الجهاز ولا يمسّ هويته.</string>
     <string name="earbuds">السماعات</string>
     <string name="eq">EQ</string>
     <string name="eq_switch_hint">قد تسمع فرقعة قصيرة عند التبديل. اخفض الصوت أولًا.</string>

@@ -15,6 +15,10 @@ data class Behavior(
     val automationToken: String = "",
     /** The first-run screen was dismissed. */
     val onboarded: Boolean = false,
+    /** Settings → Developer: the protocol console (App-only queries, no capture). Off by default. */
+    val developerOptions: Boolean = false,
+    /** Show serial-number replies in the console. Shared reports and the packet log always mask them. */
+    val showSerials: Boolean = false,
 )
 
 /**
@@ -30,6 +34,8 @@ class AppSettings(context: Context) {
             automation = prefs.getBoolean(KEY_AUTOMATION, false),
             automationToken = prefs.getString(KEY_AUTOMATION_TOKEN, "") ?: "",
             onboarded = prefs.getBoolean(KEY_ONBOARDED, false),
+            developerOptions = prefs.getBoolean(KEY_DEVELOPER_OPTIONS, false),
+            showSerials = prefs.getBoolean(KEY_SHOW_SERIALS, false),
         ),
     )
     val state: StateFlow<Behavior> = _state.asStateFlow()
@@ -43,6 +49,8 @@ class AppSettings(context: Context) {
             .putBoolean(KEY_AUTOMATION, next.automation)
             .putString(KEY_AUTOMATION_TOKEN, next.automationToken)
             .putBoolean(KEY_ONBOARDED, next.onboarded)
+            .putBoolean(KEY_DEVELOPER_OPTIONS, next.developerOptions)
+            .putBoolean(KEY_SHOW_SERIALS, next.showSerials)
             .apply()
     }
 
@@ -52,5 +60,7 @@ class AppSettings(context: Context) {
         private const val KEY_AUTOMATION = "automation"
         private const val KEY_AUTOMATION_TOKEN = "automation_token"
         private const val KEY_ONBOARDED = "onboarded"
+        private const val KEY_DEVELOPER_OPTIONS = "developer_options"
+        private const val KEY_SHOW_SERIALS = "show_serials"
     }
 }

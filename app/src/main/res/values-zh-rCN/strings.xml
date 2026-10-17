@@ -54,6 +54,12 @@
     <string name="curve_vocal">人声</string>
     <string name="curve_warm">温暖</string>
     <string name="device_info">设备信息</string>
+    <string name="devtools_console">协议控制台</string>
+    <string name="devtools_console_subtitle">实验性功能。只读查询取自 MOONDROP Link 的代码，而非抓包。从设备信息中打开。</string>
+    <string name="devtools_section">开发者</string>
+    <string name="devtools_show_serials">显示序列号</string>
+    <string name="devtools_show_serials_subtitle">在控制台中加入序列号和设备地址查询。共享报告和数据包日志始终隐藏它们。</string>
+    <string name="devtools_warning">部分查询可能没有效果或返回错误。它们都不会更改设置、更新固件、重置设备或改动其身份信息。</string>
     <string name="earbuds">耳机</string>
     <string name="eq">EQ</string>
     <string name="eq_switch_hint">切换时可能会有短暂的爆音。请先调低音量。</string>

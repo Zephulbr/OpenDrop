@@ -54,6 +54,12 @@
     <string name="curve_vocal">Vocal</string>
     <string name="curve_warm">Quente</string>
     <string name="device_info">Informações do dispositivo</string>
+    <string name="devtools_console">Console de protocolo</string>
+    <string name="devtools_console_subtitle">Experimental. Consultas somente leitura tiradas do código do MOONDROP Link, não de uma captura. Abre em Informações do dispositivo.</string>
+    <string name="devtools_section">Desenvolvedor</string>
+    <string name="devtools_show_serials">Mostrar números de série</string>
+    <string name="devtools_show_serials_subtitle">Adiciona ao console consultas de número de série e endereço do dispositivo. Relatórios compartilhados e o registro de pacotes sempre os ocultam.</string>
+    <string name="devtools_warning">Algumas consultas podem não fazer nada ou retornar um erro. Nenhuma altera uma configuração, atualiza o firmware, redefine o dispositivo ou mexe na identidade dele.</string>
     <string name="earbuds">Fones</string>
     <string name="eq">EQ</string>
     <string name="eq_switch_hint">A troca pode causar um estalo breve. Abaixe o volume antes.</string>
