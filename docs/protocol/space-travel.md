@@ -146,6 +146,7 @@ Music processing = feature 5.
 | 0 | Reference |
 | 1 | Basshead |
 | 2 | Monitor |
+| 63 | (hidden; OpenDrop: Default) |
 
 The 2.26.2c app's `MusicProcessing` plugin confirms the commands: get 0 (EQ
 state), get 1 (available presets, `[count][id...]`), get 2 (selected preset),
@@ -216,6 +217,9 @@ somewhere in between. A no-op would keep the starting preset's sound, so this
 points to 63 being a real, separate curve (Inferred). With empty user bands it
 may be the base tuning with no preset EQ applied (Inferred). That band writes
 would work is not shown; it needs a capture first.
+
+OpenDrop offers 63 as a fourth preset, **Default**, on a trial basis. If
+day-to-day use shows it does nothing, it gets removed.
 
 ## Battery (Verified)
 

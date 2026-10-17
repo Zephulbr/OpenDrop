@@ -20,7 +20,7 @@ fresh one).
 
 | Action | Extras | Does |
 |---|---|---|
-| `org.opendrop.app.action.SET_EQ` | `preset`: `reference`, `basshead`, `monitor` (or id `0`, `1`, `2`); `token` | Switches the EQ preset |
+| `org.opendrop.app.action.SET_EQ` | `preset`: `reference`, `basshead`, `monitor`, `default` (or id `0`, `1`, `2`, `63`); `token` | Switches the EQ preset |
 | `org.opendrop.app.action.NEXT_EQ` | `token` | Switches to the next preset |
 | `org.opendrop.app.action.CONNECT` | `token` | Connects to the remembered earbuds |
 | `org.opendrop.app.action.DISCONNECT` | `token` | Disconnects (and pauses auto-connect, like the button) |
@@ -39,7 +39,7 @@ battery or EQ preset changes, and once when automation is turned on.
 | `connection` | string | `connected`, `connecting`, `reconnecting`, `disconnected` or `failed` |
 | `device` | string | Bluetooth name of the earbuds |
 | `battery` | int | Percent, `-1` if unknown or not connected |
-| `preset` | string | `reference`, `basshead`, `monitor`, or empty |
+| `preset` | string | `reference`, `basshead`, `monitor`, `default`, or empty |
 
 ## Tasker example
 

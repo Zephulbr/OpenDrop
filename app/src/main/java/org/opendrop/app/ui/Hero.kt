@@ -78,6 +78,7 @@ fun illustrativeCurve(preset: EqPreset, t: Float): Float = when (preset) {
     EqPreset.REFERENCE -> 1.5f * bump(t, 0.05f, 0.22f)
     EqPreset.BASSHEAD -> 9f * bump(t, 0f, 0.30f) + 1.5f * bump(t, 0.88f, 0.08f)
     EqPreset.MONITOR -> -2f * bump(t, 0.05f, 0.2f) + 3f * bump(t, 0.62f, 0.12f)
+    EqPreset.DEFAULT -> 4.5f * bump(t, 0f, 0.26f)
 }
 
 /**

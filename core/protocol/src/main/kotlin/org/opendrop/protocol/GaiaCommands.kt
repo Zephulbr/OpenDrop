@@ -4,10 +4,17 @@ package org.opendrop.protocol
 enum class EqPreset(val id: Int, val label: String) {
     REFERENCE(0, "Reference"),
     BASSHEAD(1, "Basshead"),
-    MONITOR(2, "Monitor");
+    MONITOR(2, "Monitor"),
+
+    /**
+     * Qualcomm's user-EQ slot. Link hides it; on the Space Travel its bands
+     * read empty, but it sounds between Basshead and Reference (by ear), so it
+     * is offered as "Default" until day-to-day use says otherwise.
+     */
+    DEFAULT(63, "Default");
 
     companion object {
-        /** The hidden on-device user EQ (5 bands on the Space Travel); selected only by the console's trial. */
+        /** The on-device user EQ slot, [DEFAULT]. */
         const val USER_ID = 63
 
         fun of(id: Int): EqPreset? = entries.firstOrNull { it.id == id }

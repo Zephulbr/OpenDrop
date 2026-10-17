@@ -52,12 +52,13 @@ data class GaiaDeviceState(
     val namedEqPreset: EqPreset? get() = eqPreset?.takeIf { model?.spaceTravelPresets == true }
 
     /**
-     * Developer console: whether the hidden user preset ([EqPreset.USER_ID])
-     * may be tried. The device must list it and sit on a switchable preset,
-     * so there is one to go back to.
+     * Developer console: whether the user preset ([EqPreset.USER_ID]) may be
+     * tried. The device must list it and sit on another switchable preset, so
+     * there is one to go back to.
      */
     val canTryUserEq: Boolean
-        get() = availableEqPresets?.contains(EqPreset.USER_ID) == true && namedEqPreset in switchableEqPresets
+        get() = availableEqPresets?.contains(EqPreset.USER_ID) == true &&
+            namedEqPreset != EqPreset.DEFAULT && namedEqPreset in switchableEqPresets
 }
 
 /**

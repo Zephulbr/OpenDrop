@@ -24,7 +24,7 @@ object Automation {
     const val ACTION_DISCONNECT = "org.opendrop.app.action.DISCONNECT"
 
     /**
-     * [ACTION_SET_EQ]: preset name (reference, basshead, monitor) or id.
+     * [ACTION_SET_EQ]: preset name (reference, basshead, monitor, default) or id.
      * [EVENT_STATE]: preset name in lower case, or empty if unknown.
      */
     const val EXTRA_PRESET = "preset"
