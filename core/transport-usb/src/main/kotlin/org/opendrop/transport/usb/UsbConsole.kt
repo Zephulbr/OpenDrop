@@ -31,7 +31,7 @@ class UsbConsole(private val manager: UsbManager) {
             Thread.sleep(read.replyDelayMs)
             val buffer = ByteArray(packet.size)
             val n = connection.controlTransfer(
-                read.requestTypeIn, read.request, read.value, read.index, buffer, buffer.size, TIMEOUT_MS,
+                read.requestTypeIn, read.requestIn, read.value, read.index, buffer, buffer.size, TIMEOUT_MS,
             )
             if (n < 0) Result.Failed("No reply (IN $n)") else Result.Reply(buffer.copyOf(n))
         } finally {

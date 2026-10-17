@@ -70,7 +70,22 @@ UAC2 audio plus one HID interface (2) with 8-byte interrupt endpoints OUT
 | Direction | `bmRequestType` | `bRequest` | `wValue` | `wIndex` | Length |
 |---|---|---|---|---|---|
 | OUT | `0x43` | `0xA0` | `0` | `0x09A0` | 7 |
-| IN | `0xC3` | `0xA0` | `0` | `0x09A0` | 7 |
+| IN | `0xC3` | **`0xA1`** | `0` | `0x09A0` | 7 |
+
+Correction (2026-10-18, **Reported**): an earlier reading of Link had `0xA0`
+for the IN request too. On the original Dawn Pro, IN with `0xA0` stalls
+(Android returns -1) while the OUT is accepted. The MIT-licensed
+[mdrop](https://github.com/frahz/mdrop) tool, which works with the Dawn Pro,
+reads with `bRequest 0xA1` and writes 3-byte packets (`C0 A5 <cmd>[ <value>]`)
+with no wait between OUT and IN. Facts only; no code borrowed. Value meanings
+from mdrop (Reported, not yet checked here):
+
+- Volume raw: `0x00` loudest to `0x70` quietest (not `100 - volume`).
+- Filter: 0 fast roll-off low latency, 1 fast roll-off phase-compensated,
+  2 slow roll-off low latency, 3 slow roll-off phase-compensated,
+  4 non-oversampling.
+- Gain: 0 low, 1 high.
+- LED: 0 on, 1 off until replug, 2 off.
 
 App evidence: `UsbMessageTransmitter` (`hb5.x`/`hb5.o`) and
 `DacCommandHandler` (`l01`).

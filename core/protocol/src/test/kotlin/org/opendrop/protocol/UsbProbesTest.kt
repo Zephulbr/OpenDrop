@@ -12,8 +12,9 @@ class UsbProbesTest {
     fun comtruePacketsAreTheTwoGets() {
         assertEquals("c0 a5 a3 00 00 00 00", state.packetBytes().toHex())
         assertEquals("c0 a5 a2 00 00 00 00", volume.packetBytes().toHex())
-        assertEquals("c0 a5 a3 00 00 00 00 · 0x43/0xa0 idx 0x09a0", state.wire())
+        assertEquals("c0 a5 a3 00 00 00 00 · 0x43/0xa0, 0xc3/0xa1 idx 0x09a0", state.wire())
         assertEquals(0xC3, state.requestTypeIn)
+        assertEquals(0xA1, state.requestIn)
     }
 
     @Test
@@ -33,11 +34,25 @@ class UsbProbesTest {
     @Test
     fun decodesReplies() {
         assertEquals(
-            "filter 2, gain 1, LED 0  (c0 a5 a3 02 01 00 00)",
+            "filter 2 (slow roll-off, low latency), gain 1 (high), LED 0 (on)  (c0 a5 a3 02 01 00 00)",
             UsbProbes.describe(state, "c0a5a302010000".hexToBytes()),
         )
-        assertEquals("volume 60 (raw 40)  (c0 a5 a2 00 28 00 00)", UsbProbes.describe(volume, "c0a5a200280000".hexToBytes()))
-        assertEquals("volume 0 (raw 255)  (c0 a5 a2 00 ff 00 00)", UsbProbes.describe(volume, "c0a5a200ff0000".hexToBytes()))
+        assertEquals(
+            "filter 9 (unknown), gain 0 (low), LED 2 (off)  (c0 a5 a3 09 00 02 00)",
+            UsbProbes.describe(state, "c0a5a309000200".hexToBytes()),
+        )
+        assertEquals(
+            "volume 50% (raw 0x38; 0x00 loudest, 0x70 quietest)  (c0 a5 a2 00 38 00 00)",
+            UsbProbes.describe(volume, "c0a5a200380000".hexToBytes()),
+        )
+        assertEquals(
+            "volume 100% (raw 0x00; 0x00 loudest, 0x70 quietest)  (c0 a5 a2 00 00 00 00)",
+            UsbProbes.describe(volume, "c0a5a200000000".hexToBytes()),
+        )
+        assertEquals(
+            "volume 0% (raw 0xff; 0x00 loudest, 0x70 quietest)  (c0 a5 a2 00 ff 00 00)",
+            UsbProbes.describe(volume, "c0a5a200ff0000".hexToBytes()),
+        )
         assertEquals("c0 a5", UsbProbes.describe(state, "c0a5".hexToBytes()))
         assertEquals("(empty)", UsbProbes.describe(state, ByteArray(0)))
     }
