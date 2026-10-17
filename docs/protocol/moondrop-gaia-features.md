@@ -147,8 +147,8 @@ high-pass 1, 3 all-pass 1, 4 low-shelf 1, 5 high-shelf 1, 6 tilt 1, 7 low-pass
 The old ST1 probe sent `0a 05 00 05` (start 0, end 5). That is out of range
 for a 5-band EQ; the correct query is `0a 05 00 04`. The old reply was
 interpreted as "all zeros", but the new parser shows it is
-`start=0, end=1, one zeroed 7-byte band`, so the probe result needs
-re-checking before calling the user EQ a stub.
+`start=0, end=1, one zeroed 7-byte band`. The re-probe with `0a 05 00 04`
+(2026-10-17) returned exactly the same, so the ST1 user EQ read is a stub.
 
 Preset ids: the app's `sw3` enum has `0 = OFF`, `63 = USER`, everything else
 `PRE_SET`. The ST1 firmware reports presets 0, 1, 2 and 63, and the Link UI
@@ -450,8 +450,7 @@ probe found. Consequences:
 - No ANC, battery, touch, codec, spatial, LED or file-storage replies.
 - The EQ preset ids 0/1/2 are Reference/Basshead/Monitor in Link. The hidden
   preset 63 exists.
-- User EQ: the 7-byte band layout above is now known. Re-probe with
-  `0a 05 00 04` before deciding it is a stub.
+- User EQ: `0a 05 00 04` returns one all-zero band, not five (stub).
 
 ## How to verify
 

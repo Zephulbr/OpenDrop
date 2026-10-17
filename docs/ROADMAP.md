@@ -60,9 +60,9 @@ USB families.
       ([devices.md](devices.md)).
 - [x] Command map for Moondrop features (App; wire verification pending):
       [moondrop-gaia-features.md](protocol/moondrop-gaia-features.md).
-- [ ] Space Travel hidden "User" EQ (preset 63): re-probe the 5-band config
-      with `0a05 00 04`, then run the one opt-in test
-      (`gaia_probe.py --try-user-eq`) to settle whether it works.
+- [ ] Space Travel hidden "User" EQ (preset 63): the `0a05 00 04` re-probe
+      returns one zeroed band (stub). Last check: the opt-in
+      `gaia_probe.py --try-user-eq` (does 63 select, does sound change?).
 - [ ] Preset names per model: Link downloads them
       (`/api/v1/ota-config-equalizers/all`); fetch once and record them.
 - [ ] Touch controls: payload layouts are known (5 bytes for v2/v4, 7 for v3);
@@ -155,7 +155,8 @@ tests and a screen):
 - [ ] Spatial audio and head tracking (18), dynamic bass (27), left/right
       swap (30), dual-mic noise reduction (35), voice prompts (14).
 - [ ] On-device user EQ (music processing 5 to 8) where the firmware supports it.
-      The band parser (`UserEq`) is in; re-probe the ST1 with `0a05 00 04` first.
+      The band parser (`UserEq`) is in. ST1 FW 1.0.0 returns one zeroed band
+      for `0a05 00 04`, so not on ST1.
 - [x] Packet log names every feature 0–35 and masks serial-number replies.
 - [x] Developer-options console (Settings → Developer, opens from Device
       info): read-only GAIA probes for advertised features, one at a time.

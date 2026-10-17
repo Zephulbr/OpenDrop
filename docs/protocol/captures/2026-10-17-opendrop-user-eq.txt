@@ -1,0 +1,48 @@
+OpenDrop device report + developer-options user EQ query (phone line removed)
+
+OpenDrop: 0.5.1
+Bluetooth name: Moondrop Space Travel
+Variant name: Moondrop Space Travel
+Known model: Moondrop Space Travel (bluetrum)
+Firmware: 1.0.0
+
+GAIA features (id: name, version):
+  0: Core, v2
+  1: Earbud, v1
+  3: Voice assistant, v1
+  5: EQ, v1
+  6: Firmware update, v2
+
+OpenDrop support:
+  EQ presets: control
+
+EQ presets available: 0, 1, 2, 63
+EQ preset selected: 1
+
+Packet log (17 lines):
+23:22:55.547 -- Connected
+23:22:55.549 TX v2 0x0300
+23:22:55.674 RX v2 0x8300 00 04 03 01
+23:22:55.675 TX f0 core command 0x01
+23:22:55.742 RX f0 core response 0x01 00 03 01 05 01 01 01 06 02 00 02
+23:22:55.743 TX f0 core command 0x07 00
+23:22:55.744 TX f0 core command 0x07 05
+23:22:55.744 TX f0 core command 0x05
+23:22:55.744 TX f5 music_processing command 0x02
+23:22:55.744 TX f0 core command 0x04
+23:22:55.745 TX f5 music_processing command 0x01
+23:22:55.893 RX f0 core response 0x04 4d 6f 6f 6e 64 72 6f 70 20 53 70 61 63 65 20 54 72 61 76 65 6c
+23:22:55.917 RX f5 music_processing response 0x01 04 00 01 02 3f
+23:22:55.986 RX f0 core response 0x05 31 2e 30 2e 30
+23:22:55.990 RX f5 music_processing response 0x02 01
+23:22:56.050 RX f0 core response 0x04 4d 6f 6f 6e 64 72 6f 70 20 53 70 61 63 65 20 54 72 61 76 65 6c
+23:22:56.077 RX f5 music_processing response 0x01 04 00 01 02 3f
+
+Developer options "Last query" card (transcribed from a screenshot, same session):
+  User EQ, bands 0-4
+  f5 cmd 0x05 . 00 04
+  start 0, end 1, 1 bands: 0 Hz Q 0.000 type 0 +0.0 dB  (00 01 00 00 00 00 00 00 00)
+
+Note: the in-range request [start 0][end 4] gets the same reply as the old
+out-of-range [0][5] probe: start echoed, end 1, one all-zero band. The
+firmware advertises 5 bands (0a04 -> 05) but returns one empty band.

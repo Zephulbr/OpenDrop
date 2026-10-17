@@ -270,9 +270,10 @@ Passive IEMs. Link lists them for EQ targets and frequency-response data, applie
   yet. Unknowns include the Comture PEQ path (the Java layer only exposes
   filter/gain/LED/volume), the Jiu reply header, and Synopsys coefficient
   rounding.
-- **User EQ on ST1.** The 7-byte band layout is known, but the old probe used
-  an out-of-range end band; re-probe with `0a05 00 04` before deciding the
-  firmware is a stub.
+- **User EQ on ST1.** The 7-byte band layout is known. The corrected
+  `0a05 00 04` read returns one all-zero band instead of five, so the read
+  path is a stub. Still open: does selecting preset 63 do anything
+  (`--try-user-eq`)?
 
 ## How the app uses this
 
@@ -305,7 +306,6 @@ Next:
   codec, power timeouts, dual-mic). The exact commands are in
   [protocol/moondrop-gaia-features.md](protocol/moondrop-gaia-features.md);
   a capture is still required before a write.
-- Re-probe the ST1 user EQ with the corrected `0a05 00 04` request.
 - Preset names for other models (Link downloads them per model).
 - Airoha's own SDK protocol only if an Airoha model turns out to need it for
   something GAIA doesn't offer (firmware updates stay out of scope).

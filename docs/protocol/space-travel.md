@@ -168,12 +168,13 @@ Notes:
 | get EQ state `0a00` | `01` | EQ enabled (inferred) |
 | get available presets `0a01` | `04 00 01 02 3f` | 4 presets: 0, 1, 2 and **63** (Qualcomm's id for the user-configurable set) |
 | get user set band count `0a04` | `05` | 5 bands |
-| get user set config `0a05 00 04` | `[0][4]` + 5 × 7 bytes | start band 0, end band 4 (all five bands) |
-| get user set config `0a05 01 04` | `[1][4]` + 4 × 7 bytes | start band 1, end band 4 |
+| get user set config `0a05 00 04` | `00 01` + `00 00 00 00 00 00 00` | one zeroed band (`captures/2026-10-17-opendrop-user-eq.txt`) |
+| get user set config `0a05 00 05` | `00 01` + 7 × `00` | same (old probe) |
+| get user set config `0a05 01 05` | `01 01` + 7 × `00` | start echoed, still one zeroed band (old probe) |
 
 The request payload is `[start band][end band]`, **not** "start band then
-five zeros". Each band is 7 bytes, decoded by the 2.26.2c MusicProcessing
-plugin:
+five zeros". Per 2.26.2c, the reply should be `[start][end]` + 7 bytes per
+band. Each band is 7 bytes, decoded by the 2.26.2c MusicProcessing plugin:
 
 ```
 [0..1] frequency (u16 BE, Hz)
@@ -184,18 +185,21 @@ plugin:
 [5..6] gain x 60 (i16 BE, dB)
 ```
 
-The old probe queried `0a05 00 05` (end band 5, out of range for 5 bands).
-The replies `00 01 00...` and `01 01 00...` therefore only prove that one
-zeroed band (band 1) came back; the earlier "all zeros" conclusion was too
-strong. Re-probe with `00 04` before deciding the user EQ is a stub.
+The corrected in-range query `00 04` gets the same reply as the old
+out-of-range `00 05`: the start byte echoed, `01` where the end band should
+be, and a single all-zero band (0 Hz, Q 0, bypass, 0 dB). The firmware
+ignores the requested end band. It returns one band, not the five that `0a04`
+advertises, and that band is empty.
 
 Link never shows a user EQ for this earbud, but the firmware reports one.
-The most likely explanation is still an unimplemented stub (a real band would
-not have frequency 0 and Q 0), but that now needs the corrected query.
+Conclusion (Inferred, now well supported): the user EQ read path is an
+unimplemented stub on ST1 firmware 1.0.0.
 
-Remaining cheap test: `gaia_probe.py --try-user-eq` selects preset 63 for
-15 s and then restores the previous preset (the same "set EQ preset"
-command Link uses, with a different value). If the earbuds reject 63 or the
+Remaining cheap test: `gaia_probe.py --try-user-eq`, or the protocol
+console's "Write test" in developer options, selects preset 63 for 15 s and
+then restores the previous preset (the same "set EQ preset" command Link
+uses, with a different value). The console records the set responses, errors
+and preset notifications, and its result can be copied. If the earbuds reject 63 or the
 sound doesn't change, we drop on-device custom EQ and rely on the phone-side
 EQ. We won't try writing band values to a stub.
 
@@ -265,7 +269,8 @@ This channel is separate from GAIA; the normal device UI never sends it.
 - [x] Read the user EQ configuration (`0a05`): the 7-byte band layout is now
   known from 2.26.2c. The old probe asked for end band 5, so its "all zeros"
   result only covers band 1. The user EQ may still be a stub.
-- [ ] Re-probe with `0a05 00 04` (all five bands).
+- [x] Re-probe with `0a05 00 04` (all five bands): same single zeroed
+  band, so the read path is a stub.
 - [ ] Optional: `--try-user-eq` (does preset 63 select, does sound change?).
 - [x] Core `0x13`–`0x16`: 2.26.2c Basic commands 19–22 (language, left SN,
   right SN, TWS status). Wire replies still not captured.
