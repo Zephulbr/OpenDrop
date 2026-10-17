@@ -157,8 +157,10 @@ tests and a screen):
 - [ ] On-device user EQ (music processing 5 to 8) where the firmware supports it.
       The band parser (`UserEq`) is in; re-probe the ST1 with `0a05 00 04` first.
 - [x] Packet log names every feature 0–35 and masks serial-number replies.
-- [ ] Developer-options console: read-only GAIA probes for advertised
-      features; writes only after a capture. Plan:
+- [x] Developer-options console (Settings → Developer, opens from Device
+      info): read-only GAIA probes for advertised features, one at a time.
+      *Untested on hardware.*
+- [ ] Console writes (reversible, read-back) only after a capture. Plan:
       [2.26.2c feature tiers](superpowers/plans/2026-10-17-moondrop-2.26.2c-feature-tiers.md).
 
 ## M3: Everyday convenience (v0.3)

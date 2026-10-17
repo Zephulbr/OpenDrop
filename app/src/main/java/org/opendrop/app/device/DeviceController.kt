@@ -33,11 +33,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.opendrop.protocol.DevRead
 import org.opendrop.protocol.EqPreset
 import org.opendrop.protocol.GaiaDeviceState
 import org.opendrop.protocol.GaiaFrame
 import org.opendrop.protocol.GaiaLink
 import org.opendrop.protocol.GaiaSession
+import org.opendrop.protocol.GaiaType
 import org.opendrop.protocol.MoondropModels
 import org.opendrop.protocol.toHex
 import org.opendrop.transport.classic.RfcommLink
@@ -68,7 +70,14 @@ data class UiState(
     val autoConnect: PairedDevice? = null,
     /** True after an explicit Disconnect, until the user connects again. */
     val autoConnectPaused: Boolean = false,
+    /** The developer console's last query, if any. */
+    val probe: ProbeResult? = null,
 )
+
+enum class ProbeStatus { WAITING, REPLY, ERROR, TIMEOUT, NOT_SENT }
+
+/** A developer-console read and what came back. [payload] is the reply (or error) payload. */
+data class ProbeResult(val read: DevRead, val status: ProbeStatus, val payload: List<Byte> = emptyList())
 
 /** True while OpenDrop holds, or is trying to hold, a link to the earbuds. */
 val Connection.isActive: Boolean
@@ -115,6 +124,8 @@ class DeviceController(private val context: Context) {
             _state.update { it.copy(autoConnectPaused = value) }
         }
     private var autoConnectJob: Job? = null
+    /** Sends the pending console read, then times it out. Main thread. */
+    private var probeJob: Job? = null
 
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(c: Context, intent: Intent) {
@@ -299,7 +310,10 @@ class DeviceController(private val context: Context) {
         val newSession = GaiaSession(
             send = { bytes -> newLink.write(bytes) },
             onState = { s -> _state.update { it.copy(device = s) } },
-            onFrame = ::logFrame,
+            onFrame = { incoming, frame ->
+                logFrame(incoming, frame)
+                if (incoming) scope.launch { onProbeReply(frame) }
+            },
             onError = { e ->
                 logEvent("Device rejected f${e.feature} 0x${"%02x".format(e.cmd)}: ${e.payload.toHex()}")
             },
@@ -350,6 +364,8 @@ class DeviceController(private val context: Context) {
         link?.close()
         link = null
         session = null
+        probeJob?.cancel()
+        _state.update { it.copy(probe = null) }
     }
 
     /**
@@ -375,6 +391,44 @@ class DeviceController(private val context: Context) {
     fun setEq(preset: EqPreset) {
         val s = session ?: return
         scope.launch(sessionThread) { runCatching { s.setEq(preset) }.onFailure(::reportSendError) }
+    }
+
+    /**
+     * Developer console: sends one [DevProbes] read and waits up to
+     * [PROBE_TIMEOUT_MS] for its reply. Main thread. False if a read is still
+     * in flight or there is no link; the session refuses unadvertised features.
+     */
+    fun probe(read: DevRead): Boolean {
+        val s = session ?: return false
+        if (_state.value.probe?.status == ProbeStatus.WAITING) return false
+        _state.update { it.copy(probe = ProbeResult(read, ProbeStatus.WAITING)) }
+        probeJob = scope.launch {
+            val sent = withContext(sessionThread) {
+                runCatching { s.probe(read) }.onFailure(::reportSendError).getOrDefault(false)
+            }
+            if (!sent) {
+                finishProbe(read, ProbeStatus.NOT_SENT)
+                return@launch
+            }
+            delay(PROBE_TIMEOUT_MS)
+            finishProbe(read, ProbeStatus.TIMEOUT)
+        }
+        return true
+    }
+
+    private fun onProbeReply(frame: GaiaFrame) {
+        val pending = _state.value.probe?.takeIf { it.status == ProbeStatus.WAITING } ?: return
+        if (!pending.read.matches(frame)) return
+        probeJob?.cancel()
+        val status = if (frame.type == GaiaType.ERROR) ProbeStatus.ERROR else ProbeStatus.REPLY
+        finishProbe(pending.read, status, frame.payload.toList())
+    }
+
+    /** Settles the pending read; a later answer to an already settled read is ignored. */
+    private fun finishProbe(read: DevRead, status: ProbeStatus, payload: List<Byte> = emptyList()) {
+        val pending = _state.value.probe
+        if (pending?.read != read || pending.status != ProbeStatus.WAITING) return
+        _state.update { it.copy(probe = ProbeResult(read, status, payload)) }
     }
 
     fun setVolume(value: Int) {
@@ -424,6 +478,7 @@ class DeviceController(private val context: Context) {
         private const val EXTRA_BATTERY_LEVEL = "android.bluetooth.device.extra.BATTERY_LEVEL"
         private const val ACTION_VOLUME_CHANGED = "android.media.VOLUME_CHANGED_ACTION"
         private const val LOG_LINES = 200
+        private const val PROBE_TIMEOUT_MS = 1_000L
         private val RETRY_DELAYS_MS = longArrayOf(1_000, 3_000, 10_000)
         /** A connection that lasted this long resets the retry count. */
         private const val STABLE_CONNECTION_MS = 30_000L

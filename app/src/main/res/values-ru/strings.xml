@@ -47,6 +47,15 @@
     <string name="channel_connection_description">Показывается, пока OpenDrop подключён к наушникам</string>
     <string name="channel_phone_eq">Эквалайзер телефона</string>
     <string name="channel_phone_eq_description">Показывается, пока эквалайзер телефона включён</string>
+    <string name="console_error">Устройство ответило ошибкой: %1$s</string>
+    <string name="console_last_reply">Последний запрос</string>
+    <string name="console_none">Устройство не сообщает ни об одной функции, для которой в консоли есть запросы.</string>
+    <string name="console_not_connected">Подключитесь к наушникам, чтобы пользоваться консолью.</string>
+    <string name="console_not_sent">Не отправлено: связь прервалась или устройство не заявляет эту функцию.</string>
+    <string name="console_open_subtitle">Запросы только на чтение для функций, о которых сообщает устройство</string>
+    <string name="console_timeout">Нет ответа в течение 1 с.</string>
+    <string name="console_waiting">Ожидание ответа…</string>
+    <string name="console_waiting_features">Ожидание списка функций устройства…</string>
     <string name="curve_bass">Усиление баса</string>
     <string name="curve_flat">Ровный</string>
     <string name="curve_treble">Усиление высоких</string>

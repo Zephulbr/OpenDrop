@@ -47,6 +47,15 @@
     <string name="channel_connection_description">Wird angezeigt, solange OpenDrop mit deinen Ohrhörern verbunden ist</string>
     <string name="channel_phone_eq">Handy-EQ</string>
     <string name="channel_phone_eq_description">Wird angezeigt, solange der Handy-EQ an ist</string>
+    <string name="console_error">Das Gerät hat mit einem Fehler geantwortet: %1$s</string>
+    <string name="console_last_reply">Letzte Abfrage</string>
+    <string name="console_none">Dieses Gerät meldet keine Funktion, für die die Konsole Abfragen hat.</string>
+    <string name="console_not_connected">Verbinde dich mit den Ohrhörern, um die Konsole zu nutzen.</string>
+    <string name="console_not_sent">Nicht gesendet: Die Verbindung ist abgebrochen oder das Gerät meldet diese Funktion nicht.</string>
+    <string name="console_open_subtitle">Nur lesende Abfragen für die Funktionen, die dieses Gerät meldet</string>
+    <string name="console_timeout">Keine Antwort innerhalb von 1 s.</string>
+    <string name="console_waiting">Warte auf eine Antwort …</string>
+    <string name="console_waiting_features">Warte auf die Funktionsliste des Geräts …</string>
     <string name="curve_bass">Bass-Boost</string>
     <string name="curve_flat">Neutral</string>
     <string name="curve_treble">Höhen-Boost</string>

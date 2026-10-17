@@ -47,6 +47,15 @@
     <string name="channel_connection_description">Affichée tant qu’OpenDrop est connecté à vos écouteurs</string>
     <string name="channel_phone_eq">EQ du téléphone</string>
     <string name="channel_phone_eq_description">Affichée tant que l’EQ du téléphone est activé</string>
+    <string name="console_error">L’appareil a répondu par une erreur : %1$s</string>
+    <string name="console_last_reply">Dernière requête</string>
+    <string name="console_none">Cet appareil ne signale aucune fonction pour laquelle la console a des requêtes.</string>
+    <string name="console_not_connected">Connectez-vous aux écouteurs pour utiliser la console.</string>
+    <string name="console_not_sent">Non envoyé : la liaison a été coupée ou l’appareil ne déclare pas cette fonction.</string>
+    <string name="console_open_subtitle">Requêtes en lecture seule pour les fonctions signalées par cet appareil</string>
+    <string name="console_timeout">Pas de réponse en 1 s.</string>
+    <string name="console_waiting">En attente d’une réponse…</string>
+    <string name="console_waiting_features">En attente de la liste des fonctions de l’appareil…</string>
     <string name="curve_bass">Basses renforcées</string>
     <string name="curve_flat">Neutre</string>
     <string name="curve_treble">Aigus renforcés</string>

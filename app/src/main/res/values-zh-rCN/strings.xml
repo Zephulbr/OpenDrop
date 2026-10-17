@@ -47,6 +47,15 @@
     <string name="channel_connection_description">OpenDrop 连接耳机时显示</string>
     <string name="channel_phone_eq">手机 EQ</string>
     <string name="channel_phone_eq_description">手机 EQ 开启时显示</string>
+    <string name="console_error">设备返回了错误：%1$s</string>
+    <string name="console_last_reply">最近一次查询</string>
+    <string name="console_none">此设备未报告控制台可查询的任何功能。</string>
+    <string name="console_not_connected">连接耳机后才能使用控制台。</string>
+    <string name="console_not_sent">未发送：连接已断开，或设备未声明此功能。</string>
+    <string name="console_open_subtitle">针对此设备所报告功能的只读查询</string>
+    <string name="console_timeout">1 秒内无回复。</string>
+    <string name="console_waiting">正在等待回复…</string>
+    <string name="console_waiting_features">正在等待设备的功能列表…</string>
     <string name="curve_bass">低音增强</string>
     <string name="curve_flat">平直</string>
     <string name="curve_treble">高音增强</string>

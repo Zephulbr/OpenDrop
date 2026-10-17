@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -33,6 +34,7 @@ import org.opendrop.app.ui.theme.MotionTokens
 private enum class Destination(val parent: Destination?) {
     Home(null),
     DeviceInfo(Home),
+    ProtocolConsole(DeviceInfo),
     PhoneEq(Home),
     UsbDevice(Home),
     Settings(Home),
@@ -119,7 +121,17 @@ fun OpenDropApp(
                             open(Destination.UsbDevice)
                         },
                     )
-                    Destination.DeviceInfo -> DeviceInfoScreen(state, onBack = back)
+                    Destination.DeviceInfo -> DeviceInfoScreen(
+                        state,
+                        onOpenConsole = { open(Destination.ProtocolConsole) }.takeIf { behavior.developerOptions },
+                        onBack = back,
+                    )
+                    // Turning developer options off while here drops back to Device info.
+                    Destination.ProtocolConsole -> if (behavior.developerOptions) {
+                        ProtocolConsoleScreen(state, behavior.showSerials, onProbe = viewModel::probe, onBack = back)
+                    } else {
+                        LaunchedEffect(Unit) { back() }
+                    }
                     Destination.UsbDevice -> UsbDeviceScreen(
                         entry = usbDevices.firstOrNull { it.key == usbKey },
                         onAllow = viewModel::requestUsbPermission,

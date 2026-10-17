@@ -47,6 +47,15 @@
     <string name="channel_connection_description">OpenDrop이 이어폰에 연결되어 있는 동안 표시</string>
     <string name="channel_phone_eq">휴대폰 EQ</string>
     <string name="channel_phone_eq_description">휴대폰 EQ가 켜져 있는 동안 표시</string>
+    <string name="console_error">기기가 오류로 응답했습니다: %1$s</string>
+    <string name="console_last_reply">마지막 쿼리</string>
+    <string name="console_none">이 기기는 콘솔에 쿼리가 있는 기능을 알려 주지 않습니다.</string>
+    <string name="console_not_connected">콘솔을 사용하려면 이어폰에 연결하세요.</string>
+    <string name="console_not_sent">보내지 않음: 연결이 끊겼거나 기기가 이 기능을 알리지 않습니다.</string>
+    <string name="console_open_subtitle">이 기기가 알려 주는 기능에 대한 읽기 전용 쿼리</string>
+    <string name="console_timeout">1초 안에 응답이 없습니다.</string>
+    <string name="console_waiting">응답을 기다리는 중…</string>
+    <string name="console_waiting_features">기기의 기능 목록을 기다리는 중…</string>
     <string name="curve_bass">저음 강조</string>
     <string name="curve_flat">플랫</string>
     <string name="curve_treble">고음 강조</string>

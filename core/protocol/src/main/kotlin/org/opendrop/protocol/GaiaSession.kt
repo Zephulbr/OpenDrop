@@ -81,6 +81,17 @@ class GaiaSession(
         return true
     }
 
+    /**
+     * Sends a developer-console read. Returns false (and sends nothing) unless
+     * it is one of [DevProbes.reads] and the device advertised its feature.
+     */
+    fun probe(read: DevRead): Boolean {
+        if (DevProbes.find(read.id) != read || read.feature in DevProbes.NEVER_READ) return false
+        if (!state.featuresKnown || read.feature !in state.features) return false
+        transmit(read.encode())
+        return true
+    }
+
     fun onBytes(data: ByteArray) {
         for (frame in decoder.feed(data)) {
             onFrame(true, frame)

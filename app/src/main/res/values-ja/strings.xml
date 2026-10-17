@@ -47,6 +47,15 @@
     <string name="channel_connection_description">OpenDrop がイヤホンに接続している間に表示</string>
     <string name="channel_phone_eq">スマホ EQ</string>
     <string name="channel_phone_eq_description">スマホ EQ がオンの間に表示</string>
+    <string name="console_error">デバイスがエラーを返しました: %1$s</string>
+    <string name="console_last_reply">最後のクエリ</string>
+    <string name="console_none">このデバイスは、コンソールにクエリがある機能を報告していません。</string>
+    <string name="console_not_connected">コンソールを使うにはイヤホンに接続してください。</string>
+    <string name="console_not_sent">送信されませんでした: 接続が切れたか、デバイスがこの機能を公開していません。</string>
+    <string name="console_open_subtitle">このデバイスが報告する機能への読み取り専用クエリ</string>
+    <string name="console_timeout">1 秒以内に応答がありません。</string>
+    <string name="console_waiting">応答を待っています…</string>
+    <string name="console_waiting_features">デバイスの機能リストを待っています…</string>
     <string name="curve_bass">低音強調</string>
     <string name="curve_flat">フラット</string>
     <string name="curve_treble">高音強調</string>
