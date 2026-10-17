@@ -48,6 +48,10 @@ class UsbModelsTest {
             "App: 0.2.0",
             "USB id: 2fc6:f06a",
             "Known model: DAWN PRO2 (SPV)",
+            "Family: SPV (catalogue name)",
+            "CAPE string: not read",
+            "HID report ids: none",
+            "HID usage pages: 0xff00",
             "  3/0: HID 0 0",
             "    IN 0x83 interrupt 64",
             "  00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f",
@@ -62,5 +66,22 @@ class UsbModelsTest {
         val a = UsbDeviceInfo(1, 2, null, null, null, emptyList(), byteArrayOf(1), mapOf(0 to byteArrayOf(2)))
         assertEquals(a, a.copy(rawDescriptors = byteArrayOf(1), hidReportDescriptors = mapOf(0 to byteArrayOf(2))))
         assertFalse(a == a.copy(rawDescriptors = byteArrayOf(9)))
+        assertFalse(a == a.copy(capeMatch = true))
+    }
+
+    @Test
+    fun reportShowsHidEvidenceForUnknownProducts() {
+        val info = UsbDeviceInfo(
+            0x2fc6, 0xf06a, null, "USB Audio", null, emptyList(),
+            hidReportDescriptors = mapOf(3 to byteArrayOf(0x85.toByte(), 0x4B)),
+            capeMatch = false,
+        )
+        val report = UsbReport.build(info, emptyList())
+        listOf(
+            "Known model: no",
+            "Family: SPV (HID report 0x4b)",
+            "CAPE string: no match",
+            "HID report ids: 0x4b",
+        ).forEach { assertTrue("missing: $it", it in report) }
     }
 }

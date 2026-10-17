@@ -3,8 +3,9 @@ package org.opendrop.protocol
 import java.util.Locale
 
 /**
- * USB control protocol families in MOONDROP Link (docs/devices.md). None is
- * decoded yet, so OpenDrop only reads USB devices (roadmap M5).
+ * USB control protocol families in MOONDROP Link (docs/protocol/usb-dac.md).
+ * Decoded from Link 2.26.2c but with no USB capture yet, so OpenDrop only
+ * reads USB devices (roadmap M5).
  */
 enum class UsbFamily(val label: String) {
     COMTRUE("Comtrue"),
@@ -105,8 +106,15 @@ data class UsbDeviceInfo(
     val rawDescriptors: ByteArray? = null,
     /** HID report descriptor per HID interface id; empty without permission. */
     val hidReportDescriptors: Map<Int, ByteArray> = emptyMap(),
+    /** Whether string descriptor 41 says "CAPE" (Synaptics); null if not read. The string itself isn't kept. */
+    val capeMatch: Boolean? = null,
 ) {
     val model: MoondropUsbModel? get() = MoondropUsbModels.find(product)
+
+    /** Report ids and usage pages across all HID interfaces. */
+    val hidSummary: HidSummary get() = hidReportDescriptors.values.map(UsbHid::summarize).let { all ->
+        HidSummary(all.flatMap { it.reportIds }.toSortedSet(), all.flatMap { it.usagePages }.toSortedSet())
+    }
 
     val id: String get() = String.format(Locale.ROOT, "%04x:%04x", vendorId, productId)
 
@@ -114,7 +122,7 @@ data class UsbDeviceInfo(
     override fun equals(other: Any?): Boolean = other is UsbDeviceInfo &&
         vendorId == other.vendorId && productId == other.productId && manufacturer == other.manufacturer &&
         product == other.product && version == other.version && interfaces == other.interfaces &&
-        rawDescriptors.contentEquals(other.rawDescriptors) &&
+        capeMatch == other.capeMatch && rawDescriptors.contentEquals(other.rawDescriptors) &&
         hidReportDescriptors.keys == other.hidReportDescriptors.keys &&
         hidReportDescriptors.all { (k, v) -> v.contentEquals(other.hidReportDescriptors[k]) }
 
@@ -132,6 +140,14 @@ object UsbReport {
         appendLine("Product: ${info.product ?: "not reported"}")
         appendLine("Version: ${info.version ?: "not reported"}")
         appendLine("Known model: ${info.model?.let { "${it.name} (${it.family.label})" } ?: "no"}")
+        val identity = UsbIdentify.of(info)
+        val evidence = identity.evidence.joinToString { it.label }.ifEmpty { "no evidence" }
+        appendLine("Family: ${identity.family?.label ?: "not identified"} ($evidence)")
+        appendLine("CAPE string: ${when (info.capeMatch) { true -> "match"; false -> "no match"; null -> "not read" }}")
+        val hid = info.hidSummary
+        appendLine("HID report ids: ${hid.reportIds.joinToString { hex(it, 2) }.ifEmpty { "none" }}")
+        appendLine("HID usage pages: ${hid.usagePages.joinToString { hex(it, 4) }.ifEmpty { "none" }}")
+        appendLine("Control protocol: App only, no USB capture yet (docs/protocol/usb-dac.md)")
         appendLine()
         appendLine("Interfaces (id/alt: class subclass protocol):")
         info.interfaces.forEach { i ->
@@ -158,6 +174,8 @@ object UsbReport {
         0xff -> "vendor"
         else -> String.format(Locale.ROOT, "0x%02x", c)
     }
+
+    private fun hex(value: Int, digits: Int) = String.format(Locale.ROOT, "0x%0${digits}x", value)
 
     /** 16 bytes per line, space separated, indented. */
     fun hexDump(bytes: ByteArray): String = bytes.toList().chunked(16).joinToString("\n") { line ->
